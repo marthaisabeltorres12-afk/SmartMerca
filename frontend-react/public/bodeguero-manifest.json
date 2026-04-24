@@ -1,0 +1,17 @@
+{
+  "name": "SmartMerca Bodeguero",
+  "short_name": "Bodeguero",
+  "description": "App para bodegueros de SmartMerca",
+  "start_url": "/bodeguero.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e3a5f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231e3a5f'/><text y='.9em' font-size='80' x='10'>📦</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}

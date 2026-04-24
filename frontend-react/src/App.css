@@ -1,0 +1,129 @@
+.ticket-print {
+  width: 72mm;
+  margin: 0 auto;
+  padding: 2mm;
+  font-family: "Courier New", monospace;
+  font-size: 10px;   /* 👈 clave */
+  line-height: 1.2;
+  background: #fff;
+  color: #000;
+}
+
+/* Todo dentro */
+.ticket-print * {
+  box-sizing: border-box;
+  word-break: break-word;
+}
+
+/* Tablas */
+.ticket-print table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+
+.ticket-print td {
+  padding: 2px;
+}
+
+/* Ajuste de textos grandes */
+.ticket-print .big {
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* SOLO al imprimir */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .ticket-print,
+  .ticket-print * {
+    visibility: visible;
+  }
+
+  .ticket-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 72mm;
+  }
+}
+/* ── MODO OSCURO TOTAL ─────────────────────────────────── */
+body.dark-mode *:not(.badge):not(.btn):not(.btn-close):not(.progress-bar):not([class*="bg-"]):not(.nav-link) {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode {
+  background-color: #0f172a !important;
+}
+
+body.dark-mode main {
+  background-color: #0f172a !important;
+}
+
+/* Botones */
+body.dark-mode .btn-success  { background-color: #16a34a !important; border-color: #16a34a !important; color: #fff !important; }
+body.dark-mode .btn-danger   { background-color: #dc2626 !important; border-color: #dc2626 !important; color: #fff !important; }
+body.dark-mode .btn-primary  { background-color: #2563eb !important; border-color: #2563eb !important; color: #fff !important; }
+body.dark-mode .btn-warning  { background-color: #d97706 !important; border-color: #d97706 !important; color: #fff !important; }
+body.dark-mode .btn-info     { background-color: #0ea5e9 !important; border-color: #0ea5e9 !important; color: #fff !important; }
+body.dark-mode .btn-secondary{ background-color: #475569 !important; border-color: #475569 !important; color: #fff !important; }
+body.dark-mode .btn-dark     { background-color: #1e293b !important; border-color: #334155 !important; color: #fff !important; }
+
+body.dark-mode .btn-outline-success  { color: #4ade80 !important; border-color: #4ade80 !important; background-color: transparent !important; }
+body.dark-mode .btn-outline-danger   { color: #f87171 !important; border-color: #f87171 !important; background-color: transparent !important; }
+body.dark-mode .btn-outline-primary  { color: #60a5fa !important; border-color: #60a5fa !important; background-color: transparent !important; }
+body.dark-mode .btn-outline-secondary{ color: #94a3b8 !important; border-color: #475569 !important; background-color: transparent !important; }
+body.dark-mode .btn-outline-warning  { color: #fbbf24 !important; border-color: #fbbf24 !important; background-color: transparent !important; }
+
+/* Badges */
+body.dark-mode .badge.bg-success  { background-color: #16a34a !important; color: #fff !important; }
+body.dark-mode .badge.bg-danger   { background-color: #dc2626 !important; color: #fff !important; }
+body.dark-mode .badge.bg-primary  { background-color: #2563eb !important; color: #fff !important; }
+body.dark-mode .badge.bg-warning  { background-color: #d97706 !important; color: #fff !important; }
+body.dark-mode .badge.bg-info     { background-color: #0ea5e9 !important; color: #fff !important; }
+body.dark-mode .badge.bg-secondary{ background-color: #475569 !important; color: #fff !important; }
+body.dark-mode .badge.bg-light    { background-color: #334155 !important; color: #e2e8f0 !important; }
+body.dark-mode .badge.bg-dark     { background-color: #0f172a !important; color: #e2e8f0 !important; }
+
+/* Textos de color */
+body.dark-mode .text-success { color: #4ade80 !important; }
+body.dark-mode .text-danger  { color: #f87171 !important; }
+body.dark-mode .text-warning { color: #fbbf24 !important; }
+body.dark-mode .text-info    { color: #38bdf8 !important; }
+body.dark-mode .text-muted   { color: #94a3b8 !important; }
+body.dark-mode .text-primary { color: #60a5fa !important; }
+body.dark-mode .text-dark    { color: #e2e8f0 !important; }
+body.dark-mode .text-white   { color: #ffffff !important; }
+
+/* Alertas */
+body.dark-mode .alert-success { background-color: #052e16 !important; border-color: #16a34a !important; color: #86efac !important; }
+body.dark-mode .alert-danger  { background-color: #450a0a !important; border-color: #dc2626 !important; color: #fca5a5 !important; }
+body.dark-mode .alert-warning { background-color: #422006 !important; border-color: #d97706 !important; color: #fde68a !important; }
+body.dark-mode .alert-info    { background-color: #0c1a2e !important; border-color: #0ea5e9 !important; color: #7dd3fc !important; }
+
+/* Progress */
+body.dark-mode .progress      { background-color: #334155 !important; }
+body.dark-mode .progress-bar  { background-color: #16a34a !important; }
+
+/* Toggle switch */
+body.dark-mode .dark-mode-toggle {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+}
+
+/* Navbar siempre oscuro */
+body.dark-mode .sidebar {
+  background-color: #111827 !important;
+}
+body.dark-mode .card-header {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
