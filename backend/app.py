@@ -124,7 +124,7 @@ def create_app():
             from models.shift        import Shift, ShiftWithdrawal
         except ImportError:
             pass
-        db.create_all()
+       # db.create_all()
 
     return app
 
