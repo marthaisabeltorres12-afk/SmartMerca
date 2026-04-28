@@ -38,6 +38,7 @@ const classifyWithVision = async (base64, apiKey) => {
 // ── Emojis ────────────────────────────────────────────────────────────────
 const getEmoji = (nombre = '') => {
   const n = nombre.toLowerCase();
+
   if (n.includes('banano') || n.includes('banana'))    return '🍌';
   if (n.includes('manzana') || n.includes('apple'))    return '🍎';
   if (n.includes('naranja') || n.includes('orange'))   return '🍊';
@@ -48,23 +49,41 @@ const getEmoji = (nombre = '') => {
   if (n.includes('sandía')  || n.includes('watermelon'))return '🍉';
   if (n.includes('papaya'))                            return '🥭';
   if (n.includes('uva')     || n.includes('grape'))    return '🍇';
-  if (n.includes('plátano') || n.includes('plantain')) return '🍌';
+  if (n.includes('plátano amarillo') || n.includes('plantain')) return '🍌';
+
   if (n.includes('tomate')  || n.includes('tomato'))   return '🍅';
   if (n.includes('zanahoria')|| n.includes('carrot'))  return '🥕';
   if (n.includes('brócoli') || n.includes('broccoli')) return '🥦';
   if (n.includes('pepino')  || n.includes('cucumber')) return '🥒';
   if (n.includes('repollo') || n.includes('cabbage'))  return '🥬';
-  if (n.includes('pimentón')|| n.includes('pepper'))   return '🫑';
+  if (n.includes('pimentón')|| n.includes('pepper') || n.includes('bell pepper'))   return '🫑';
   if (n.includes('mazorca') || n.includes('corn'))     return '🌽';
-  if (n.includes('cebolla') || n.includes('onion'))    return '🧅';
+  if (n.includes('cebolla cabezona') || n.includes('onion'))    return '🧅';
   if (n.includes('ajo')     || n.includes('garlic'))   return '🧄';
   if (n.includes('lechuga') || n.includes('lettuce'))  return '🥬';
   if (n.includes('ahuyama') || n.includes('pumpkin'))  return '🎃';
+
   if (n.includes('papa')    || n.includes('potato'))   return '🥔';
-  if (n.includes('yuca')    || n.includes('cassava'))  return '🫚';
+  if (n.includes('yuca')    || n.includes('cassava') || n.includes('yucca'))  return '🥔';
+
+  if (n.includes('melón') || n.includes('melon')) return '🍈';
+  if (n.includes('pitaya') || n.includes('dragon fruit')) return '🐉';
+  if (n.includes('manzana verde') || n.includes('green apple')) return '🍏';
+  if (n.includes('tomate de arbol') || n.includes('tamarillo')) return '🍅';
+  if (n.includes('lulo') || n.includes('naranjilla')) return '🍊';
+
+  if (n.includes('espinaca') || n.includes('spinach')) return '🥬';
+  if (n.includes('apio') || n.includes('celery')) return '🥬';
+  if (n.includes('remolacha') || n.includes('beet') || n.includes('beetroot')) return '🍠';
+  if (n.includes('papa criolla') || n.includes('creole potato')) return '🥔';
+  if (n.includes('arracacha')) return '🥔';
+  if (n.includes('cabezona morada') || n.includes('red onion')) return '🧅';
+  if (n.includes('cebolla larga') || n.includes('green onion') || n.includes('scallion')) return '🧅';
+  if (n.includes('platano verde') || n.includes('green plantain')) return '🍌';
+  if (n.includes('aguacate') || n.includes('avocado')) return '🥑';
+
   return '🥬';
 };
-
 // ── COMPONENTE PRINCIPAL ──────────────────────────────────────────────────
 const CamaraIA = ({ products = [], onAddToCart, onClose }) => {
   const videoRef    = useRef(null);
