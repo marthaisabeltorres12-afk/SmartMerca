@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const [email,    setEmail]    = useState("");
@@ -9,13 +9,23 @@ const Login = () => {
   const [showPass, setShowPass] = useState(false);
   const [error,    setError]    = useState("");
   const [loading,  setLoading]  = useState(false);
+
+  // Reset modal
+  const [resetModal,    setResetModal]    = useState(false);
+  const [resetEmail,    setResetEmail]    = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetPin,      setResetPin]      = useState('');
+  const [resetTarjeta,  setResetTarjeta]  = useState('');
+  const [resetError,    setResetError]    = useState('');
+  const [resetLoading,  setResetLoading]  = useState(false);
+  const [resetOk,       setResetOk]       = useState(false);
+
   const { login } = useAuth();
   const navigate  = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
+    setError(""); setLoading(true);
     try {
       const user = await login(email, password);
       if      (user.role === 'admin_tecnico') navigate('/tecnico');
@@ -26,9 +36,38 @@ const Login = () => {
       else if (user.role === 'bodeguero')     navigate('/cajero/ventas');
       else                                    navigate('/cajero');
     } catch (err) {
-      setError(err.message || "Credenciales invalidas");
+      setError(err.message || "Credenciales inválidas");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReset = async () => {
+    setResetError('');
+    if (!resetEmail || !resetPassword || !resetPin || !resetTarjeta) {
+      setResetError('Todos los campos son requeridos (PIN + tarjeta)');
+      return;
+    }
+    setResetLoading(true);
+    try {
+      const res = await fetch('/api/auth-admin/reset-seguro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username:       resetEmail,
+          password:       resetPassword,
+          pin:            resetPin,
+          codigo_tarjeta: resetTarjeta.toUpperCase(),
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) { setResetError(data.message || 'Error'); return; }
+      setResetOk(true);
+      setTimeout(() => { setResetModal(false); setResetOk(false); }, 2000);
+    } catch {
+      setResetError('Error de conexión');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -37,6 +76,7 @@ const Login = () => {
     borderRadius:10, padding:"12px 14px", color:"white", fontSize:14,
     outline:"none", boxSizing:"border-box",
   };
+  const inpDark = { ...inp, border:'1.5px solid #334155', marginBottom:10 };
 
   const EyeIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
@@ -49,20 +89,28 @@ const Login = () => {
 
   return (
     <div style={{ minHeight:"100vh", background:"#020617", display:"flex", position:"relative", overflow:"hidden" }}>
-      <div style={{ position:"absolute", inset:0, pointerEvents:"none", backgroundImage:"radial-gradient(rgba(255,255,255,0.07) 1.5px, transparent 1.5px)", backgroundSize:"26px 26px" }} />
+      <div style={{ position:"absolute", inset:0, pointerEvents:"none",
+        backgroundImage:"radial-gradient(rgba(255,255,255,0.07) 1.5px, transparent 1.5px)",
+        backgroundSize:"26px 26px" }} />
 
-      <div style={{ width:"50%", padding:"60px 50px", display:"flex", flexDirection:"column", justifyContent:"space-between", position:"relative", zIndex:1 }}>
+      {/* Left panel */}
+      <div style={{ width:"50%", padding:"60px 50px", display:"flex", flexDirection:"column",
+        justifyContent:"space-between", position:"relative", zIndex:1 }}>
         <div>
           <p style={{ color:"white", fontWeight:700, fontSize:16, marginBottom:48 }}>SmartMerca</p>
           <h1 style={{ color:"white", fontWeight:800, fontSize:"2.6rem", lineHeight:1.2, marginBottom:16 }}>
             Gestiona tu tienda<br />
             <span style={{ color:"#3b82f6" }}>inteligentemente</span>
           </h1>
-          <p style={{ color:"#64748b", fontSize:15, marginBottom:40 }}>Sistema completo para administrar inventario, ventas y usuarios.</p>
+          <p style={{ color:"#64748b", fontSize:15, marginBottom:40 }}>
+            Sistema completo para administrar inventario, ventas y usuarios.
+          </p>
           <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-            {[["📦","Control de inventario en tiempo real"],["🔍","Escaneo de códigos de barras"],["📊","Reportes detallados de ventas"],["📅","Control automático de vencimientos"]].map(([icon,text]) => (
+            {[["📦","Control de inventario en tiempo real"],["🔍","Escaneo de códigos de barras"],
+              ["📊","Reportes detallados de ventas"],["📅","Control automático de vencimientos"]].map(([icon,text]) => (
               <div key={text} style={{ display:"flex", alignItems:"center", gap:14 }}>
-                <div style={{ width:36, height:36, background:"#1e293b", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, flexShrink:0 }}>{icon}</div>
+                <div style={{ width:36, height:36, background:"#1e293b", borderRadius:10,
+                  display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, flexShrink:0 }}>{icon}</div>
                 <span style={{ color:"#cbd5e1", fontSize:14 }}>{text}</span>
               </div>
             ))}
@@ -80,7 +128,9 @@ const Login = () => {
         </div>
       </div>
 
-      <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"40px 60px", position:"relative", zIndex:1 }}>
+      {/* Right panel */}
+      <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center",
+        padding:"40px 60px", position:"relative", zIndex:1 }}>
         <div style={{ width:"100%", maxWidth:400 }}>
           <div style={{ textAlign:"center", marginBottom:32 }}>
             <h2 style={{ color:"white", fontWeight:700, fontSize:"1.8rem", marginBottom:6 }}>Iniciar sesión</h2>
@@ -88,44 +138,143 @@ const Login = () => {
           </div>
 
           {error && (
-            <div style={{ background:"#450a0a", border:"1px solid #dc2626", borderRadius:8, padding:"10px 14px", color:"#fca5a5", marginBottom:16, fontSize:13 }}>
+            <div style={{ background:"#450a0a", border:"1px solid #dc2626", borderRadius:8,
+              padding:"10px 14px", color:"#fca5a5", marginBottom:16, fontSize:13 }}>
               ⚠️ {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom:16 }}>
-              <label style={{ color:"#94a3b8", fontSize:12, fontWeight:600, display:"block", marginBottom:6, textTransform:"uppercase", letterSpacing:"0.05em" }}>Correo electrónico</label>
+              <label style={{ color:"#94a3b8", fontSize:12, fontWeight:600, display:"block",
+                marginBottom:6, textTransform:"uppercase", letterSpacing:"0.05em" }}>
+                Correo electrónico
+              </label>
               <input type="email" placeholder="correo@ejemplo.com" value={email}
-                onChange={(e) => setEmail(e.target.value)} required autoComplete="email" style={inp} />
+                onChange={e => setEmail(e.target.value)} required autoComplete="email" style={inp} />
             </div>
-
             <div style={{ marginBottom:8 }}>
-              <label style={{ color:"#94a3b8", fontSize:12, fontWeight:600, display:"block", marginBottom:6, textTransform:"uppercase", letterSpacing:"0.05em" }}>Contraseña</label>
+              <label style={{ color:"#94a3b8", fontSize:12, fontWeight:600, display:"block",
+                marginBottom:6, textTransform:"uppercase", letterSpacing:"0.05em" }}>
+                Contraseña
+              </label>
               <div style={{ position:"relative" }}>
-                <input type={showPass ? "text":"password"} placeholder="••••••••" value={password}
-                  onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password"
+                <input type={showPass?"text":"password"} placeholder="••••••••" value={password}
+                  onChange={e => setPassword(e.target.value)} required autoComplete="current-password"
                   style={{ ...inp, paddingRight:44 }} />
                 <button type="button" onClick={() => setShowPass(!showPass)}
-                  style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", color:"#64748b", cursor:"pointer", padding:4, display:"flex", alignItems:"center" }}>
+                  style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)",
+                    background:"none", border:"none", color:"#64748b", cursor:"pointer",
+                    padding:4, display:"flex", alignItems:"center" }}>
                   <EyeIcon />
                 </button>
               </div>
             </div>
-
             <div style={{ textAlign:"right", marginBottom:24 }}>
-              <Link to="/forgot-password" style={{ color:"#3b82f6", fontSize:13, fontWeight:600, textDecoration:"none" }}>
+              <button type="button" onClick={() => setResetModal(true)}
+                style={{ background:"none", border:"none", color:"#3b82f6",
+                  fontSize:13, fontWeight:600, cursor:"pointer" }}>
                 ¿Olvidaste tu contraseña?
-              </Link>
+              </button>
             </div>
-
             <button type="submit" disabled={loading}
-              style={{ width:"100%", background:"#2563eb", border:"none", borderRadius:10, padding:"14px", color:"white", fontWeight:700, fontSize:15, cursor:"pointer" }}>
+              style={{ width:"100%", background:"#2563eb", border:"none", borderRadius:10,
+                padding:"14px", color:"white", fontWeight:700, fontSize:15, cursor:"pointer" }}>
               {loading ? "Verificando..." : "Ingresar al sistema"}
             </button>
           </form>
         </div>
       </div>
+
+      {/* Modal reset con doble factor */}
+      {resetModal && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)',
+          display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999 }}>
+          <div style={{ width:360, background:'#020617', border:'1px solid #1e293b',
+            borderRadius:14, padding:24, boxShadow:'0 20px 60px rgba(0,0,0,0.6)' }}>
+
+            <div style={{ textAlign:'center', marginBottom:20 }}>
+              <div style={{ fontSize:32, marginBottom:6 }}>🔐</div>
+              <h5 style={{ color:'white', fontWeight:700, margin:0 }}>Recuperar contraseña</h5>
+              <p style={{ color:'#64748b', fontSize:12, marginTop:4 }}>
+                ⚠️ Requiere PIN <strong>y</strong> código de tarjeta del administrador
+              </p>
+            </div>
+
+            {resetOk ? (
+              <div style={{ textAlign:'center', padding:'20px 0' }}>
+                <div style={{ fontSize:40 }}>✅</div>
+                <p style={{ color:'#22c55e', fontWeight:700, marginTop:8 }}>Contraseña actualizada</p>
+              </div>
+            ) : (
+              <>
+                {resetError && (
+                  <div style={{ background:'#450a0a', border:'1px solid #dc2626', borderRadius:8,
+                    padding:'8px 12px', color:'#fca5a5', fontSize:13, marginBottom:12 }}>
+                    ⚠️ {resetError}
+                  </div>
+                )}
+
+                <div style={{ background:'#0f172a', border:'1px solid #1e3a5f', borderRadius:8,
+                  padding:12, marginBottom:12, fontSize:12, color:'#64748b' }}>
+                  <strong style={{ color:'#3b82f6' }}>Seguridad reforzada:</strong> Para restablecer una contraseña
+                  se requieren ambos factores del administrador.
+                </div>
+
+                <label style={{ color:'#94a3b8', fontSize:11, fontWeight:600, display:'block',
+                  marginBottom:4, textTransform:'uppercase', letterSpacing:'0.05em' }}>
+                  Usuario (correo o nombre)
+                </label>
+                <input placeholder="correo@ejemplo.com" value={resetEmail}
+                  onChange={e => setResetEmail(e.target.value)} style={inpDark} />
+
+                <label style={{ color:'#94a3b8', fontSize:11, fontWeight:600, display:'block',
+                  marginBottom:4, textTransform:'uppercase', letterSpacing:'0.05em' }}>
+                  Nueva contraseña
+                </label>
+                <input type="password" placeholder="Nueva contraseña" value={resetPassword}
+                  onChange={e => setResetPassword(e.target.value)} style={inpDark} />
+
+                <div style={{ borderTop:'1px solid #1e293b', margin:'10px 0', paddingTop:10 }}>
+                  <p style={{ color:'#94a3b8', fontSize:11, fontWeight:700, marginBottom:8,
+                    textTransform:'uppercase', letterSpacing:'0.05em' }}>
+                    Autorización del administrador
+                  </p>
+                </div>
+
+                <label style={{ color:'#94a3b8', fontSize:11, fontWeight:600, display:'block',
+                  marginBottom:4, textTransform:'uppercase', letterSpacing:'0.05em' }}>
+                  1️⃣ PIN del administrador *
+                </label>
+                <input type="password" placeholder="PIN (4-6 dígitos)" value={resetPin}
+                  onChange={e => setResetPin(e.target.value)} maxLength={6}
+                  style={{ ...inpDark, letterSpacing:4, textAlign:'center', fontSize:18 }} />
+
+                <label style={{ color:'#94a3b8', fontSize:11, fontWeight:600, display:'block',
+                  marginBottom:4, textTransform:'uppercase', letterSpacing:'0.05em' }}>
+                  2️⃣ Código de tarjeta admin *
+                </label>
+                <input placeholder="ADMIN-XXXXXX (escanear o escribir)" value={resetTarjeta}
+                  onChange={e => setResetTarjeta(e.target.value.toUpperCase())}
+                  style={{ ...inpDark, fontFamily:'monospace', fontSize:13 }} />
+
+                <div style={{ display:'flex', gap:10, marginTop:4 }}>
+                  <button onClick={() => { setResetModal(false); setResetError(''); }}
+                    style={{ flex:1, background:'none', border:'1px solid #334155',
+                      borderRadius:8, color:'#94a3b8', padding:'10px', cursor:'pointer', fontSize:14 }}>
+                    Cancelar
+                  </button>
+                  <button onClick={handleReset} disabled={resetLoading}
+                    style={{ flex:2, background:'#2563eb', border:'none', borderRadius:8,
+                      color:'white', padding:'10px', cursor:'pointer', fontSize:14, fontWeight:700 }}>
+                    {resetLoading ? '⏳ Verificando...' : '🔐 Restablecer'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

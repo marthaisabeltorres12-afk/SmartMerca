@@ -98,8 +98,8 @@ const SupervisorDashboard = () => {
                         <tr key={v.id}>
                           <td className="text-muted">#{String(v.id).padStart(4,'0')}</td>
                           <td>{v.created_at?.slice(11,16)}</td>
-                          <td>{v.cashier_name||v.cashier||'—'}</td>
-                          <td>{v.customer_name||'Consumidor Final'}</td>
+                          <td>{v.cashier||'—'}</td>
+                          <td>{v.customer?.full_name||'Consumidor Final'}</td>
                           <td><span className="badge bg-secondary">{v.payment_method||'efectivo'}</span></td>
                           <td className="text-end fw-bold text-success">{fmt(v.total)}</td>
                         </tr>
@@ -149,8 +149,8 @@ const SupervisorDashboard = () => {
                     <tr key={v.id}>
                       <td className="text-muted">#{String(v.id).padStart(4,'0')}</td>
                       <td>{v.created_at?.slice(11,16)}</td>
-                      <td>{v.cashier_name||v.cashier||'—'}</td>
-                      <td>{v.customer_name||'Consumidor Final'}</td>
+                      <td>{v.cashier||'—'}</td>
+                      <td>{v.customer?.full_name||'Consumidor Final'}</td>
                       <td><span className="badge bg-secondary">{v.payment_method||'efectivo'}</span></td>
                       <td className="text-end fw-bold text-success">{fmt(v.total)}</td>
                     </tr>

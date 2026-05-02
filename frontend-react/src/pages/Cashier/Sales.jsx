@@ -9,7 +9,9 @@ import { saleService } from '../../services/saleService';
 import { customerService } from '../../services/customerService';
 import { creditService } from '../../services/creditService';
 import { presentationService } from '../../services/presentationService';
+import AuthModal from '../../components/AuthModal';
 
+import useCartReservations from '../../hooks/useCartReservations';
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
 const fmtDate = (iso) => {
@@ -23,7 +25,6 @@ const fmtMoney = (n) => {
   return isNaN(v) ? '$0' : v.toLocaleString('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
 };
 
-// Registrar acción en auditoría
 const logAudit = async (token, accion, descripcion) => {
   try {
     await fetch('http://localhost:5000/api/audit/log', {
@@ -47,8 +48,10 @@ const PESO_CATS = ['🥦 Frutas y Verduras', '🥩 Carnes y Embutidos'];
 const esPorPeso = (cat) => PESO_CATS.includes(cat);
 
 let _tabCounter = 1;
-const newTab = () => ({
+// sinDian = true → pestaña creada con F5, no emite factura DIAN
+const newTab = (sinDian = false) => ({
   id:               _tabCounter++,
+  sinDian:          sinDian,
   cart:             [],
   paymentMethod:    'efectivo',
   cashReceived:     '',
@@ -62,12 +65,13 @@ const newTab = () => ({
   customerResults:  [],
   showNewCustomer:  false,
   newCustomerForm:  { doc_type:'CC', doc_number:'', full_name:'', phone:'', email:'' },
-  catFilter:        '',  // filtro por categoría en el buscador
+  catFilter:        '',
 });
 
 // ─── Ticket ────────────────────────────────────────────────────────────────
-const Invoice = ({ sale, cashierName, onClose }) => {
+const Invoice = ({ sale, cashierName, onClose, mode = 'sin_dian' }) => {
   const printRef = useRef();
+  const isDian = mode === 'dian';
 
   const handlePrint = () => {
     const w = window.open('', '_blank', 'width=302,height=600');
@@ -93,25 +97,41 @@ const Invoice = ({ sale, cashierName, onClose }) => {
     <div className="modal d-block" style={{ background:'rgba(0,0,0,0.6)', zIndex:9999 }}>
       <div className="modal-dialog" style={{ maxWidth:340 }}>
         <div className="modal-content">
-          <div className="modal-header py-2">
-            <h6 className="modal-title fw-bold">Ticket generado</h6>
-            <button className="btn-close btn-sm" onClick={onClose} />
+          <div className="modal-header py-2" style={{ background: isDian ? '#1e3a5f' : '#374151', color:'#fff' }}>
+            <h6 className="modal-title fw-bold">
+              {isDian ? '🧾 Factura DIAN generada' : '🧾 Ticket generado'}
+            </h6>
+            <button className="btn-close btn-close-white btn-sm" onClick={onClose} />
           </div>
           <div className="modal-body p-2" style={{ background:'#fafafa' }}>
             <div ref={printRef} style={{ fontFamily:'"Courier New",monospace', fontSize:10, color:'#000', background:'#fff', padding:'4px 6px', lineHeight:1.2 }}>
+
+              {/* Encabezado */}
               <div style={{ textAlign:'center', marginBottom:2 }}>
                 <div style={{ fontSize:13, fontWeight:'bold' }}>LA ESQUINA DE DULCE</div>
                 <div style={{ fontSize:10 }}>EDUCARDO TORRES</div>
                 <div style={{ fontSize:10 }}>NIT: 17293830</div>
                 <div style={{ fontSize:10 }}>DIR: MZ 30 CASA 4 QUITAS FLANDES</div>
                 <div style={{ fontSize:10 }}>TEL: 3203308547 — FLANDES, TOLIMA</div>
-                <div style={{ fontSize:9 }}>NO VALIDO COMO FACTURA DE VENTA</div>
+                {isDian && (
+                  <>
+                    <div style={{ fontSize:9, fontWeight:'bold', marginTop:2 }}>FACTURA DE VENTA</div>
+                    <div style={{ fontSize:8 }}>Res. DIAN No. 18764050366042</div>
+                    <div style={{ fontSize:8 }}>Del 2024-01-01 al 2025-12-31</div>
+                    <div style={{ fontSize:8 }}>Desde FACT-0001 hasta FACT-9999</div>
+                  </>
+                )}
               </div>
+
               <hr style={{ border:'none', borderTop:'1px dashed #000', margin:'2px 0' }} />
+
+              {/* Info venta */}
               <div style={{ fontSize:10 }}>
                 <div style={{ display:'flex', justifyContent:'space-between' }}>
-                  <span>Ticket No:</span>
-                  <span style={{ fontWeight:'bold' }}>#{String(sale.id).padStart(6,'0')}</span>
+                  <span>{isDian ? 'Factura No:' : 'Ticket No:'}</span>
+                  <span style={{ fontWeight:'bold' }}>
+                    {isDian ? 'FACT-' : '#'}{String(sale.id).padStart(6,'0')}
+                  </span>
                 </div>
                 <div style={{ display:'flex', justifyContent:'space-between' }}>
                   <span>Fecha:</span><span>{fmtDate(sale.created_at)}</span>
@@ -119,17 +139,42 @@ const Invoice = ({ sale, cashierName, onClose }) => {
                 <div style={{ display:'flex', justifyContent:'space-between' }}>
                   <span>Cajero:</span><span>{cashierName}</span>
                 </div>
-                <div style={{ display:'flex', justifyContent:'space-between' }}>
-                  <span>Cliente:</span>
-                  <span>{sale.customer?.full_name || 'Consumidor Final'}</span>
-                </div>
-                {sale.customer?.doc_number && (
+
+                {isDian ? (
+                  <>
+                    <hr style={{ border:'none', borderTop:'1px dashed #000', margin:'2px 0' }} />
+                    <div style={{ fontWeight:'bold', fontSize:9 }}>DATOS DEL CLIENTE</div>
+                    <div style={{ display:'flex', justifyContent:'space-between' }}>
+                      <span>Cliente:</span>
+                      <span style={{ maxWidth:'55mm', textAlign:'right' }}>
+                        {sale.dianCliente?.nombre || sale.customer?.full_name || 'Consumidor Final'}
+                      </span>
+                    </div>
+                    <div style={{ display:'flex', justifyContent:'space-between' }}>
+                      <span>{sale.dianCliente?.tipoDoc || 'CC'}:</span>
+                      <span>{sale.dianCliente?.nit || sale.customer?.doc_number || '—'}</span>
+                    </div>
+                    <div style={{ display:'flex', justifyContent:'space-between' }}>
+                      <span>Dir:</span>
+                      <span style={{ maxWidth:'50mm', textAlign:'right' }}>
+                        {sale.dianCliente?.direccion || '—'}
+                      </span>
+                    </div>
+                    <div style={{ display:'flex', justifyContent:'space-between' }}>
+                      <span>Tel:</span><span>{sale.dianCliente?.telefono || '—'}</span>
+                    </div>
+                  </>
+                ) : (
                   <div style={{ display:'flex', justifyContent:'space-between' }}>
-                    <span>{sale.customer.doc_type}:</span><span>{sale.customer.doc_number}</span>
+                    <span>Cliente:</span>
+                    <span>{sale.customer?.full_name || 'Consumidor Final'}</span>
                   </div>
                 )}
               </div>
+
               <hr style={{ border:'none', borderTop:'1px dashed #000', margin:'2px 0' }} />
+
+              {/* Productos */}
               <table style={{ width:'100%', borderCollapse:'collapse', fontSize:11 }}>
                 <thead>
                   <tr style={{ borderBottom:'1px solid #000' }}>
@@ -161,11 +206,26 @@ const Invoice = ({ sale, cashierName, onClose }) => {
                   ))}
                 </tbody>
               </table>
+
               <hr style={{ border:'none', borderTop:'2px solid #000', margin:'3px 0' }} />
+
+              {isDian && (
+                <>
+                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:10 }}>
+                    <span>Subtotal:</span>
+                    <span>${Number(total).toLocaleString('es-CO')}</span>
+                  </div>
+                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:10 }}>
+                    <span>IVA (0%):</span><span>$0</span>
+                  </div>
+                </>
+              )}
+
               <div style={{ display:'flex', justifyContent:'space-between', fontWeight:'bold', fontSize:12 }}>
                 <span>TOTAL:</span><span>${Number(total).toLocaleString('es-CO')}</span>
               </div>
 
+              {/* Pago */}
               {sale.mixtoSegundo ? (
                 <>
                   <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, marginTop:2 }}>
@@ -207,11 +267,18 @@ const Invoice = ({ sale, cashierName, onClose }) => {
               )}
 
               <hr style={{ border:'none', borderTop:'1px dashed #000', margin:'3px 0' }} />
+
               <div style={{ textAlign:'center', fontSize:11, marginTop:2 }}>
-                {sale.customer && (
+                {!isDian && sale.customer && (
                   <div style={{ fontWeight:'bold' }}>
                     ⭐ Puntos ganados: +{Math.floor(total/1000)}<br/>
                     ⭐ Puntos totales: {(sale.customer.points||0) + Math.floor(total/1000)}
+                  </div>
+                )}
+                {isDian && (
+                  <div style={{ fontSize:8, marginBottom:2 }}>
+                    Generado el {new Date().toLocaleDateString('es-CO')}<br/>
+                    Vendedor autorizado por resolución DIAN
                   </div>
                 )}
                 <div style={{ fontWeight:'bold', marginTop:2 }}>¡Gracias por su compra!</div>
@@ -221,7 +288,9 @@ const Invoice = ({ sale, cashierName, onClose }) => {
           </div>
           <div className="modal-footer py-2 gap-2">
             <button className="btn btn-outline-secondary btn-sm" onClick={onClose}>Cerrar</button>
-            <button className="btn btn-dark btn-sm fw-bold" onClick={handlePrint}>Imprimir ticket</button>
+            <button className="btn btn-dark btn-sm fw-bold" onClick={handlePrint}>
+              🖨️ Imprimir {isDian ? 'factura' : 'ticket'}
+            </button>
           </div>
         </div>
       </div>
@@ -230,7 +299,12 @@ const Invoice = ({ sale, cashierName, onClose }) => {
 };
 
 // ─── Panel de una venta ────────────────────────────────────────────────────
-const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, onAddTab, showAlert, token, handleSaleRef, suspendedSales = [], onSuspend, onRecover, onOpenCamera }) => {
+const SalePanel = ({
+  tab, products, presentations = [], onUpdate, onCompleted,
+  onAddTab, showAlert, token, handleSaleRef,
+  suspendedSales = [], onSuspend, onRecover, onOpenCamera,
+  onAddTabSinDian,
+}) => {
   const queryRef  = useRef();
   const weightRef = useRef();
   const pinRef    = useRef();
@@ -241,27 +315,30 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
   const [weightModal, setWeightModal] = useState(null);
   const [weightInput, setWeightInput] = useState('');
   const [pinModal,    setPinModal]    = useState(null);
-  const [pinValue,    setPinValue]    = useState('');
-  const [pinError,    setPinError]    = useState('');
   const [pinLoading,  setPinLoading]  = useState(false);
-  const [loading,       setLoading]       = useState(false);
-  const [priceModal,    setPriceModal]    = useState(false);   // F2
-  const [priceQuery,    setPriceQuery]    = useState('');
-  const [priceResult,   setPriceResult]   = useState(null);
-  const [calcModal,     setCalcModal]     = useState(false);   // F4
-  const [calcTotal,     setCalcTotal]     = useState('');
-  const [calcPago,      setCalcPago]      = useState('');
-  const [recoverModal,  setRecoverModal]  = useState(false);   // F9
-  const [helpModal,     setHelpModal]     = useState(false);   // F1
-  const calcRef    = useRef();
-  const priceRef   = useRef();
+  const [loading,     setLoading]     = useState(false);
+  const [priceModal,  setPriceModal]  = useState(false);
+  const [priceQuery,  setPriceQuery]  = useState('');
+  const [priceResult, setPriceResult] = useState(null);
+  const [calcModal,   setCalcModal]   = useState(false);
+  const [calcTotal,   setCalcTotal]   = useState('');
+  const [calcPago,    setCalcPago]    = useState('');
+  const [recoverModal,setRecoverModal]= useState(false);
+  const [helpModal,   setHelpModal]   = useState(false);
+
+  // Modal DIAN
+  const [dianModal,   setDianModal]   = useState(false);
+  const [dianForm,    setDianForm]    = useState({ tipoDoc:'NIT', nit:'', nombre:'', direccion:'', telefono:'' });
+  const [dianLoading, setDianLoading] = useState(false);
+
+  const calcRef  = useRef();
+  const priceRef = useRef();
 
   useEffect(() => { queryRef.current?.focus(); }, []);
   useEffect(() => { if (weightModal) setTimeout(() => weightRef.current?.focus(), 100); }, [weightModal]);
-  useEffect(() => { if (pinModal)   setTimeout(() => pinRef.current?.focus(), 100); }, [pinModal]);
-  useEffect(() => { if (calcModal)  setTimeout(() => calcRef.current?.focus(),  100); }, [calcModal]);
-  useEffect(() => { if (priceModal) setTimeout(() => priceRef.current?.focus(), 100); }, [priceModal]);
-
+  useEffect(() => { if (pinModal)    setTimeout(() => pinRef.current?.focus(),    100); }, [pinModal]);
+  useEffect(() => { if (calcModal)   setTimeout(() => calcRef.current?.focus(),   100); }, [calcModal]);
+  useEffect(() => { if (priceModal)  setTimeout(() => priceRef.current?.focus(),  100); }, [priceModal]);
 
   const today = todayStr();
   const in7d  = (() => { const d = new Date(); d.setDate(d.getDate()+7); return d.toISOString().slice(0,10); })();
@@ -275,14 +352,11 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
 
   const set = (field, value) => onUpdate(tab.id, d => ({ ...d, [field]: value }));
 
-  // ── Buscador unificado ──────────────────────────────────────────────────
   const handleQueryChange = (e) => {
     const val = e.target.value;
     setQuery(val);
     if (!val.trim()) { setResults([]); setShowResults(false); return; }
     const q = val.toLowerCase();
-
-    // Productos normales (filtro de categoria aplicado)
     const foundProds = products.filter(p => {
       const matchSearch = p.name.toLowerCase().includes(q) ||
         (p.display_name && p.display_name.toLowerCase().includes(q)) ||
@@ -291,7 +365,6 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
       return matchSearch && matchCat;
     }).map(p => ({ ...p, _type:'product' }));
 
-    // Presentaciones (cubetas, etc.)
     const foundPres = presentations.filter(p =>
       p.name.toLowerCase().includes(q) ||
       p.product_name?.toLowerCase().includes(q) ||
@@ -299,7 +372,7 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
     ).map(p => ({
       ...p,
       _type:           'presentation',
-      product_id:      p.product_id ?? p.base_product_id,  // normalizar nombre
+      product_id:      p.product_id ?? p.base_product_id,
       stock_available: typeof p.stock_packs === 'number' ? p.stock_packs
                        : (p.base_stock && p.units_per_pack ? Math.floor(p.base_stock / p.units_per_pack) : 0),
     }));
@@ -317,7 +390,8 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
       if (byBarcodePres) {
         const sp = typeof byBarcodePres.stock_packs === 'number' ? byBarcodePres.stock_packs
                    : (byBarcodePres.base_stock && byBarcodePres.units_per_pack ? Math.floor(byBarcodePres.base_stock / byBarcodePres.units_per_pack) : 0);
-        addToCart({ ...byBarcodePres, _type:'presentation', stock_available: sp, product_id: byBarcodePres.product_id ?? byBarcodePres.base_product_id }); return;
+        addToCart({ ...byBarcodePres, _type:'presentation', stock_available: sp, product_id: byBarcodePres.product_id ?? byBarcodePres.base_product_id });
+        return;
       }
       const byBarcode = products.find(p => p.barcode === val);
       if (byBarcode) { addToCart({ ...byBarcode, _type:'product' }); return; }
@@ -332,10 +406,6 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
     queryRef.current?.focus();
   };
 
-  // ── Stock disponible real (descontando lo comprometido en el carrito) ───
-  // Considera: unidades directas + packs (cada pack consume factor unidades base)
-  // stockDisponible: stock real descontando todo lo comprometido en el carrito
-  // prods = products array (pasado como param para evitar problemas de closure en useCallback)
   const stockDisponible = useCallback((productId, cart, prods) => {
     const prod = (prods || products).find(p => p.id === productId);
     if (!prod) return 0;
@@ -349,37 +419,23 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
     return Math.max(0, stockTotal - unidadesDirectas - unidadesPacks);
   }, [products]);
 
-  // ── Agregar al carrito ──────────────────────────────────────────────────
   const addToCart = useCallback((item) => {
-    // Presentación (cubeta, media cubeta, etc.)
     if (item._type === 'presentation') {
       onUpdate(tab.id, draft => {
         const key        = 'pres_' + item.id;
         const exists     = draft.cart.find(c => c.cart_key === key);
         const packActual = exists?.quantity || 0;
         const factor     = item.units_per_pack || 1;
-
-        // Unidades comprometidas por TODOS los packs del mismo producto base en el carrito
-        // (incluyendo esta presentación y cualquier otra del mismo producto)
         const unidadesEnPacks = draft.cart
           .filter(c => c.product_id === item.product_id && c.is_presentation)
           .reduce((a, c) => a + (parseFloat(c.quantity) || 0) * (parseFloat(c.factor) || 1), 0);
-
-        // Unidades directas del mismo producto en carrito
         const unidadesDirectas = draft.cart
           .filter(c => c.product_id === item.product_id && !c.is_presentation)
           .reduce((a, c) => a + (parseFloat(c.quantity) || 0), 0);
-
-        // Stock del producto base
         const prod = products.find(p => p.id === item.product_id);
         const stockBase = prod?.stock || 0;
-
-        // Stock libre = stock base - todo lo ya comprometido en carrito
         const stockLibre = Math.max(0, stockBase - unidadesDirectas - unidadesEnPacks);
-
-        // Packs adicionales que se pueden agregar de ESTA presentación
         const packsAdicionales = Math.floor(stockLibre / factor);
-
         if (packsAdicionales <= 0) {
           const udsLibres = stockBase - unidadesDirectas - unidadesEnPacks;
           showAlert('danger', item.name + ' sin stock disponible (' + Math.max(0, udsLibres) + ' uds libres)');
@@ -415,7 +471,6 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
       return;
     }
 
-    // Producto normal
     const product = item;
     const warn = productWarning(product);
     if (warn?.level === 'danger') { showAlert('danger', warn.msg); return; }
@@ -431,9 +486,8 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
     onUpdate(tab.id, draft => {
       const exists      = draft.cart.find(c => c.product_id === product.id && !c.is_presentation);
       const stockReal   = stockDisponible(product.id, draft.cart, products);
-      // stockDisponible ya descontó lo directo, sumarlo de vuelta para validar el +1
       const directaActual = exists?.quantity || 0;
-      const disponible    = stockReal + directaActual; // real sin contar la directa actual
+      const disponible    = stockReal + directaActual;
       const totalQty      = directaActual + 1;
       if (totalQty > disponible) {
         const packsComprometidos = draft.cart
@@ -466,7 +520,6 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
     clearQuery();
   }, [tab.id, onUpdate, productWarning, showAlert, stockDisponible, products]);
 
-  // ── Peso ────────────────────────────────────────────────────────────────
   const confirmWeight = () => {
     const kg = parseFloat(weightInput);
     if (!kg || kg <= 0) { showAlert('danger', 'Ingresa un peso valido'); return; }
@@ -495,48 +548,10 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
     setTimeout(() => queryRef.current?.focus(), 100);
   };
 
-  // ── PIN de admin ────────────────────────────────────────────────────────
-  const requestPin = (action, detail, label, onConfirm) => {
+   const requestPin = (action, detail, label, onConfirm) => {
     setPinModal({ action, detail, label, onConfirm });
-    setPinValue('');
-    setPinError('');
   };
 
-  const submitPin = async () => {
-    if (!pinValue.trim()) { setPinError('Ingresa el PIN'); return; }
-    setPinLoading(true);
-    setPinError('');
-    try {
-      const res = await fetch('http://localhost:5000/api/pin/verify', {
-        method:  'POST',
-        headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
-        body:    JSON.stringify({ pin: pinValue, action: pinModal.action, detail: pinModal.detail }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setPinError(data.message || 'PIN incorrecto'); return; }
-      showAlert('success', 'Autorizado por ' + data.admin_name);
-
-      // Registrar en auditoría con nombre del admin y del cajero
-      const accionMap = {
-        'eliminar_producto': 'eliminar',
-        'cambiar_cantidad':  'editar',
-        'editar_precio':     'editar',
-        'aplicar_descuento': 'descuento',
-        'descuento_venta':   'descuento',
-      };
-      const accion = accionMap[pinModal.action] || 'autorizacion';
-      await logAudit(token, accion, data.admin_name + ' autorizó ' + pinModal.detail);
-
-      pinModal.onConfirm();
-      setPinModal(null);
-    } catch(e) {
-      setPinError('Error de conexión. Intenta de nuevo.');
-    } finally {
-      setPinLoading(false);
-    }
-  };
-
-  // ── Cantidad ────────────────────────────────────────────────────────────
   const updateQtyDirect = (id, q) => {
     onUpdate(tab.id, draft => {
       const item = draft.cart.find(c => c.product_id === id);
@@ -551,7 +566,6 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
         const factor    = item.factor || 1;
         const prod      = products.find(p => p.id === item.product_id);
         const stockBase = prod?.stock || 0;
-        // Comprometido por OTROS packs del mismo producto (excluir este item)
         const otrosPacks = draft.cart
           .filter(c => c.is_presentation && c.product_id === item.product_id && c.cart_key !== item.cart_key)
           .reduce((a, c) => a + (parseFloat(c.quantity) || 0) * (parseFloat(c.factor) || 1), 0);
@@ -565,7 +579,6 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
           return draft;
         }
       } else {
-        // Para unidades normales: stock real
         const stockReal  = stockDisponible(id, draft.cart, products);
         const directa    = item.quantity || 0;
         const disponible = stockReal + directa;
@@ -604,7 +617,6 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
     );
   };
 
-  // ── Cliente ─────────────────────────────────────────────────────────────
   const handleCustomerSearch = async (q) => {
     set('customerSearch', q);
     if (q.length < 2) { set('customerResults', []); return; }
@@ -632,16 +644,151 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
     } catch(e) { showAlert('danger', e.message); }
   };
 
-  // ── Atajos de teclado globales ─────────────────────────────────────────
+  // ── Motor de venta ──────────────────────────────────────────────────────
+  const _ejecutarVenta = async (mode, dianCliente = null) => {
+    if (handleSaleRef) handleSaleRef.current = () => _ejecutarVenta(mode, dianCliente);
+
+    if (tab.isMixto) {
+      const ef2 = parseFloat(tab.mixtoEfectivo || 0);
+      const m2  = parseFloat(tab.mixtoMonto2   || 0);
+      if (ef2 + m2 < total) {
+        showAlert('danger', 'La suma ' + fmtMoney(ef2+m2) + ' es menor al total ' + fmtMoney(total));
+        return;
+      }
+      if (!tab.mixtoRef && (tab.mixtoSegundo === 'nequi' || tab.mixtoSegundo === 'transferencia')) {
+        showAlert('danger', 'Ingresa la referencia de la transferencia');
+        return;
+      }
+    } else if (tab.paymentMethod === 'credito') {
+      if (!tab.selectedCustomer) { showAlert('danger', 'Selecciona un cliente para pagar a credito'); return; }
+      if ((tab.selectedCustomer.credit_limit || 0) <= 0) { showAlert('danger', 'Este cliente no tiene credito habilitado'); return; }
+      const creditAvailable = tab.selectedCustomer.credit_available !== undefined
+        ? tab.selectedCustomer.credit_available
+        : Math.max(0, (tab.selectedCustomer.credit_limit||0) - (tab.selectedCustomer.credit_balance||0));
+      if (total > creditAvailable) {
+        showAlert('danger', 'Supera el credito disponible ' + fmtMoney(creditAvailable));
+        return;
+      }
+    } else if (tab.paymentMethod === 'efectivo') {
+      if (parseFloat(tab.cashReceived || 0) < total) {
+        showAlert('danger', 'El efectivo recibido es insuficiente');
+        return;
+      }
+    }
+
+    setLoading(true);
+    try {
+      const pm = tab.isMixto
+        ? ('mixto:efectivo+' + tab.mixtoSegundo)
+        : tab.paymentMethod;
+
+      const ef2 = parseFloat(tab.mixtoEfectivo || 0);
+      const m2  = parseFloat(tab.mixtoMonto2   || 0);
+      const cambioEfectivo = tab.isMixto
+        ? Math.max(0, ef2 - (total - m2))
+        : Math.max(0, parseFloat(tab.cashReceived||0) - total);
+
+      const payments = tab.isMixto ? [
+        { metodo: 'efectivo',       monto: ef2,   cambio: cambioEfectivo, referencia: null },
+        { metodo: tab.mixtoSegundo, monto: m2,    cambio: 0,              referencia: tab.mixtoRef || null },
+      ] : [
+        { metodo: tab.paymentMethod, monto: total, cambio: cambioEfectivo, referencia: null },
+      ];
+
+      const sale = await saleService.create({
+        items:          tab.cart.map(c => ({ product_id: c.product_id, presentation_id: c.presentation_id || null, quantity: c.quantity })),
+        customer_id:    tab.selectedCustomer?.id || null,
+        payment_method: pm,
+        payments,
+        cambio:         cambioEfectivo,
+        sale_mode:      mode,
+      }, token);
+
+      if (tab.selectedCustomer) {
+        const pts = Math.floor(total / 1000);
+        if (pts > 0) await customerService.addPoints(tab.selectedCustomer.id, pts, token);
+      }
+
+      if (tab.paymentMethod === 'credito' && tab.selectedCustomer) {
+        await creditService.addCredit(tab.selectedCustomer.id, {
+          amount:  total,
+          sale_id: sale.id,
+          note:    'Venta #' + sale.id + ' a credito',
+        }, token);
+      }
+
+      onCompleted(tab.id, {
+        ...sale,
+        saleMode:     mode,
+        dianCliente:  dianCliente,
+        customer:     tab.selectedCustomer,
+        mixtoSegundo: tab.isMixto ? tab.mixtoSegundo : null,
+        mixtoMonto2:  tab.isMixto ? m2               : null,
+        mixtoRef:     tab.isMixto ? tab.mixtoRef      : null,
+        efectivo: tab.isMixto
+          ? ef2
+          : tab.paymentMethod === 'efectivo' ? parseFloat(tab.cashReceived || 0) : 0,
+        cambio: tab.isMixto
+          ? Math.max(0, ef2 - (total - m2))
+          : tab.paymentMethod === 'efectivo' ? Math.max(0, parseFloat(tab.cashReceived || 0) - total) : 0,
+      });
+    } catch(e) {
+      if (e.status === 409) {
+        showAlert('warning', `⚠️ ${e.message} — Haz clic en "Reintentar" para intentar de nuevo.`, true);
+      } else {
+        showAlert('danger', e.message || 'Error al registrar la venta');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Cobrar: bifurca según sinDian ───────────────────────────────────────
+  const handleSale = async () => {
+    if (!tab.cart.length) { showAlert('danger', 'Agrega al menos un producto'); return; }
+
+    const LIMITE_CONSUMIDOR_FINAL = 100000; // ajusta según tu negocio
+
+if (tab.sinDian) {
+  await _ejecutarVenta('sin_dian', null);
+  return;
+}
+
+// 🟢 Si ya hay cliente → no pedir datos
+if (tab.selectedCustomer) {
+  await _ejecutarVenta('dian', {
+    tipoDoc: tab.selectedCustomer.doc_type || 'CC',
+    nit: tab.selectedCustomer.doc_number,
+    nombre: tab.selectedCustomer.full_name,
+    direccion: tab.selectedCustomer.address || '—',
+    telefono: tab.selectedCustomer.phone || '—'
+  });
+  return;
+}
+
+// 🟢 Si NO hay cliente pero venta pequeña → consumidor final
+if (total <= LIMITE_CONSUMIDOR_FINAL) {
+  await _ejecutarVenta('dian', {
+    tipoDoc: 'CC',
+    nit: '222222222222',
+    nombre: 'Consumidor Final',
+    direccion: '—',
+    telefono: '—'
+  });
+  return;
+}
+
+// 🔴 Si es venta grande → pedir datos
+setDianModal(true);
+  };
+
+  // ── Atajos de teclado ───────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e) => {
-      // No activar si hay un input/textarea enfocado (excepto el buscador principal)
       const tag = document.activeElement?.tagName;
       const isInput = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT')
         && document.activeElement !== queryRef.current;
       if (isInput) return;
-
-      // No activar si hay un modal PIN abierto
       if (pinModal) return;
 
       switch(e.key) {
@@ -665,6 +812,10 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
           setCalcTotal(tab.cart.length > 0 ? String(Math.round(tab.cart.reduce((a,c)=>(a+(parseFloat(c.price)||0)*(parseFloat(c.quantity)||0)),0))) : '');
           setCalcPago('');
           setCalcModal(true);
+          break;
+        case 'F5':
+          e.preventDefault();
+          onAddTabSinDian && onAddTabSinDian();
           break;
         case 'F6':
           e.preventDefault();
@@ -708,6 +859,7 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
           setCalcModal(false);
           setRecoverModal(false);
           setHelpModal(false);
+          setDianModal(false);
           setQuery('');
           setResults([]);
           setShowResults(false);
@@ -718,110 +870,12 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [tab, pinModal, suspendedSales, onSuspend, onUpdate, requestPin, showAlert]);
-  // ── Cobrar ──────────────────────────────────────────────────────────────
-  const handleSale = async () => {
-    if (!tab.cart.length) { showAlert('danger', 'Agrega al menos un producto'); return; }
-    if (handleSaleRef) handleSaleRef.current = handleSale;
-
-    if (tab.isMixto) {
-      const ef2 = parseFloat(tab.mixtoEfectivo || 0);
-      const m2  = parseFloat(tab.mixtoMonto2   || 0);
-      if (ef2 + m2 < total) {
-        showAlert('danger', 'La suma ' + fmtMoney(ef2+m2) + ' es menor al total ' + fmtMoney(total));
-        return;
-      }
-      if (!tab.mixtoRef && (tab.mixtoSegundo === 'nequi' || tab.mixtoSegundo === 'transferencia')) {
-        showAlert('danger', 'Ingresa la referencia de la transferencia');
-        return;
-      }
-    } else if (tab.paymentMethod === 'credito') {
-      if (!tab.selectedCustomer) { showAlert('danger', 'Selecciona un cliente para pagar a credito'); return; }
-      if ((tab.selectedCustomer.credit_limit || 0) <= 0) { showAlert('danger', 'Este cliente no tiene credito habilitado'); return; }
-      // Recalculate available credit in case it wasn't set
-      const creditAvailable = tab.selectedCustomer.credit_available !== undefined
-        ? tab.selectedCustomer.credit_available
-        : Math.max(0, (tab.selectedCustomer.credit_limit||0) - (tab.selectedCustomer.credit_balance||0));
-      if (total > creditAvailable) {
-        showAlert('danger', 'Supera el credito disponible ' + fmtMoney(creditAvailable));
-        return;
-      }
-    } else if (tab.paymentMethod === 'efectivo') {
-      if (parseFloat(tab.cashReceived || 0) < total) {
-        showAlert('danger', 'El efectivo recibido es insuficiente');
-        return;
-      }
-    }
-
-    setLoading(true);
-    try {
-      const pm = tab.isMixto
-        ? ('mixto:efectivo+' + tab.mixtoSegundo)
-        : tab.paymentMethod;
-
-      const ef2 = parseFloat(tab.mixtoEfectivo || 0);
-      const m2  = parseFloat(tab.mixtoMonto2   || 0);
-      const cambioEfectivo = tab.isMixto ? Math.max(0, ef2 - (total - m2)) : Math.max(0, parseFloat(tab.cashReceived||0) - total);
-
-      // Pagos desglosados para sale_payments
-      const payments = tab.isMixto ? [
-        { metodo: 'efectivo',         monto: ef2, cambio: cambioEfectivo, referencia: null },
-        { metodo: tab.mixtoSegundo,   monto: m2,  cambio: 0,              referencia: tab.mixtoRef || null },
-      ] : [
-        { metodo: tab.paymentMethod,  monto: total, cambio: cambioEfectivo, referencia: null },
-      ];
-
-      const sale = await saleService.create({
-        items:          tab.cart.map(c => ({ product_id: c.product_id, presentation_id: c.presentation_id || null, quantity: c.quantity })),
-        customer_id:    tab.selectedCustomer?.id || null,
-        payment_method: pm,
-        payments,
-        cambio:         cambioEfectivo,
-      }, token);
-
-      if (tab.selectedCustomer) {
-        const pts = Math.floor(total / 1000);
-        if (pts > 0) await customerService.addPoints(tab.selectedCustomer.id, pts, token);
-      }
-
-      if (tab.paymentMethod === 'credito' && tab.selectedCustomer) {
-        await creditService.addCredit(tab.selectedCustomer.id, {
-          amount:  total,
-          sale_id: sale.id,
-          note:    'Venta #' + sale.id + ' a credito',
-        }, token);
-      }
-
-      onCompleted(tab.id, {
-        ...sale,
-        customer:     tab.selectedCustomer,
-        mixtoSegundo: tab.isMixto ? tab.mixtoSegundo    : null,
-        mixtoMonto2:  tab.isMixto ? m2                  : null,
-        mixtoRef:     tab.isMixto ? tab.mixtoRef        : null,
-        efectivo: tab.isMixto
-          ? ef2
-          : tab.paymentMethod === 'efectivo' ? parseFloat(tab.cashReceived || 0) : 0,
-        cambio: tab.isMixto
-          ? Math.max(0, ef2 - (total - m2))
-          : tab.paymentMethod === 'efectivo' ? Math.max(0, parseFloat(tab.cashReceived || 0) - total) : 0,
-      });
-    } catch(e) {
-      if (e.status === 409) {
-        showAlert('warning', `⚠️ ${e.message} — Haz clic en "Reintentar" para intentar de nuevo.`, true);
-      } else {
-        showAlert('danger', e.message || 'Error al registrar la venta');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [tab, pinModal, suspendedSales, onSuspend, onUpdate, showAlert, onAddTabSinDian]);
 
   const total  = tab.cart.reduce((a, c) => a + (parseFloat(c.price) || 0) * (parseFloat(c.quantity) || 0), 0);
   const cambio = parseFloat(tab.cashReceived || 0) - total;
 
   const stockBadge = (item) => {
-    // Para presentaciones, stock máximo = item.stock (stock_packs al momento de agregar)
-    // Para productos normales, stock máximo = stock del producto base
     const maxStock = item.is_presentation
       ? (item.stock || 0)
       : (products.find(x => x.id === item.product_id)?.stock || 0);
@@ -831,16 +885,14 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
     return 'bg-success';
   };
 
-  // ── Mixto ────────────────────────────────────────────────────────────────
-  const ef2   = parseFloat(tab.mixtoEfectivo || 0);
-  const m2    = parseFloat(tab.mixtoMonto2   || 0);
-  const suma  = ef2 + m2;
-  const camb  = ef2 - (total - m2);
-  const falta = total - suma;
+  const ef2  = parseFloat(tab.mixtoEfectivo || 0);
+  const m2   = parseFloat(tab.mixtoMonto2   || 0);
+  const suma = ef2 + m2;
+  const camb = ef2 - (total - m2);
+  const falta= total - suma;
 
   return (
     <div className="row g-3">
-
 
       {/* ── Carrito (izquierda) ── */}
       <div className="col-lg-5">
@@ -849,6 +901,7 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
             <span className="fw-bold">
               Carrito
               {tab.cart.length > 0 && <span className="badge bg-success ms-2">{tab.cart.length}</span>}
+              {tab.sinDian && <span className="badge bg-secondary ms-2" style={{fontSize:10}}>Sin DIAN</span>}
             </span>
             {tab.cart.length > 0 && (
               <button className="btn btn-outline-danger btn-sm"
@@ -1029,8 +1082,7 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
                     setPriceQuery(q);
                     if (!q.trim()) { setPriceResult(null); return; }
                     const found = products.find(p =>
-                      p.barcode === q ||
-                      p.name.toLowerCase().includes(q.toLowerCase())
+                      p.barcode === q || p.name.toLowerCase().includes(q.toLowerCase())
                     );
                     setPriceResult(found || null);
                   }}
@@ -1176,6 +1228,7 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
                       ['F2',    'Consultar precio de un producto'],
                       ['F3',    'Enfocar buscador de productos'],
                       ['F4',    'Calculadora de cambio'],
+                      ['F5',    'Nueva venta sin factura DIAN (ticket interno)'],
                       ['F6',    'Descuento a toda la venta (requiere PIN)'],
                       ['F8',    'Suspender venta (guardar para después)'],
                       ['F9',    'Recuperar venta suspendida'],
@@ -1236,48 +1289,104 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
       )}
 
       {/* Modal PIN */}
+     {/* ✅ AuthModal reemplaza el modal PIN */}
       {pinModal && (
-        <div className="modal d-block" style={{ background:'rgba(0,0,0,0.75)', zIndex:10000 }}>
-          <div className="modal-dialog modal-sm" style={{ marginTop:'20vh' }}>
+        <AuthModal
+          tipo={pinModal.action}
+          detalle={pinModal.label}
+          onAuthorized={(adminNombre) => {
+            showAlert('success', 'Autorizado por ' + adminNombre);
+            pinModal.onConfirm();
+            setPinModal(null);
+          }}
+          onCancel={() => setPinModal(null)}
+        />
+      )}
+
+      {/* ── Modal DIAN ── */}
+      {dianModal && (
+        <div className="modal d-block" style={{ background:'rgba(0,0,0,0.7)', zIndex:10002 }}>
+          <div className="modal-dialog" style={{ marginTop:'8vh' }}>
             <div className="modal-content border-0 shadow-lg">
               <div className="modal-header py-3" style={{ background:'#1e3a5f', color:'#fff' }}>
-                <h6 className="modal-title fw-bold">Autorizacion requerida</h6>
+                <h5 className="modal-title fw-bold">🧾 Factura DIAN — Datos del cliente</h5>
+                <button className="btn-close btn-close-white" onClick={() => setDianModal(false)} />
               </div>
               <div className="modal-body">
-                <div className="mb-3 p-2 rounded" style={{ background:'#f8fafc', fontSize:12 }}>
-                  <div className="text-muted small">Accion:</div>
-                  <div className="fw-semibold">{pinModal.label}</div>
+                <div className="alert alert-info py-2 small mb-3">
+                  Para emitir factura electrónica DIAN se requieren los datos del cliente.
                 </div>
-                <label className="form-label fw-semibold small">PIN del administrador</label>
-                <input
-                  ref={pinRef}
-                  type="password"
-                  className={'form-control form-control-lg text-center ' + (pinError ? 'is-invalid' : '')}
-                  placeholder="* * * *"
-                  maxLength={6}
-                  value={pinValue}
-                  onChange={e => { setPinValue(e.target.value); setPinError(''); }}
-                  onKeyDown={e => e.key === 'Enter' && submitPin()}
-                  style={{ letterSpacing:8, fontSize:24 }}
-                />
-                {pinError && <div className="invalid-feedback d-block text-center">{pinError}</div>}
-                <div className="text-muted text-center mt-2" style={{ fontSize:11 }}>
-                  El admin ingresa su PIN de 4-6 digitos
+                <div className="row g-3">
+                  <div className="col-4">
+                    <label className="form-label fw-semibold small">Tipo doc *</label>
+                    <select className="form-select" value={dianForm.tipoDoc}
+                      onChange={e => setDianForm(f => ({ ...f, tipoDoc: e.target.value }))}>
+                      {['NIT','CC','CE','Pasaporte'].map(t => <option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div className="col-8">
+                    <label className="form-label fw-semibold small">
+                      {dianForm.tipoDoc === 'NIT' ? 'NIT' : 'Número de documento'} *
+                    </label>
+                    <input className="form-control" placeholder="Ej: 900123456-1"
+                      value={dianForm.nit}
+                      onChange={e => setDianForm(f => ({ ...f, nit: e.target.value }))} />
+                  </div>
+                  <div className="col-12">
+                    <label className="form-label fw-semibold small">
+                      {dianForm.tipoDoc === 'NIT' ? 'Razón social' : 'Nombre completo'} *
+                    </label>
+                    <input className="form-control" placeholder="Nombre o razón social"
+                      value={dianForm.nombre}
+                      onChange={e => setDianForm(f => ({ ...f, nombre: e.target.value }))} />
+                  </div>
+                  <div className="col-12">
+                    <label className="form-label fw-semibold small">Dirección *</label>
+                    <input className="form-control" placeholder="Dirección del cliente"
+                      value={dianForm.direccion}
+                      onChange={e => setDianForm(f => ({ ...f, direccion: e.target.value }))} />
+                  </div>
+                  <div className="col-12">
+                    <label className="form-label fw-semibold small">Teléfono *</label>
+                    <input className="form-control" placeholder="Teléfono de contacto"
+                      value={dianForm.telefono}
+                      onChange={e => setDianForm(f => ({ ...f, telefono: e.target.value }))} />
+                  </div>
+                </div>
+                <div className="mt-3 p-2 rounded" style={{ background:'#f8fafc', fontSize:12 }}>
+                  <div className="d-flex justify-content-between">
+                    <span className="text-muted">Total a facturar:</span>
+                    <span className="fw-bold text-success fs-6">{fmtMoney(total)}</span>
+                  </div>
+                  <div className="d-flex justify-content-between mt-1">
+                    <span className="text-muted">Resolución DIAN:</span>
+                    <span className="text-muted">No. 18764050366042</span>
+                  </div>
                 </div>
               </div>
               <div className="modal-footer">
-                <button className="btn btn-outline-secondary"
-                  onClick={() => { setPinModal(null); setPinValue(''); setPinError(''); }}>
-                  Cancelar
-                </button>
-                <button className="btn btn-dark fw-bold px-4" onClick={submitPin} disabled={pinLoading}>
-                  {pinLoading ? <><span className="spinner-border spinner-border-sm me-2"/>Verificando...</> : 'Autorizar'}
+                <button className="btn btn-secondary" onClick={() => setDianModal(false)}>Cancelar</button>
+                <button
+                  className="btn btn-primary fw-bold px-4"
+                  disabled={dianLoading || !dianForm.nit || !dianForm.nombre || !dianForm.direccion || !dianForm.telefono}
+                  onClick={async () => {
+                    setDianLoading(true);
+                    setDianModal(false);
+                    await _ejecutarVenta('dian', { ...dianForm });
+                    setDianLoading(false);
+                    setDianForm({ tipoDoc:'NIT', nit:'', nombre:'', direccion:'', telefono:'' });
+                  }}>
+                  {dianLoading
+                    ? <><span className="spinner-border spinner-border-sm me-2"/>Procesando...</>
+                    : '🧾 Emitir factura DIAN'}
                 </button>
               </div>
             </div>
           </div>
         </div>
-      )}      {/* ── Buscador/opciones (derecha) ── */}
+      )}
+
+      {/* ── Buscador/opciones (derecha) ── */}
       <div className="col-lg-7">
 
         {/* Buscador */}
@@ -1286,7 +1395,6 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
             <label className="form-label fw-semibold small text-uppercase text-muted mb-1">
               Buscar por nombre o codigo de barras
             </label>
-            {/* Filtro rápido por categoría */}
             {(() => {
               const cats = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
               if (!cats.length) return null;
@@ -1304,7 +1412,6 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
                       style={{ fontSize:11 }}
                       onClick={() => {
                         set('catFilter', cat);
-                        // Si no hay query activo, mostrar todos los de esa cat
                         if (!query.trim()) {
                           const r = products.filter(p => p.category === cat).slice(0,12)
                             .map(p => ({ ...p, _type:'product' }));
@@ -1338,7 +1445,7 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
               {query && (
                 <button className="btn btn-outline-secondary" onClick={clearQuery}>x</button>
               )}
-              <button className="btn btn-outline-success" title="📷 Cámara IA — Reconocer frutas y verduras"
+              <button className="btn btn-outline-success" title="📷 Cámara IA"
                 onClick={() => onOpenCamera && onOpenCamera()}>
                 📷
               </button>
@@ -1353,7 +1460,6 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
               </button>
             </div>
 
-            {/* Resultados */}
             {showResults && results.length > 0 && (
               <div className="mt-2 border rounded shadow-sm" style={{ maxHeight:300, overflowY:'auto', position:'relative', zIndex:20 }}>
                 {results.map(p => {
@@ -1465,10 +1571,10 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
                   {(tab.selectedCustomer.credit_limit > 0) && (
                     <div className="small text-muted">
                       Crédito disponible: <strong className="text-success">
-                      {fmtMoney(tab.selectedCustomer.credit_available !== undefined
-                        ? tab.selectedCustomer.credit_available
-                        : Math.max(0, (tab.selectedCustomer.credit_limit||0) - (tab.selectedCustomer.credit_balance||0)))}
-                    </strong>
+                        {fmtMoney(tab.selectedCustomer.credit_available !== undefined
+                          ? tab.selectedCustomer.credit_available
+                          : Math.max(0, (tab.selectedCustomer.credit_limit||0) - (tab.selectedCustomer.credit_balance||0)))}
+                      </strong>
                     </div>
                   )}
                 </div>
@@ -1487,17 +1593,14 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
                     {tab.customerResults.map(c => (
                       <div key={c.id} className="px-3 py-2 border-bottom" style={{ cursor:'pointer' }}
                         onClick={async () => {
-                          // Fetch fresh customer data to get updated credit info
                           try {
                             const fresh = await customerService.getById(c.id, token);
                             const customer = fresh || c;
-                            // Ensure credit_available is calculated
                             if (customer.credit_limit > 0 && customer.credit_available === undefined) {
                               customer.credit_available = Math.max(0, customer.credit_limit - (customer.credit_balance || 0));
                             }
                             onUpdate(tab.id, d => ({ ...d, selectedCustomer: customer, customerSearch: customer.full_name, customerResults:[] }));
                           } catch(e) {
-                            // fallback to cached data
                             const customer = { ...c, credit_available: Math.max(0, (c.credit_limit||0) - (c.credit_balance||0)) };
                             onUpdate(tab.id, d => ({ ...d, selectedCustomer: customer, customerSearch: c.full_name, customerResults:[] }));
                           }
@@ -1567,8 +1670,6 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
             Metodo de Pago
           </div>
           <div className="card-body">
-
-            {/* Toggle simple / mixto */}
             <div className="d-flex gap-2 mb-3">
               <button
                 className={'btn btn-sm flex-fill ' + (!tab.isMixto ? 'btn-dark' : 'btn-outline-secondary')}
@@ -1582,7 +1683,6 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
               </button>
             </div>
 
-            {/* Pago simple */}
             {!tab.isMixto && (
               <>
                 <div className="d-flex gap-2 mb-3 flex-wrap">
@@ -1659,7 +1759,6 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
               </>
             )}
 
-            {/* Pago mixto */}
             {tab.isMixto && (
               <div>
                 <div className="p-2 rounded mb-3" style={{ background:'#fffbeb', border:'1px solid #fde68a', fontSize:12 }}>
@@ -1729,44 +1828,46 @@ const SalePanel = ({ tab, products, presentations = [], onUpdate, onCompleted, o
               </div>
             </div>
 
-            <button className="btn btn-success btn-lg w-100 mt-3 fw-bold"
+            {/* Botón cobrar — cambia según sinDian */}
+            <button
+              className={`btn btn-lg w-100 mt-3 fw-bold ${tab.sinDian ? 'btn-secondary' : 'btn-success'}`}
               onClick={handleSale}
               disabled={loading || tab.cart.length === 0}
               style={{ borderRadius:8 }}>
               {loading
                 ? <><span className="spinner-border spinner-border-sm me-2"/>Procesando...</>
-                : 'Cobrar ' + fmtMoney(total)}
+                : tab.sinDian
+                  ? <>🧾 Cobrar (sin DIAN) — {fmtMoney(total)}</>
+                  : <>🧾 Cobrar con DIAN — {fmtMoney(total)}</>}
             </button>
           </div>
         </div>
       </div>
-
     </div>
   );
 };
 
-// ─── Componente principal con pestañas ─────────────────────────────────────
+// ─── Componente principal ──────────────────────────────────────────────────
 const Sales = () => {
   const { token, user } = useAuth();
   const navigate = useNavigate();
-  const [shiftOk, setShiftOk] = React.useState(null); // null=loading, true=ok, false=no turno
+  const [shiftOk,        setShiftOk]        = React.useState(null);
   const [products,       setProducts]       = useState([]);
   const [presentations,  setPresentations]  = useState([]);
-  const [tabs,        setTabs]        = useState(() => [newTab()]);
-  const [activeTabId, setActiveTabId] = useState(tabs[0].id);
-  const [alert,       setAlert]       = useState(null);
+  const [tabs,           setTabs]           = useState(() => [newTab()]);
+  const [activeTabId,    setActiveTabId]    = useState(tabs[0].id);
+  const [alert,          setAlert]          = useState(null);
   const [confirmCancelVenta, setConfirmCancelVenta] = useState(null);
-  const [showCamaraIA, setShowCamaraIA] = useState(false); // tab id a cancelar
+  const [showCamaraIA,   setShowCamaraIA]   = useState(false);
   const [lastSale,       setLastSale]       = useState(null);
-  const [suspendedSales, setSuspendedSales] = useState([]);  // F8/F9
+  const [suspendedSales, setSuspendedSales] = useState([]);
   const handleSaleRef = React.useRef(null);
-
+  const reservaciones = useCartReservations(token);
   const MAX_TABS = 5;
 
   useEffect(() => {
     productService.getAll(token).then(setProducts).catch(console.error);
     presentationService.getAll(token).then(setPresentations).catch(console.error);
-    // Verificar turno activo del cajero
     fetch('http://localhost:5000/api/shifts/active', {
       headers: { 'Authorization': 'Bearer ' + token }
     })
@@ -1789,21 +1890,27 @@ const Sales = () => {
 
   const addTab = () => {
     if (tabs.length >= MAX_TABS) { showAlert('warning', 'Maximo ' + MAX_TABS + ' ventas simultaneas'); return; }
-    const t = newTab();
+    const t = newTab(false);
     setTabs(prev => [...prev, t]);
     setActiveTabId(t.id);
   };
 
+  // F5: nueva pestaña marcada como sinDian
+  const addTabSinDian = useCallback(() => {
+    if (tabs.length >= MAX_TABS) { showAlert('warning', 'Maximo ' + MAX_TABS + ' ventas simultaneas'); return; }
+    const t = newTab(true);
+    setTabs(prev => [...prev, t]);
+    setActiveTabId(t.id);
+  }, [tabs.length, showAlert]);
+
   const closeTab = (id) => {
     const tab = tabs.find(t => t.id === id);
-    if (tab?.cart.length > 0) {
-      setConfirmCancelVenta(id);
-      return;
-    }
+    if (tab?.cart.length > 0) { setConfirmCancelVenta(id); return; }
     _doCloseTab(id);
   };
 
-  const _doCloseTab = (id) => {    const remaining = tabs.filter(t => t.id !== id);
+  const _doCloseTab = (id) => {
+    const remaining = tabs.filter(t => t.id !== id);
     if (remaining.length === 0) {
       const t = newTab();
       setTabs([t]);
@@ -1815,9 +1922,9 @@ const Sales = () => {
   };
 
   const handleCompleted = (id, sale) => {
-    productService.getAll(token).then(setProducts);
-      presentationService.getAll(token).then(setPresentations);
-    presentationService.getAll(token).then(setPresentations);
+    // Recargar stock en todas las pestañas tras cualquier venta (DIAN o sin DIAN)
+    productService.getAll(token).then(setProducts).catch(console.error);
+    presentationService.getAll(token).then(setPresentations).catch(console.error);
     setLastSale(sale);
     if (tabs.length > 1) {
       const remaining = tabs.filter(t => t.id !== id);
@@ -1844,7 +1951,7 @@ const Sales = () => {
               Cajero: <strong>{user?.name}</strong> — {new Date().toLocaleDateString('es-CO', { weekday:'long', day:'numeric', month:'long' })}
             </span>
           </div>
-          <span className="badge bg-primary">{products.filter(p => p.stock > 0).length} disponibles</span>
+     
         </div>
 
         {alert && (
@@ -1852,7 +1959,8 @@ const Sales = () => {
             <span>{alert.msg}</span>
             <div className="d-flex gap-2">
               {alert.retryable && (
-                <button className="btn btn-sm btn-warning fw-bold" onClick={() => { setAlert(null); handleSaleRef.current && handleSaleRef.current(); }}>
+                <button className="btn btn-sm btn-warning fw-bold"
+                  onClick={() => { setAlert(null); handleSaleRef.current && handleSaleRef.current(); }}>
                   🔄 Reintentar
                 </button>
               )}
@@ -1874,7 +1982,7 @@ const Sales = () => {
                   cursor:       'pointer',
                   padding:      '8px 14px',
                   borderRadius: '8px 8px 0 0',
-                  background:   isActive ? '#fff' : '#e9ecef',
+                  background:   isActive ? '#fff' : (t.sinDian ? '#e2e8f0' : '#e9ecef'),
                   border:       '1px solid #dee2e6',
                   borderBottom: isActive ? '2px solid #fff' : '1px solid #dee2e6',
                   marginBottom: isActive ? '-2px' : 0,
@@ -1886,6 +1994,9 @@ const Sales = () => {
                   <div>
                     <div className="fw-semibold" style={{ fontSize:13 }}>
                       Venta {t.id}
+                      {t.sinDian && (
+                        <span className="badge bg-secondary ms-1" style={{ fontSize:9 }}>Sin DIAN</span>
+                      )}
                       {itemCount > 0 && (
                         <span className="badge bg-success ms-1" style={{ fontSize:10 }}>{itemCount}</span>
                       )}
@@ -1915,29 +2026,28 @@ const Sales = () => {
 
         {/* Panel activo */}
         <div style={{ background:'#fff', border:'1px solid #dee2e6', borderTop:'none', borderRadius:'0 0 12px 12px', padding:16, marginBottom:16 }}>
-          {/* Bloqueo si no hay turno abierto */}
-        {shiftOk === false && (
-          <div className="d-flex flex-column align-items-center justify-content-center py-5 text-center">
-            <div style={{ fontSize:'4rem' }}>🔒</div>
-            <h4 className="fw-bold mt-3 text-danger">Sin turno activo</h4>
-            <p className="text-muted mb-4" style={{ maxWidth:400 }}>
-              No puedes realizar ventas sin un turno de caja abierto.<br/>
-              Pide al administrador que abra tu turno.
-            </p>
-            <a href="/cajero/turno" className="btn btn-primary fw-bold px-4">
-              🔄 Ir a Mi Turno
-            </a>
-          </div>
-        )}
+          {shiftOk === false && (
+            <div className="d-flex flex-column align-items-center justify-content-center py-5 text-center">
+              <div style={{ fontSize:'4rem' }}>🔒</div>
+              <h4 className="fw-bold mt-3 text-danger">Sin turno activo</h4>
+              <p className="text-muted mb-4" style={{ maxWidth:400 }}>
+                No puedes realizar ventas sin un turno de caja abierto.<br/>
+                Pide al administrador que abra tu turno.
+              </p>
+              <a href="/cajero/turno" className="btn btn-primary fw-bold px-4">
+                🔄 Ir a Mi Turno
+              </a>
+            </div>
+          )}
 
-        {shiftOk === null && (
-          <div className="d-flex align-items-center justify-content-center py-5">
-            <div className="spinner-border text-secondary me-2" />
-            <span className="text-muted">Verificando turno...</span>
-          </div>
-        )}
+          {shiftOk === null && (
+            <div className="d-flex align-items-center justify-content-center py-5">
+              <div className="spinner-border text-secondary me-2" />
+              <span className="text-muted">Verificando turno...</span>
+            </div>
+          )}
 
-        {shiftOk === true && activeTab && (
+          {shiftOk === true && activeTab && (
             <SalePanel
               key={activeTab.id}
               tab={activeTab}
@@ -1946,6 +2056,7 @@ const Sales = () => {
               onUpdate={updateTab}
               onCompleted={handleCompleted}
               onAddTab={addTab}
+              onAddTabSinDian={addTabSinDian}
               showAlert={showAlert}
               token={token}
               handleSaleRef={handleSaleRef}
@@ -1963,12 +2074,16 @@ const Sales = () => {
               onOpenCamera={() => setShowCamaraIA(true)}
             />
           )}
-        }
         </div>
       </main>
 
       {lastSale && (
-        <Invoice sale={lastSale} cashierName={user?.name} onClose={() => setLastSale(null)} />
+        <Invoice
+          sale={lastSale}
+          cashierName={user?.name}
+          onClose={() => setLastSale(null)}
+          mode={lastSale.saleMode || 'sin_dian'}
+        />
       )}
 
       {showCamaraIA && (

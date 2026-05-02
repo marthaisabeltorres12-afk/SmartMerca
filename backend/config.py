@@ -2,21 +2,31 @@ import os
 from datetime import timedelta
 
 class Config:
-    SECRET_KEY     = os.environ.get('SECRET_KEY', 'smartmerca_secret_key')
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        'DATABASE_URL',
-        "mysql+pymysql://root:@localhost:3307/smartmerca"
-    )
+    # ── Base de datos ─────────────────────────────────────────────────────
+    # Railway provee DATABASE_URL automáticamente cuando conectas MySQL
+    # Formato: mysql+pymysql://user:pass@host:port/dbname
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
+        'mysql+pymysql://root:@localhost/smartmerca'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    JWT_SECRET_KEY            = os.environ.get('JWT_SECRET_KEY', 'jwt_smartmerca_key')
-    JWT_ACCESS_TOKEN_EXPIRES  = timedelta(hours=8)
-    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=7)
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_recycle': 280,
+        'pool_pre_ping': True,
+        'pool_size': 5,
+        'max_overflow': 10,
+    }
 
-    # ── Correo ────────────────────────────────────────────────────────────────
-    # Reemplaza estos dos valores con tu correo Gmail y su contraseña de aplicación
-    MAIL_SERVER         = 'smtp.gmail.com'
-    MAIL_PORT           = 587
-    MAIL_USE_TLS        = True
-    MAIL_USERNAME       = os.environ.get('MAIL_USERNAME', 'TU_CORREO@gmail.com')
-    MAIL_PASSWORD       = os.environ.get('MAIL_PASSWORD', 'TU_CONTRASEÑA_DE_APP')
-    MAIL_DEFAULT_SENDER = ('SmartMerca', os.environ.get('MAIL_USERNAME', 'TU_CORREO@gmail.com'))
+    # ── JWT ───────────────────────────────────────────────────────────────
+    JWT_SECRET_KEY            = os.environ.get('JWT_SECRET_KEY') or 'dev-secret-cambiar-en-produccion'
+    JWT_ACCESS_TOKEN_EXPIRES  = timedelta(hours=12)
+
+    # ── Flask ─────────────────────────────────────────────────────────────
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'flask-secret-cambiar-en-produccion'
+    DEBUG      = os.environ.get('DEBUG', 'False').lower() == 'true'
+
+    # ── Correo (opcional) ─────────────────────────────────────────────────
+    MAIL_SERVER   = os.environ.get('MAIL_SERVER',   'smtp.gmail.com')
+    MAIL_PORT     = int(os.environ.get('MAIL_PORT', 587))
+    MAIL_USE_TLS  = os.environ.get('MAIL_USE_TLS',  'true').lower() == 'true'
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME', '')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@smartmerca.com')

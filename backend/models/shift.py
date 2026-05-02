@@ -5,6 +5,7 @@ class Shift(db.Model):
 
     id                = db.Column(db.Integer, primary_key=True)
     cashier_id        = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    cash_register_id  = db.Column(db.Integer, db.ForeignKey('cash_registers.id'), nullable=True)  # ← NUEVO
     base_amount       = db.Column(db.Numeric(10,2), default=0)
     opened_at         = db.Column(db.DateTime, server_default=db.func.now())
     closed_at         = db.Column(db.DateTime, nullable=True)
@@ -19,10 +20,10 @@ class Shift(db.Model):
     difference        = db.Column(db.Numeric(10,2), nullable=True)
     notes             = db.Column(db.Text, nullable=True)
     status                    = db.Column(db.Enum('abierto','pendiente_cierre','cerrado'), default='abierto')
-    cashier_count_requested = db.Column(db.Boolean, default=False)
-    cash_counted_by_cashier = db.Column(db.Numeric(10,2), nullable=True)
-    branch_id               = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
-    points_earned           = db.Column(db.Integer, default=0)
+    cashier_count_requested   = db.Column(db.Boolean, default=False)
+    cash_counted_by_cashier   = db.Column(db.Numeric(10,2), nullable=True)
+    branch_id                 = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
+    points_earned             = db.Column(db.Integer, default=0)
 
     cashier      = db.relationship('User', foreign_keys=[cashier_id])
     branch       = db.relationship('Branch', foreign_keys=[branch_id])
@@ -33,6 +34,8 @@ class Shift(db.Model):
             'id':               self.id,
             'cashier_id':       self.cashier_id,
             'cashier':          self.cashier.name if self.cashier else None,
+            'cash_register_id': self.cash_register_id,
+            'cash_register':    self.cash_register.nombre if hasattr(self, 'cash_register') and self.cash_register else None,
             'base_amount':      float(self.base_amount),
             'opened_at':        str(self.opened_at),
             'closed_at':        str(self.closed_at) if self.closed_at else None,
@@ -47,12 +50,12 @@ class Shift(db.Model):
             'difference':       float(self.difference) if self.difference is not None else None,
             'notes':            self.notes,
             'status':                     self.status,
-            'cashier_count_requested': self.cashier_count_requested,
-            'cash_counted_by_cashier': float(self.cash_counted_by_cashier) if self.cash_counted_by_cashier is not None else None,
+            'cashier_count_requested':    self.cashier_count_requested,
+            'cash_counted_by_cashier':    float(self.cash_counted_by_cashier) if self.cash_counted_by_cashier is not None else None,
             'branch_id':    self.branch_id,
             'branch_name':  self.branch.nombre if self.branch else None,
             'points_earned':self.points_earned or 0,
-            'withdrawals':      [w.to_dict() for w in self.withdrawals],
+            'withdrawals':  [w.to_dict() for w in self.withdrawals],
         }
 
 

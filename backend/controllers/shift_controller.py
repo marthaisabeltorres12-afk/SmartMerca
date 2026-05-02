@@ -11,32 +11,29 @@ def _admin(claims):
     return claims.get('role') in ('admin', 'admin_tecnico')
 
 def _calc_totals(shift):
-    """Calcula totales de ventas en tiempo real para un turno."""
     q = Sale.query.filter(
         Sale.cashier_id == shift.cashier_id,
         Sale.created_at >= shift.opened_at
     )
     if shift.closed_at:
         q = q.filter(Sale.created_at <= shift.closed_at)
-    sales = q.all()
+    sales    = q.all()
     sale_ids = [s.id for s in sales]
 
     total_sales = sum(float(s.total) for s in sales)
     total_wd    = sum(float(w.amount) for w in shift.withdrawals)
 
-    # Totales por método desde sale_payments (preciso para pagos mixtos)
     total_cash = total_card = total_nequi = total_transfer = total_credit = 0.0
     if sale_ids:
         payments = SalePayment.query.filter(SalePayment.sale_id.in_(sale_ids)).all()
         for p in payments:
             m = (p.metodo or '').lower()
-            if m == 'efectivo':     total_cash     += float(p.monto)
-            elif m == 'tarjeta':    total_card     += float(p.monto)
-            elif m == 'nequi':      total_nequi    += float(p.monto)
+            if m == 'efectivo':        total_cash     += float(p.monto)
+            elif m == 'tarjeta':       total_card     += float(p.monto)
+            elif m == 'nequi':         total_nequi    += float(p.monto)
             elif m == 'transferencia': total_transfer += float(p.monto)
-            elif m == 'credito':    total_credit   += float(p.monto)
+            elif m == 'credito':       total_credit   += float(p.monto)
 
-    # Fallback: si no hay sale_payments usar payment_method del sale
     if not sale_ids or total_cash + total_card + total_nequi + total_transfer + total_credit == 0:
         def pm(s, kw): return kw in (s.payment_method or '')
         total_cash     = sum(float(s.total) for s in sales if pm(s,'efectivo') or pm(s,'mixto'))
@@ -57,12 +54,63 @@ def _calc_totals(shift):
     }
 
 def _shift_dict(shift):
-    """to_dict enriquecido con totales en tiempo real si el turno está abierto."""
     d = shift.to_dict()
     if shift.status == 'abierto':
         t = _calc_totals(shift)
         d.update(t)
     return d
+
+# ── AUTO-ABRIR TURNO al iniciar sesión ───────────────────────────────────
+def auto_open_shift(user_id):
+    """
+    Llamar desde auth_controller.login() después de autenticar.
+    Busca la caja donde el cajero está autorizado y no hay turno activo.
+    """
+    try:
+        from models.cash_register import CashRegister
+        from models.user import User
+
+        # Verificar si ya tiene turno abierto
+        turno_existente = Shift.query.filter_by(
+            cashier_id=user_id, status='abierto'
+        ).first()
+        if turno_existente:
+            return _shift_dict(turno_existente)
+
+        # Buscar cajas donde este cajero está autorizado
+        cajero = User.query.get(user_id)
+        if not cajero:
+            return None
+
+        cajas_autorizadas = [c for c in cajero.cajas_autorizadas if c.is_active]
+        if not cajas_autorizadas:
+            return None  # Sin caja asignada
+
+        # Buscar la primera caja disponible (sin turno activo)
+        for caja in cajas_autorizadas:
+            turno_caja = Shift.query.filter_by(
+                cash_register_id=caja.id, status='abierto'
+            ).first()
+            if not turno_caja:
+                # Abrir turno en esta caja
+                shift = Shift(
+                    cashier_id       = user_id,
+                    cash_register_id = caja.id,
+                    base_amount      = float(caja.base_amount or 0),
+                    branch_id        = caja.branch_id,
+                    status           = 'abierto',
+                )
+                db.session.add(shift)
+                db.session.commit()
+                return _shift_dict(shift)
+
+        # Todas las cajas ocupadas — abrir en la primera sin importar
+        # (caso: mismo cajero en doble turno, no debería pasar normalmente)
+        return None
+
+    except Exception as e:
+        print(f'[auto_open_shift] Error: {e}')
+        return None
 
 # ── Turno activo del cajero ───────────────────────────────────────────────
 @jwt_required()
@@ -82,12 +130,12 @@ def get_all_shifts():
         shifts = Shift.query.filter_by(cashier_id=user_id).order_by(Shift.opened_at.desc()).all()
     return jsonify([_shift_dict(s) for s in shifts]), 200
 
-# ── Abrir turno (solo admin) ──────────────────────────────────────────────
+# ── Abrir turno manual (admin — por si acaso) ─────────────────────────────
 @jwt_required()
 def open_shift():
     claims = get_jwt()
     if not _admin(claims):
-        return jsonify({'message': 'Solo admins pueden abrir turnos'}), 403
+        return jsonify({'message': 'Solo admins pueden abrir turnos manualmente'}), 403
 
     data       = request.get_json()
     cashier_id = data.get('cashier_id')
@@ -99,16 +147,17 @@ def open_shift():
         return jsonify({'message': 'Este cajero ya tiene un turno abierto', 'shift': _shift_dict(existing)}), 400
 
     shift = Shift(
-        cashier_id  = int(cashier_id),
-        base_amount = float(data.get('base_amount', 0)),
-        branch_id   = int(data['branch_id']) if data.get('branch_id') else None,
-        status      = 'abierto',
+        cashier_id       = int(cashier_id),
+        base_amount      = float(data.get('base_amount', 0)),
+        branch_id        = int(data['branch_id']) if data.get('branch_id') else None,
+        cash_register_id = int(data['cash_register_id']) if data.get('cash_register_id') else None,
+        status           = 'abierto',
     )
     db.session.add(shift)
     db.session.commit()
     return jsonify(_shift_dict(shift)), 201
 
-# ── Admin solicita el conteo al cajero ────────────────────────────────────
+# ── Admin solicita conteo ─────────────────────────────────────────────────
 @jwt_required()
 def request_count(shift_id):
     claims = get_jwt()
@@ -119,7 +168,7 @@ def request_count(shift_id):
     db.session.commit()
     return jsonify(_shift_dict(shift)), 200
 
-# ── Cajero envía su conteo ────────────────────────────────────────────────
+# ── Cajero envía conteo ───────────────────────────────────────────────────
 @jwt_required()
 def submit_cashier_count(shift_id):
     user_id = int(get_jwt_identity())
@@ -144,9 +193,7 @@ def close_shift():
     if not shift or shift.status != 'abierto':
         return jsonify({'message': 'Turno no encontrado o ya cerrado'}), 404
 
-    # Calcular totales finales
     t = _calc_totals(shift)
-
     cash_expected = float(shift.base_amount) + t['total_cash'] - t['total_withdrawals']
     cashier_count = float(shift.cash_counted_by_cashier or 0)
     difference    = cashier_count - cash_expected
@@ -164,7 +211,6 @@ def close_shift():
     shift.notes             = data.get('notes', '')
     shift.status            = 'cerrado'
 
-    # Calcular puntos del cajero
     try:
         from controllers.branch_controller import calcular_puntos_turno
         calcular_puntos_turno(shift)
@@ -172,54 +218,46 @@ def close_shift():
         pass
 
     db.session.commit()
-    return jsonify({
-        'shift':         _shift_dict(shift),
-        'cash_expected': cash_expected,
-    }), 200
+    return jsonify({'shift': _shift_dict(shift), 'cash_expected': cash_expected}), 200
 
-# ── Cajero solicita cerrar su turno ──────────────────────────────────────
+# ── Cajero solicita cerrar turno ──────────────────────────────────────────
 @jwt_required()
 def cashier_request_close(shift_id):
-    """El cajero cuenta su caja y solicita el cierre. Queda en estado 'pendiente_cierre'."""
     user_id = int(get_jwt_identity())
     shift   = Shift.query.get_or_404(shift_id)
-
     if shift.cashier_id != user_id:
         return jsonify({'message': 'No es tu turno'}), 403
     if shift.status != 'abierto':
         return jsonify({'message': 'Este turno no está abierto'}), 400
 
-    data = request.get_json()
+    data         = request.get_json()
     cash_counted = float(data.get('cash_counted', 0))
-
-    # Calcular diferencia preliminar
-    t = _calc_totals(shift)
+    t            = _calc_totals(shift)
     cash_expected = float(shift.base_amount) + t['total_cash'] - t['total_withdrawals']
     difference    = cash_counted - cash_expected
 
-    shift.cash_counted_by_cashier  = cash_counted
-    shift.cashier_count_requested  = True
-    shift.status                   = 'pendiente_cierre'
+    shift.cash_counted_by_cashier = cash_counted
+    shift.cashier_count_requested = True
+    shift.status                  = 'pendiente_cierre'
     db.session.commit()
 
     return jsonify({
-        'shift':         _shift_dict(shift),
-        'cash_expected': cash_expected,
-        'difference':    difference,
-        'message':       'Solicitud de cierre enviada. El administrador aprobará el cierre.',
+        'shift':        _shift_dict(shift),
+        'cash_expected':cash_expected,
+        'difference':   difference,
+        'message':      'Solicitud de cierre enviada. El administrador aprobará el cierre.',
     }), 200
 
-
-# ── Admin aprueba el cierre solicitado por el cajero ─────────────────────
+# ── Admin aprueba cierre ──────────────────────────────────────────────────
 @jwt_required()
 def approve_close(shift_id):
     claims = get_jwt()
     if not _admin(claims):
-        return jsonify({'message': 'Solo admins pueden aprobar cierres'}), 403
+        return jsonify({'message': 'Solo admins'}), 403
 
     shift = Shift.query.get_or_404(shift_id)
     if shift.status != 'pendiente_cierre':
-        return jsonify({'message': 'Este turno no tiene solicitud de cierre pendiente'}), 400
+        return jsonify({'message': 'No hay solicitud pendiente'}), 400
 
     data = request.get_json()
     t    = _calc_totals(shift)
@@ -248,14 +286,9 @@ def approve_close(shift_id):
         pass
 
     db.session.commit()
-    return jsonify({
-        'shift':         _shift_dict(shift),
-        'cash_expected': cash_expected,
-        'difference':    difference,
-    }), 200
+    return jsonify({'shift': _shift_dict(shift), 'cash_expected': cash_expected, 'difference': difference}), 200
 
-
-# ── Admin rechaza el cierre y lo devuelve a abierto ───────────────────────
+# ── Admin rechaza cierre ──────────────────────────────────────────────────
 @jwt_required()
 def reject_close(shift_id):
     claims = get_jwt()
@@ -273,6 +306,8 @@ def reject_close(shift_id):
     shift.notes                   = data.get('motivo', '')
     db.session.commit()
     return jsonify({'message': 'Cierre rechazado — el cajero debe recontar', 'shift': _shift_dict(shift)}), 200
+
+# ── Retiro ────────────────────────────────────────────────────────────────
 @jwt_required()
 def add_withdrawal():
     data     = request.get_json()
@@ -296,9 +331,8 @@ def add_withdrawal():
     db.session.commit()
     return jsonify(w.to_dict()), 201
 
-# ── Detalle de un turno ───────────────────────────────────────────────────
+# ── Detalle turno ─────────────────────────────────────────────────────────
 @jwt_required()
 def get_shift(id):
     shift = Shift.query.get_or_404(id)
-    d = _shift_dict(shift)
-    return jsonify(d), 200
+    return jsonify(_shift_dict(shift)), 200

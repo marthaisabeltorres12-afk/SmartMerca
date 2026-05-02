@@ -258,7 +258,25 @@ def create_sale():
     log_action('venta', 'sale', sale.id,
         f'Venta #{sale.id} — {data.get("payment_method","efectivo")} — Total: ${total:,.0f} — Productos: {prods_txt[:200]}')
     db.session.commit()
+# ── AGREGAR en sale_controller.py — función create_sale() ────────────────
+# Después de db.session.commit() al final de create_sale(), agregar:
 
+    # Liberar reservas del carrito al confirmar la venta
+    try:
+        from controllers.cart_reservation_controller import CartReservation
+        product_ids = [i.get('product_id') for i in items if i.get('product_id')]
+        reservas = CartReservation.query.filter(
+            CartReservation.cashier_id == user_id,
+            CartReservation.product_id.in_(product_ids)
+        ).all()
+        for r in reservas:
+            product = Product.query.get(r.product_id)
+            if product:
+                product.reserved_stock = max(0, (product.reserved_stock or 0) - float(r.quantity))
+            db.session.delete(r)
+        db.session.commit()
+    except Exception as e:
+        print(f'[create_sale] Error liberando reservas: {e}')
     # Verificar reabastecimiento en segundo plano
     try:
         import threading

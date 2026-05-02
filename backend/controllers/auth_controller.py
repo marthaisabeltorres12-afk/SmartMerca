@@ -1,3 +1,4 @@
+from werkzeug.security import check_password_hash
 from flask import request, jsonify, current_app
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from flask_mail import Message
@@ -123,3 +124,53 @@ def reset_password():
     user.reset_token_expires = None
     db.session.commit()
     return jsonify({'message': 'Contraseña actualizada exitosamente'}), 200
+
+from werkzeug.security import check_password_hash
+
+def reset_by_admin():
+    data = request.json
+
+    username = data.get('username')
+    new_password = data.get('password')
+    pin = data.get('pin')
+
+    print("Reset intento:", username, pin)
+
+    admin = User.query.filter_by(role='admin').first()
+
+    if not admin:
+        return jsonify({'message': 'No hay admin'}), 404
+
+    if not admin.admin_pin:
+        return jsonify({'message': 'Admin sin PIN'}), 403
+
+    # ✅ VALIDAR HASH
+    if not check_password_hash(admin.admin_pin, pin):
+        return jsonify({'message': 'PIN incorrecto'}), 403
+
+    user = User.query.filter_by(email=username).first()
+
+    if not user:
+        return jsonify({'message': 'Usuario no encontrado'}), 404
+
+    user.set_password(new_password)
+    db.session.commit()
+
+    print("✅ Contraseña cambiada")
+
+    return jsonify({'message': 'OK'})
+def set_admin_pin():
+    data = request.json
+    pin = data.get('pin')
+
+    admin = User.query.filter_by(role='admin').first()
+
+    if not admin:
+        return jsonify({'message': 'No hay admin'}), 404
+
+    # 🔐 guardar hash
+    admin.admin_pin = generate_password_hash(pin)
+
+    db.session.commit()
+
+    return jsonify({'message': 'PIN guardado'})

@@ -148,7 +148,7 @@ const Nomina = () => {
 
   // Modales períodos
   const [perModal,   setPerModal]   = useState(false);
-  const [perForm,    setPerForm]    = useState({ period:'' });
+  const [perForm, setPerForm] = useState({ period: '', tipo: 'mensual', quincena: '1' });
 
   // Modales novedades
   const [novModal,   setNovModal]   = useState(false);
@@ -231,19 +231,45 @@ const Nomina = () => {
     setEmpModal(true);
   };
 
-  // ── Período ─────────────────────────────────────────────────────────────
-  const handleCreatePeriod = async (e) => {
-    e.preventDefault();
-    const [y,m] = perForm.period.split('-');
-    const fi = `${y}-${m}-01`;
-    const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
-    const ff = `${y}-${m}-${String(lastDay).padStart(2,'0')}`;
-    try {
-      await apiFetch('/payroll/periods', { method:'POST', body: JSON.stringify({ period: perForm.period, fecha_inicio: fi, fecha_fin: ff }) }, token);
-      showAlert('success', 'Período creado'); setPerModal(false); setPerForm({period:''}); load();
-    } catch(e) { showAlert('danger', e.message); }
-  };
+  // Reemplaza tu handleCreatePeriod existente en Nomina.jsx
 
+const handleCreatePeriod = async (e) => {
+  e.preventDefault();
+  if (!perForm.period) return;
+
+  const [y, m] = perForm.period.split('-').map(Number);
+  const lastDay = new Date(y, m, 0).getDate();
+
+  let fecha_inicio, fecha_fin, nombre;
+
+  if (perForm.tipo === 'quincenal') {
+    if (perForm.quincena === '1') {
+      fecha_inicio = `${y}-${String(m).padStart(2,'0')}-01`;
+      fecha_fin    = `${y}-${String(m).padStart(2,'0')}-15`;
+      nombre = `1ª Quincena ${new Date(y,m-1).toLocaleString('es-CO',{month:'long'})} ${y}`;
+    } else {
+      fecha_inicio = `${y}-${String(m).padStart(2,'0')}-16`;
+      fecha_fin    = `${y}-${String(m).padStart(2,'0')}-${lastDay}`;
+      nombre = `2ª Quincena ${new Date(y,m-1).toLocaleString('es-CO',{month:'long'})} ${y}`;
+    }
+  } else {
+    fecha_inicio = `${y}-${String(m).padStart(2,'0')}-01`;
+    fecha_fin    = `${y}-${String(m).padStart(2,'0')}-${lastDay}`;
+    nombre = `${new Date(y,m-1).toLocaleString('es-CO',{month:'long',year:'numeric'})}`;
+  }
+
+  try {
+    await apiFetch('/payroll/periods', {
+      method: 'POST',
+      body: JSON.stringify({ nombre, fecha_inicio, fecha_fin })
+    }, token);
+    setPerModal(false);
+    setPerForm({ period: '', tipo: 'mensual', quincena: '1' });
+    load(); // recargar lista
+  } catch(err) {
+    showAlert('danger', err.message);
+  }
+};
   const handleCalculate = async () => {
     setLoading(true);
     try {
@@ -664,29 +690,84 @@ const Nomina = () => {
           </div>
         )}
 
-        {/* Modal nuevo período */}
-        {perModal && (
-          <div className="modal d-block" style={{background:'rgba(0,0,0,0.5)',zIndex:9999}}>
-            <div className="modal-dialog modal-sm">
-              <div className="modal-content">
-                <div className="modal-header" style={{background:'#1e3a5f',color:'#fff'}}>
-                  <h5 className="modal-title fw-bold">📅 Nuevo período</h5>
-                  <button className="btn-close btn-close-white" onClick={()=>setPerModal(false)} />
-                </div>
-                <form onSubmit={handleCreatePeriod}>
-                  <div className="modal-body">
-                    <label className="form-label fw-semibold">Mes (AAAA-MM) *</label>
-                    <input type="month" className="form-control" required value={perForm.period} onChange={e=>setPerForm({period:e.target.value})} />
-                  </div>
-                  <div className="modal-footer">
-                    <button type="button" className="btn btn-secondary" onClick={()=>setPerModal(false)}>Cancelar</button>
-                    <button type="submit" className="btn btn-primary fw-bold">Crear</button>
-                  </div>
-                </form>
-              </div>
+       {/* Modal nuevo período — reemplazar el modal existente en Nomina.jsx */}
+{perModal && (
+  <div className="modal d-block" style={{background:'rgba(0,0,0,0.5)',zIndex:9999}}>
+    <div className="modal-dialog modal-sm">
+      <div className="modal-content">
+        <div className="modal-header" style={{background:'#1e3a5f',color:'#fff'}}>
+          <h5 className="modal-title fw-bold">📅 Nuevo período</h5>
+          <button className="btn-close btn-close-white" onClick={()=>setPerModal(false)} />
+        </div>
+        <form onSubmit={handleCreatePeriod}>
+          <div className="modal-body">
+
+            {/* Tipo de período */}
+            <label className="form-label fw-semibold">Tipo de período *</label>
+            <div className="d-flex gap-2 mb-3">
+              <button type="button"
+                className={`btn flex-fill fw-bold ${perForm.tipo==='mensual'?'btn-primary':'btn-outline-secondary'}`}
+                onClick={()=>setPerForm(f=>({...f, tipo:'mensual', quincena:'1'}))}>
+                📅 Mensual
+              </button>
+              <button type="button"
+                className={`btn flex-fill fw-bold ${perForm.tipo==='quincenal'?'btn-primary':'btn-outline-secondary'}`}
+                onClick={()=>setPerForm(f=>({...f, tipo:'quincenal'}))}>
+                📆 Quincenal
+              </button>
             </div>
+
+            {/* Mes */}
+            <label className="form-label fw-semibold">Mes (AAAA-MM) *</label>
+            <input type="month" className="form-control mb-3" required
+              value={perForm.period}
+              onChange={e=>setPerForm(f=>({...f, period:e.target.value}))} />
+
+            {/* Quincena — solo si es quincenal */}
+            {perForm.tipo === 'quincenal' && (
+              <>
+                <label className="form-label fw-semibold">Quincena *</label>
+                <div className="d-flex gap-2">
+                  <button type="button"
+                    className={`btn flex-fill fw-bold ${perForm.quincena==='1'?'btn-success':'btn-outline-secondary'}`}
+                    onClick={()=>setPerForm(f=>({...f, quincena:'1'}))}>
+                    1ª quincena<br/><small>Días 1–15</small>
+                  </button>
+                  <button type="button"
+                    className={`btn flex-fill fw-bold ${perForm.quincena==='2'?'btn-success':'btn-outline-secondary'}`}
+                    onClick={()=>setPerForm(f=>({...f, quincena:'2'}))}>
+                    2ª quincena<br/><small>Días 16–fin</small>
+                  </button>
+                </div>
+
+                {/* Vista previa de fechas */}
+                {perForm.period && (
+                  <div className="alert alert-info py-2 mt-3 small">
+                    {(() => {
+                      const [y, m] = perForm.period.split('-').map(Number);
+                      const lastDay = new Date(y, m, 0).getDate();
+                      return perForm.quincena === '1'
+                        ? `📅 Del 1 al 15 de ${new Date(y,m-1).toLocaleString('es-CO',{month:'long'})} ${y}`
+                        : `📅 Del 16 al ${lastDay} de ${new Date(y,m-1).toLocaleString('es-CO',{month:'long'})} ${y}`;
+                    })()}
+                  </div>
+                )}
+              </>
+            )}
+
           </div>
-        )}
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary"
+              onClick={()=>setPerModal(false)}>Cancelar</button>
+            <button type="submit" className="btn btn-primary fw-bold">
+              ✅ Crear período
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+)}
 
         {/* Modal novedad */}
         {novModal && (

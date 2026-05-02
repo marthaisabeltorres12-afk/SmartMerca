@@ -30,6 +30,10 @@ from routes.payroll_routes          import payroll_bp
 from routes.profitability_routes    import profitability_bp
 from routes.replenishment_routes    import replenishment_bp
 from routes.coupon_routes           import coupons_bp
+from routes.authorization_routes    import auth_admin_bp
+from routes.import_export_routes    import import_export_bp
+from routes.multicaja_routes import multicaja_bp
+from routes.reservas_routes import reservas_bp
 
 try:
     from routes.promotions    import promotions_bp
@@ -48,24 +52,25 @@ def create_app():
     db.init_app(app)
     jwt.init_app(app)
     mail.init_app(app)
-
-    app.register_blueprint(auth_bp,           url_prefix='/api/auth')
-    app.register_blueprint(products_bp,       url_prefix='/api/products')
-    app.register_blueprint(suppliers_bp,      url_prefix='/api/suppliers')
-    app.register_blueprint(users_bp,          url_prefix='/api/users')
-    app.register_blueprint(sales_bp,          url_prefix='/api/sales')
-    app.register_blueprint(inventory_bp,      url_prefix='/api/inventory')
-    app.register_blueprint(cash_closes_bp,    url_prefix='/api/cash-closes')
-    app.register_blueprint(customers_bp,      url_prefix='/api/customers')
-    app.register_blueprint(returns_bp,        url_prefix='/api/returns')
-    app.register_blueprint(backup_bp,         url_prefix='/api/backup')
-    app.register_blueprint(pin_bp,            url_prefix='/api/pin')
-    app.register_blueprint(credit_bp,         url_prefix='/api/credit')
-    app.register_blueprint(presentations_bp,  url_prefix='/api/presentations')
-    app.register_blueprint(shifts_bp,         url_prefix='/api/shifts')
-    app.register_blueprint(finance_bp,        url_prefix='/api/finance')
-    app.register_blueprint(cash_adjustments_bp, url_prefix='/api/cash-adjustments')
-    app.register_blueprint(dashboard_bp,        url_prefix='/api/dashboard')
+    app.register_blueprint(reservas_bp, url_prefix='/api/reservas')
+    app.register_blueprint(multicaja_bp, url_prefix='/api/cajas')
+    app.register_blueprint(auth_bp,              url_prefix='/api/auth')
+    app.register_blueprint(products_bp,          url_prefix='/api/products')
+    app.register_blueprint(suppliers_bp,         url_prefix='/api/suppliers')
+    app.register_blueprint(users_bp,             url_prefix='/api/users')
+    app.register_blueprint(sales_bp,             url_prefix='/api/sales')
+    app.register_blueprint(inventory_bp,         url_prefix='/api/inventory')
+    app.register_blueprint(cash_closes_bp,       url_prefix='/api/cash-closes')
+    app.register_blueprint(customers_bp,         url_prefix='/api/customers')
+    app.register_blueprint(returns_bp,           url_prefix='/api/returns')
+    app.register_blueprint(backup_bp,            url_prefix='/api/backup')
+    app.register_blueprint(pin_bp,               url_prefix='/api/pin')
+    app.register_blueprint(credit_bp,            url_prefix='/api/credit')
+    app.register_blueprint(presentations_bp,     url_prefix='/api/presentations')
+    app.register_blueprint(shifts_bp,            url_prefix='/api/shifts')
+    app.register_blueprint(finance_bp,           url_prefix='/api/finance')
+    app.register_blueprint(cash_adjustments_bp,  url_prefix='/api/cash-adjustments')
+    app.register_blueprint(dashboard_bp,         url_prefix='/api/dashboard')
     app.register_blueprint(supplier_invoices_bp, url_prefix='/api/supplier-invoices')
     app.register_blueprint(shrinkage_bp,         url_prefix='/api/shrinkage')
     app.register_blueprint(price_lists_bp,       url_prefix='/api/price-lists')
@@ -76,15 +81,17 @@ def create_app():
     app.register_blueprint(payroll_bp,           url_prefix='/api/payroll')
     app.register_blueprint(profitability_bp,     url_prefix='/api/profitability')
     app.register_blueprint(replenishment_bp,     url_prefix='/api/replenishment')
-    from routes.catalogo_routes          import catalogo_bp
-    from routes.notificacion_routes      import notificaciones_bp
-    app.register_blueprint(notificaciones_bp,    url_prefix='/api/notificaciones')
-    app.register_blueprint(catalogo_bp,          url_prefix='/api/catalogo')
+    app.register_blueprint(auth_admin_bp,        url_prefix='/api/auth-admin')
+    app.register_blueprint(import_export_bp,     url_prefix='/api/import-export')
 
-    # CORS para catálogo público (acceso desde red local)
+    from routes.catalogo_routes     import catalogo_bp
+    from routes.notificacion_routes import notificaciones_bp
+    app.register_blueprint(notificaciones_bp, url_prefix='/api/notificaciones')
+    app.register_blueprint(catalogo_bp,       url_prefix='/api/catalogo')
+    app.register_blueprint(audit_bp,          url_prefix='/api/audit')
+
     from flask_cors import CORS
     CORS(app, resources={r"/api/catalogo/*": {"origins": "*"}})
-    app.register_blueprint(audit_bp,            url_prefix='/api/audit')
 
     if _extras:
         app.register_blueprint(promotions_bp,    url_prefix='/api/promotions')
@@ -94,42 +101,45 @@ def create_app():
         app.register_blueprint(lines_bp,         url_prefix='/api/lines')
 
     with app.app_context():
-        from models.user         import User
-        from models.product      import Product
-        from models.supplier     import Supplier
-        from models.sale         import Sale, SaleItem
-        from models.inventory    import InventoryMovement
-        from models.customer     import Customer
-        from models.return_order import ReturnOrder, ReturnItem
-        from models.cash_close   import CashClose
-        from models.audit_log    import AuditLog
-        from models.cash_adjustment import CashAdjustment
-        from models.sale_payment import SalePayment
+        from models.user             import User
+        from models.product          import Product
+        from models.supplier         import Supplier
+        from models.sale             import Sale, SaleItem
+        from models.inventory        import InventoryMovement
+        from models.customer         import Customer
+        from models.return_order     import ReturnOrder, ReturnItem
+        from models.cash_close       import CashClose
+        from models.audit_log        import AuditLog
+        from models.cash_adjustment  import CashAdjustment
+        from models.sale_payment     import SalePayment
         from models.supplier_invoice import SupplierInvoice, SupplierPayment
-        from models.shrinkage import ShrinkageRecord
-        from models.price_list import PriceList, PriceListItem
-        from models.purchase_order import PurchaseOrder, PurchaseOrderItem
-        from models.inventory_batch import InventoryBatch
-        from models.inventory_count import InventoryCount, InventoryCountItem
-        from models.location import Location, LocationStock, StockTransfer
-        from models.branch import Branch, CashierPoints
-        from models.payroll import Employee, PayrollPeriod, PayrollRecord, PayrollNovedad, LiquidacionLaboral
-        from models.profitability import OperatingExpense, BranchMonthlySummary
-        from models.price_history import PriceHistory
-        from models.notificacion import Notificacion
-        from models.coupon import LoyaltyCoupon
+        from models.shrinkage        import ShrinkageRecord
+        from models.price_list       import PriceList, PriceListItem
+        from models.purchase_order   import PurchaseOrder, PurchaseOrderItem
+        from models.inventory_batch  import InventoryBatch
+        from models.inventory_count  import InventoryCount, InventoryCountItem
+        from models.location         import Location, LocationStock, StockTransfer
+        from models.branch           import Branch, CashierPoints
+        from models.payroll          import Employee, PayrollPeriod, PayrollRecord, PayrollNovedad, LiquidacionLaboral
+        from models.profitability    import OperatingExpense, BranchMonthlySummary
+        from models.price_history    import PriceHistory
+        from models.notificacion     import Notificacion
+        from models.coupon           import LoyaltyCoupon
+        from models.admin_card       import AdminCard
+        from models.cash_register import CashRegister
         try:
             from models.customer     import CreditTransaction
             from models.presentation import ProductPresentation
             from models.shift        import Shift, ShiftWithdrawal
         except ImportError:
             pass
-       # db.create_all()
+        db.create_all()
 
     return app
 
 
 app = create_app()
+
 @app.route("/")
 def home():
     return "API funcionando 🚀"
@@ -151,5 +161,4 @@ def add_cors_headers(response):
     return response
 
 if __name__ == '__main__':
-   app.run(host='0.0.0.0', port=5000, debug=True)
-   
+    app.run(host='0.0.0.0', port=5000, debug=True)

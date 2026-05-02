@@ -37,11 +37,12 @@ import LineDashboard         from './pages/Admin/LineDashboard';
 import ShiftManager          from './pages/Admin/TurnosCaja';
 import Promotions            from './pages/Admin/Promotions';
 import Catalogo              from './pages/Admin/Catalogo';
+import Etiquetas             from './pages/Admin/Etiquetas';
 import CustomerReport        from './pages/Admin/CustomerReport';
 import SalesAnalysis         from './pages/Admin/SalesAnalysis';
 import AdvancedFinance       from './pages/Admin/AdvancedFinance';
 import BusinessPolicy        from './pages/Admin/BusinessPolicy';
-
+import ImportarProductos from './pages/Admin/ImportarProductos';
 // ── Cajero ──
 import Sales                 from './pages/Cashier/Sales';
 import SalesHistory          from './pages/Cashier/SalesHistory';
@@ -118,6 +119,7 @@ function App() {
             <Route path="/admin/turno"             element={<PrivateRoute roles={['admin','admin_tecnico']}><ShiftManager /></PrivateRoute>} />
             <Route path="/admin/promociones"       element={<PrivateRoute roles={['admin','admin_tecnico']}><Promotions /></PrivateRoute>} />
             <Route path="/admin/catalogo"          element={<PrivateRoute roles={['admin','admin_tecnico']}><Catalogo /></PrivateRoute>} />
+            <Route path="/admin/etiquetas"         element={<PrivateRoute roles={['admin','admin_tecnico']}><Etiquetas /></PrivateRoute>} />
             <Route path="/admin/reporte-clientes"  element={<PrivateRoute roles={['admin','admin_tecnico']}><CustomerReport /></PrivateRoute>} />
             <Route path="/admin/analisis-ventas"   element={<PrivateRoute roles={['admin','admin_tecnico']}><SalesAnalysis /></PrivateRoute>} />
             <Route path="/admin/finanzas"          element={<PrivateRoute roles={['admin','admin_tecnico']}><AdvancedFinance /></PrivateRoute>} />
@@ -129,7 +131,7 @@ function App() {
             <Route path="/admin/sucursales"        element={<PrivateRoute roles={['admin','admin_tecnico']}><Sucursales /></PrivateRoute>} />
             <Route path="/admin/nomina"            element={<PrivateRoute roles={['admin','admin_tecnico']}><Nomina /></PrivateRoute>} />
             <Route path="/admin/politicas"         element={<PrivateRoute roles={['admin','admin_tecnico']}><BusinessPolicy /></PrivateRoute>} />
-
+            <Route path="/admin/importar" element={<PrivateRoute roles={['admin','admin_tecnico']}><ImportarProductos /></PrivateRoute>} />
             {/* ── Cajero ── */}
             <Route path="/cajero/ventas"       element={<PrivateRoute roles={['cajero']}><Sales /></PrivateRoute>} />
             <Route path="/cajero/historial"    element={<PrivateRoute roles={['cajero']}><SalesHistory /></PrivateRoute>} />

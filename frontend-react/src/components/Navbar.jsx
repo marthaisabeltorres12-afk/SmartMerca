@@ -9,32 +9,59 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 const adminLinks = [
   { path: "/admin", icon: "bi-speedometer2", label: "Dashboard" },
+
+  // 📦 INVENTARIO
   {
     group: true, label: "Inventario", icon: "bi-archive", key: "inventario",
     children: [
       { path: "/admin/productos",      icon: "bi-box",          label: "Productos" },
+      { path: "/admin/importar",       icon: "bi-upload", label: "Importar/Exportar" },
       { path: "/admin/inventario",     icon: "bi-archive",      label: "Inventario" },
       { path: "/admin/proveedores",    icon: "bi-truck",        label: "Proveedores" },
       { path: "/admin/presentaciones", icon: "bi-boxes",        label: "Presentaciones" },
       { path: "/admin/lineas",         icon: "bi-grid-3x3-gap", label: "Líneas/Categorías" },
+      { path: "/admin/bodegas",        icon: "bi-building",     label: "Bodegas" },
+      { path: "/admin/conteo",         icon: "bi-clipboard-check", label: "Conteo Físico" },
+      { path: "/admin/merma",          icon: "bi-exclamation-triangle", label: "Merma" },
+      { path: "/admin/ordenes-compra", icon: "bi-cart-plus",    label: "Órdenes de Compra" },
     ]
   },
+
+  // 👥 CLIENTES
   {
     group: true, label: "Clientes", icon: "bi-people", key: "clientes",
     children: [
-      { path: "/admin/usuarios",         icon: "bi-person-badge",        label: "Usuarios" },
-      { path: "/admin/clientes",         icon: "bi-person-heart",        label: "Clientes" },
-      { path: "/admin/reporte-clientes", icon: "bi-person-lines-fill",   label: "Reporte Clientes" },
+      { path: "/admin/clientes",         icon: "bi-person-heart",      label: "Clientes" },
+      { path: "/admin/reporte-clientes", icon: "bi-person-lines-fill", label: "Reporte Clientes" },
       { path: "/admin/cartera",          icon: "bi-credit-card-2-front", label: "Cartera" },
-      { path: "/admin/cuentas-pagar",    icon: "bi-receipt",             label: "Cuentas x Pagar" },
-      { path: "/admin/merma",            icon: "bi-exclamation-triangle", label: "Merma" },
-      { path: "/admin/ordenes-compra",   icon: "bi-cart-plus",           label: "Órdenes de Compra" },
-      { path: "/admin/conteo",           icon: "bi-clipboard-check",     label: "Conteo Físico" },
-      { path: "/admin/bodegas",          icon: "bi-building",            label: "Bodegas" },
-      { path: "/admin/sucursales",       icon: "bi-shop",                label: "Sucursales" },
-      { path: "/admin/nomina",           icon: "bi-person-badge",        label: "Nómina" },
     ]
   },
+
+  // 💰 FINANZAS
+  {
+    group: true, label: "Finanzas", icon: "bi-cash-stack", key: "finanzas",
+    children: [
+      { path: "/admin/cuentas-pagar", icon: "bi-receipt",      label: "Cuentas x Pagar" },
+      { path: "/admin/nomina",        icon: "bi-person-badge", label: "Nómina" },
+    ]
+  },
+
+  // ⚙️ OPERACIONES
+  {
+    group: true, label: "Operaciones", icon: "bi-gear", key: "operaciones",
+    children: [
+      { path: "/admin/usuarios",   icon: "bi-person-badge",    label: "Usuarios" },
+      { path: "/admin/sucursales", icon: "bi-shop",            label: "Sucursales" },
+      { path: "/admin/turno",      icon: "bi-toggle-on",       label: "Turnos y Cierres" },
+      { path: "/admin/promociones",icon: "bi-gift-fill",       label: "Promociones" },
+      { path: "/admin/catalogo",   icon: "bi-shop-window",     label: "Catálogo en línea" },
+      { path: "/admin/etiquetas",  icon: "bi-tag",             label: "Etiquetas" },
+      { path: "/admin/pin",        icon: "bi-shield-lock",     label: "Mi PIN" },
+      { path: "/admin/politicas",  icon: "bi-clipboard-check", label: "Políticas" },
+    ]
+  },
+
+  // 📊 REPORTES
   {
     group: true, label: "Reportes", icon: "bi-bar-chart", key: "reportes",
     children: [
@@ -43,16 +70,6 @@ const adminLinks = [
       { path: "/admin/finanzas",        icon: "bi-currency-dollar", label: "Finanzas" },
       { path: "/admin/auditoria",       icon: "bi-clipboard-data",  label: "Auditoría" },
       { path: "/admin/alertas",         icon: "bi-bell",            label: "Alertas" },
-    ]
-  },
-  {
-    group: true, label: "Operaciones", icon: "bi-gear", key: "operaciones",
-    children: [
-      { path: "/admin/turno",       icon: "bi-toggle-on",       label: "Turnos y Cierres" },
-      { path: "/admin/promociones", icon: "bi-gift-fill",       label: "Promociones" },
-      { path: "/admin/catalogo",    icon: "bi-shop-window",     label: "Catálogo en línea" },
-      { path: "/admin/pin",         icon: "bi-shield-lock",     label: "Mi PIN" },
-      { path: "/admin/politicas",   icon: "bi-clipboard-check", label: "Políticas" },
     ]
   },
 ];
@@ -90,11 +107,10 @@ const bodegueroLinks = [
   { path: "/admin/conteo",         icon: "bi-clipboard-check", label: "Conteo Físico" },
   { path: "/admin/bodegas",        icon: "bi-building",        label: "Bodegas" },
   { separator: true, label: "PRODUCTOS" },
-  { path: "/admin/productos",      icon: "bi-box",   label: "Productos" },
-  { path: "/admin/proveedores",    icon: "bi-truck", label: "Proveedores" },
+  { path: "/admin/productos",      icon: "bi-box",             label: "Productos" },
+  { path: "/admin/proveedores",    icon: "bi-truck",           label: "Proveedores" },
 ];
 
-// ── Supervisor: ve ventas, alertas, productos, clientes, análisis ──────────
 const supervisorLinks = [
   { path: "/supervisor",           icon: "bi-speedometer2",   label: "Dashboard" },
   { separator: true, label: "VENTAS" },
@@ -107,7 +123,6 @@ const supervisorLinks = [
   { path: "/supervisor/clientes",  icon: "bi-people",         label: "Clientes" },
 ];
 
-// ── Contador: finanzas, ventas, nómina, cuentas, auditoría ────────────────
 const contadorLinks = [
   { path: "/contador",             icon: "bi-speedometer2",    label: "Dashboard" },
   { separator: true, label: "FINANZAS" },
@@ -120,7 +135,6 @@ const contadorLinks = [
   { path: "/contador/auditoria",   icon: "bi-shield-check",    label: "Auditoría" },
 ];
 
-// ── Auditor: solo lectura ──────────────────────────────────────────────────
 const auditorLinks = [
   { path: "/auditor",              icon: "bi-speedometer2",   label: "Dashboard" },
   { separator: true, label: "AUDITORÍA" },
@@ -241,7 +255,6 @@ const Navbar = () => {
 
         <div className="nav-links">
 
-          {/* Modo oscuro/claro */}
           <button onClick={toggleDarkMode} title={darkMode?'Modo claro':'Modo oscuro'}
             style={{ background:'none', border:'none', color:'#cbd5e1', cursor:'pointer', padding:'8px 10px', fontSize:18 }}
             onMouseEnter={e=>e.currentTarget.style.color='#fff'}
@@ -249,7 +262,6 @@ const Navbar = () => {
             {darkMode ? '☀️' : '🌙'}
           </button>
 
-          {/* Campana notificaciones */}
           {canSeeBell && (
             <div ref={bellRef} style={{ position:'relative', padding:'8px 10px' }}>
               <button onClick={() => { setBellOpen(o=>!o); if(!bellOpen) markAllRead(); }}
@@ -281,9 +293,11 @@ const Navbar = () => {
                     <>
                       {notifications.map(n => {
                         const tipoColor = { stock_bajo:'#f59e0b', vencimiento:'#ef4444', cierre_turno:'#8b5cf6',
-                          producto_faltante:'#3b82f6', producto_danado:'#ef4444', conteo_diferencia:'#f59e0b', otro:'#64748b' }[n.tipo]||'#64748b';
+                          producto_faltante:'#3b82f6', producto_danado:'#ef4444',
+                          conteo_diferencia:'#f59e0b', otro:'#64748b' }[n.tipo]||'#64748b';
                         const tipoIcon = { stock_bajo:'bi-graph-down', vencimiento:'bi-calendar-x', cierre_turno:'bi-lock',
-                          producto_faltante:'bi-box', producto_danado:'bi-exclamation-triangle', conteo_diferencia:'bi-calculator', otro:'bi-bell' }[n.tipo]||'bi-bell';
+                          producto_faltante:'bi-box', producto_danado:'bi-exclamation-triangle',
+                          conteo_diferencia:'bi-calculator', otro:'bi-bell' }[n.tipo]||'bi-bell';
                         return (
                           <div key={n.id} style={{ display:'flex', gap:10, padding:'10px 16px',
                             borderBottom:'1px solid rgba(255,255,255,0.05)', alignItems:'flex-start' }}>
@@ -313,7 +327,6 @@ const Navbar = () => {
             </div>
           )}
 
-          {/* Links navegación */}
           {links.map((link, i) =>
             link.group ? (
               <div key={link.key}>

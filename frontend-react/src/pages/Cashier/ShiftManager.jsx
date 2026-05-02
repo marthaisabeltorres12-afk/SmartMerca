@@ -12,6 +12,9 @@ const fmtDt = s => s ? new Date(s).toLocaleString('es-CO', { day:'2-digit', mont
 // ══════════════════════════════════════════════
 // VISTA CAJERO — solo ve estado de turno y cuenta efectivo al cerrar
 // ══════════════════════════════════════════════
+// ── CashierView CORREGIDO — sin precios en Mi Turno ──────────────────────
+// Reemplaza SOLO el componente CashierView en TurnosCaja.jsx
+
 const CashierView = ({ token, user }) => {
   const [shift,       setShift]       = useState(undefined);
   const [loading,     setLoading]     = useState(true);
@@ -64,22 +67,26 @@ const CashierView = ({ token, user }) => {
             <div className="card-body text-center py-5">
               <div className="fs-1 mb-2">⏳</div>
               <div className="fw-bold fs-5">Cierre pendiente de aprobación</div>
-              <div className="text-muted small mt-2">
-                Conteo enviado: <strong>${Number(shift.cash_counted_by_cashier||0).toLocaleString('es-CO')}</strong>
-              </div>
-              <div className="text-muted small mt-1">El administrador revisará y aprobará el cierre</div>
+              <div className="text-muted small mt-2">El administrador revisará y aprobará el cierre</div>
             </div>
           </div>
 
         ) : (
           <>
+            {/* ✅ CAMBIO: Sin total_sales ni precios — solo estado del turno */}
             <div className="card border-success border-2 mb-4">
               <div className="card-body text-center py-4">
                 <div className="fs-1 mb-1">🟢</div>
                 <div className="fw-bold fs-5">Turno activo</div>
-                <div className="text-muted small">Desde: {fmtDt(shift.opened_at)}</div>
-                <div className="mt-2 fs-5 fw-bold text-success">{fmt(shift.total_sales || 0)}</div>
-                <div className="text-muted small">en ventas este turno</div>
+                {shift.cash_register && (
+                  <div className="badge bg-primary mt-1">🖥️ {shift.cash_register}</div>
+                )}
+                <div className="text-muted small mt-2">
+                  Desde: {new Date(shift.opened_at).toLocaleString('es-CO', {
+                    day:'2-digit', month:'2-digit', year:'numeric',
+                    hour:'2-digit', minute:'2-digit'
+                  })}
+                </div>
               </div>
             </div>
 

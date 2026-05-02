@@ -88,7 +88,7 @@ class Employee(db.Model):
 class PayrollPeriod(db.Model):
     __tablename__ = 'payroll_periods'
     id           = db.Column(db.Integer, primary_key=True)
-    period       = db.Column(db.String(7), nullable=False, unique=True)
+    period       = db.Column(db.String(50), nullable=False, unique=True)
     fecha_inicio = db.Column(db.Date, nullable=False)
     fecha_fin    = db.Column(db.Date, nullable=False)
     status       = db.Column(db.Enum('abierto','calculado','pagado'), default='abierto')

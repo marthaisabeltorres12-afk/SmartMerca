@@ -20,10 +20,10 @@ def _admin(claims):
 
 
 def _calcular_record(emp, period, novedades):
-    """Motor de cálculo completo según ley colombiana."""
     sal = float(emp.salario_base)
-    dias = 30
-
+    
+    # Días reales del período (quincena ~15, mensual ~30)
+    dias = min((period.fecha_fin - period.fecha_inicio).days + 1, 30)
     # Novedades que afectan días
     dias_ausencia = 0
     dias_vacaciones = 0
@@ -186,19 +186,45 @@ def get_periods():
 @jwt_required()
 def create_period():
     claims = get_jwt()
-    if not _admin(claims): return jsonify({'message': 'Acceso denegado'}), 403
+    if not _admin(claims):
+        return jsonify({'message': 'Acceso denegado'}), 403
+
     data = request.get_json()
-    if PayrollPeriod.query.filter_by(period=data['period']).first():
-        return jsonify({'message': f"El período {data['period']} ya existe"}), 400
+    nombre       = data.get('nombre')
+    fecha_inicio = data.get('fecha_inicio')
+    fecha_fin    = data.get('fecha_fin')
+
+    if not all([nombre, fecha_inicio, fecha_fin]):
+        return jsonify({'message': 'Faltan campos: nombre, fecha_inicio, fecha_fin'}), 400
+
+    try:
+        fi = date.fromisoformat(fecha_inicio)
+        ff = date.fromisoformat(fecha_fin)
+    except ValueError:
+        return jsonify({'message': 'Formato de fecha inválido, usar YYYY-MM-DD'}), 400
+
+    # Generar código único ≤ 7 chars
+    # Mensual  → "2026-04"
+    # 1ª quincena → "2604-Q1"
+    # 2ª quincena → "2604-Q2"
+    if fi.day == 1 and ff.day <= 15:
+        period_code = f"{fi.strftime('%y%m')}-Q1"   # "2604-Q1"
+    elif fi.day >= 16:
+        period_code = f"{fi.strftime('%y%m')}-Q2"   # "2604-Q2"
+    else:
+        period_code = fi.strftime('%Y-%m')           # "2026-04"
+
+    if PayrollPeriod.query.filter_by(period=period_code).first():
+        return jsonify({'message': f'El período {nombre} ya existe'}), 400
+
     p = PayrollPeriod(
-        period       = data['period'],
-        fecha_inicio = data['fecha_inicio'],
-        fecha_fin    = data['fecha_fin'],
+        period       = period_code,
+        fecha_inicio = fi,
+        fecha_fin    = ff,
     )
     db.session.add(p)
     db.session.commit()
     return jsonify(p.to_dict()), 201
-
 
 # ── CÁLCULO AUTOMÁTICO ────────────────────────────────────────────────────
 @jwt_required()

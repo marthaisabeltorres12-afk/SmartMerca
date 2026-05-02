@@ -16,7 +16,7 @@ class User(db.Model):
     admin_pin           = db.Column(db.String(256), nullable=True)  # PIN 4-6 dígitos hasheado
     branch_id           = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     created_at          = db.Column(db.DateTime, server_default=db.func.now())
-
+    pin                 = db.Column(db.String(10), nullable=True)
     branch = db.relationship('Branch', foreign_keys=[branch_id])
 
     def set_password(self, password):

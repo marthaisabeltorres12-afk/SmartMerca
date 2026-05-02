@@ -9,7 +9,6 @@ const fmtDate  = (iso) => {
   return new Date(iso).toLocaleString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
 };
 
-
 const InvoiceModal = ({ sale, cashierName, onClose }) => {
   const ref = useRef();
   const handlePrint = () => {
@@ -105,9 +104,10 @@ const InvoiceModal = ({ sale, cashierName, onClose }) => {
   );
 };
 
-
 const SalesHistory = () => {
   const { token, user } = useAuth();
+  const isCajero = user?.role === 'cajero';
+
   const [sales,    setSales]    = useState([]);
   const [expanded, setExpanded] = useState(null);
   const [invoice,  setInvoice]  = useState(null);
@@ -120,19 +120,12 @@ const SalesHistory = () => {
       .catch(console.error);
   }, [token, user]);
 
- 
   const filtered = sales.filter(s => {
     const d = s.created_at?.slice(0,10);
     if (dateFrom && d < dateFrom) return false;
     if (dateTo   && d > dateTo)   return false;
     return true;
   });
-
-
-  const totalVentas  = filtered.length;
-  const totalIngresos = filtered.reduce((a, s) => a + parseFloat(s.total), 0);
-  const today = new Date().toISOString().slice(0,10);
-  const todayCount = filtered.filter(s => s.created_at?.slice(0,10) === today).length;
 
   return (
     <div className="d-flex" style={{ background:'#f0f2f5', minHeight:'100vh' }}>
@@ -142,26 +135,7 @@ const SalesHistory = () => {
         <h4 className="fw-bold mb-1">📜 Historial de Ventas</h4>
         <p className="text-muted mb-4 small">Mis ventas registradas</p>
 
-       
-        <div className="row g-3 mb-4">
-          {[
-     
-          ].map((s, i) => (
-            <div key={i} className="col-md-4">
-              <div className="card border-0 shadow-sm text-white" style={{ background:s.color, borderRadius:12 }}>
-                <div className="card-body d-flex align-items-center gap-3 py-3">
-                  <span style={{ fontSize:'1.5rem' }}>{s.icon}</span>
-                  <div>
-                    <div className="fw-bold fs-4 lh-1">{s.value}</div>
-                    <div style={{ fontSize:'0.72rem', opacity:0.9 }}>{s.label}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-     
+        {/* Filtros */}
         <div className="card border-0 shadow-sm mb-3" style={{ borderRadius:12 }}>
           <div className="card-body py-2">
             <div className="row g-2 align-items-end">
@@ -182,7 +156,7 @@ const SalesHistory = () => {
           </div>
         </div>
 
-       
+        {/* Tabla */}
         <div className="card border-0 shadow-sm" style={{ borderRadius:12 }}>
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0" style={{ fontSize:'0.85rem' }}>
@@ -191,19 +165,20 @@ const SalesHistory = () => {
                   <th># Venta</th>
                   <th>Fecha y Hora</th>
                   <th className="text-center">Items</th>
-                  <th className="text-end">Total</th>
+                  {/* ✅ CAMBIO: cajero NO ve columna Total */}
+                  {!isCajero && <th className="text-end">Total</th>}
                   <th className="text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="text-center text-muted py-5">
+                    <td colSpan={isCajero ? 4 : 5} className="text-center text-muted py-5">
                       <div style={{ fontSize:'2rem' }}>🧾</div>
                       Sin ventas en este período
                     </td>
                   </tr>
-                ) : filtered.map((s, i) => (
+                ) : filtered.map((s) => (
                   <React.Fragment key={s.id}>
                     <tr>
                       <td>
@@ -213,28 +188,34 @@ const SalesHistory = () => {
                       <td className="text-center">
                         <span className="badge bg-primary">{s.items?.length || 0} productos</span>
                       </td>
-                      <td className="text-end fw-bold text-success">{fmtMoney(s.total)}</td>
+                      {/* ✅ CAMBIO: cajero NO ve el total */}
+                      {!isCajero && (
+                        <td className="text-end fw-bold text-success">{fmtMoney(s.total)}</td>
+                      )}
                       <td className="text-center">
                         <div className="d-flex gap-1 justify-content-center">
-                          <button
-                            className="btn btn-outline-secondary btn-sm"
-                            onClick={() => setExpanded(expanded === s.id ? null : s.id)}
-                          >
-                            {expanded === s.id ? '▲ Ocultar' : '▼ Detalle'}
-                          </button>
+                          {/* ✅ CAMBIO: cajero NO puede ver detalles */}
+                          {!isCajero && (
+                            <button
+                              className="btn btn-outline-secondary btn-sm"
+                              onClick={() => setExpanded(expanded === s.id ? null : s.id)}
+                            >
+                              {expanded === s.id ? '▲ Ocultar' : '▼ Detalle'}
+                            </button>
+                          )}
                           <button
                             className="btn btn-outline-primary btn-sm"
                             onClick={() => setInvoice(s)}
                             title="Ver factura"
-                          >Factura
-                            
+                          >
+                            🧾 Factura
                           </button>
                         </div>
                       </td>
                     </tr>
 
-                   
-                    {expanded === s.id && (
+                    {/* ✅ CAMBIO: cajero NO ve el detalle expandido */}
+                    {!isCajero && expanded === s.id && (
                       <tr>
                         <td colSpan="5" className="p-0">
                           <div className="bg-light px-4 py-3" style={{ borderBottom:'1px solid #dee2e6' }}>
@@ -276,17 +257,25 @@ const SalesHistory = () => {
             </table>
           </div>
 
-          {filtered.length > 0 && (
+          {/* ✅ CAMBIO: cajero NO ve el total del pie de tabla */}
+          {filtered.length > 0 && !isCajero && (
             <div className="card-footer bg-white d-flex justify-content-between align-items-center" style={{ borderRadius:'0 0 12px 12px' }}>
               <span className="text-muted small">{filtered.length} venta(s)</span>
-              <span className="fw-bold text-success">{fmtMoney(totalIngresos)}</span>
+              <span className="fw-bold text-success">
+                {fmtMoney(filtered.reduce((a, s) => a + parseFloat(s.total), 0))}
+              </span>
+            </div>
+          )}
+
+          {/* Cajero solo ve conteo */}
+          {filtered.length > 0 && isCajero && (
+            <div className="card-footer bg-white" style={{ borderRadius:'0 0 12px 12px' }}>
+              <span className="text-muted small">{filtered.length} venta(s) registradas</span>
             </div>
           )}
         </div>
-
       </main>
 
-    
       {invoice && (
         <InvoiceModal
           sale={invoice}
