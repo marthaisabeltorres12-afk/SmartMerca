@@ -98,14 +98,13 @@ def create_sale():
         qty   = float(item.get('quantity', 1))
         price = float(item.get('price', 0)) if item.get('price') else None
 
-        # ── Presentación (cubeta de huevos, etc.) ────────────────────────
+        # ── Presentación ──────────────────────────────────────────────────
         if item.get('presentation_id'):
             pres = ProductPresentation.query.get(item['presentation_id'])
             if not pres:
                 db.session.rollback()
                 return jsonify({'message': 'Presentación no encontrada'}), 404
 
-            # SELECT FOR UPDATE — bloquea la fila hasta que termine esta transacción
             try:
                 from sqlalchemy import text as sa_text
                 db.session.execute(
@@ -116,9 +115,8 @@ def create_sale():
                 db.session.rollback()
                 return jsonify({'message': f'El stock de "{pres.base_product.name}" está siendo procesado por otra caja. Intenta de nuevo.'}), 409
 
-            # Refrescar desde BD después del bloqueo
             db.session.refresh(pres.base_product)
-            base = pres.base_product
+            base         = pres.base_product
             units_needed = qty * pres.units_per_pack
 
             if base.stock < units_needed:
@@ -132,8 +130,7 @@ def create_sale():
             item_name     = f'{pres.name} ({pres.units_per_pack} {base.name})'
             item_subtotal = item_price * qty
             total        += item_subtotal
-
-            base.stock -= units_needed
+            base.stock   -= units_needed
 
             db.session.add(SaleItem(
                 sale_id      = sale.id,
@@ -151,7 +148,6 @@ def create_sale():
 
         # ── Producto normal ───────────────────────────────────────────────
         else:
-            # SELECT FOR UPDATE — bloquea la fila hasta que termine esta transacción
             try:
                 from sqlalchemy import text as sa_text
                 db.session.execute(
@@ -164,7 +160,6 @@ def create_sale():
                 nombre = nombre.name if nombre else str(item['product_id'])
                 return jsonify({'message': f'El stock de "{nombre}" está siendo procesado por otra caja. Intenta de nuevo.'}), 409
 
-            # Refrescar desde BD después del bloqueo
             product = Product.query.get(item['product_id'])
             if not product:
                 db.session.rollback()
@@ -178,7 +173,7 @@ def create_sale():
 
             item_price = price if price else float(product.final_price)
 
-            # ── Aplicar lista de precios del cliente ──────────────────────
+            # ── Lista de precios del cliente ──────────────────────────────
             if not price and data.get('customer_id'):
                 try:
                     from models.customer import Customer
@@ -196,10 +191,10 @@ def create_sale():
                                 item_price = round(float(product.final_price) * (1 - float(pl.descuento_pct) / 100), 0)
                 except Exception:
                     pass
-            total     += item_price * qty
+
+            total         += item_price * qty
             product.stock -= qty
 
-            # ── Descuento FIFO en lotes ───────────────────────────────────
             try:
                 from controllers.inventory_controller import descuento_fifo
                 descuento_fifo(product.id, qty)
@@ -222,12 +217,11 @@ def create_sale():
 
     sale.total = total
 
-    # ── Guardar pagos desglosados en sale_payments ────────────────────────
+    # ── Pagos ─────────────────────────────────────────────────────────────
     payments = data.get('payments', [])
     pm_str   = data.get('payment_method', 'efectivo')
 
     if payments:
-        # El frontend envía lista de pagos [{metodo, monto, referencia, cambio}]
         for p in payments:
             db.session.add(SalePayment(
                 sale_id    = sale.id,
@@ -236,11 +230,9 @@ def create_sale():
                 cambio     = float(p.get('cambio', 0)),
                 referencia = p.get('referencia') or None,
             ))
-        # Generar resumen textual para payment_method
         metodos = [p.get('metodo') for p in payments]
         sale.payment_method = 'mixto:' + '+'.join(metodos) if len(metodos) > 1 else metodos[0]
     else:
-        # Compatibilidad: si no viene payments, crear uno solo con el método
         cambio = float(data.get('cambio', 0))
         db.session.add(SalePayment(
             sale_id    = sale.id,
@@ -250,18 +242,17 @@ def create_sale():
             referencia = data.get('referencia') or None,
         ))
 
-    # Auditoría
+    # ── Auditoría ─────────────────────────────────────────────────────────
     prods_txt = ', '.join([
-        (i.get('product_name') or str(i.get('product_id',''))) + f' x{i.get("quantity",1)}'
+        (i.get('product_name') or str(i.get('product_id', ''))) + f' x{i.get("quantity", 1)}'
         for i in items
     ])
     log_action('venta', 'sale', sale.id,
         f'Venta #{sale.id} — {data.get("payment_method","efectivo")} — Total: ${total:,.0f} — Productos: {prods_txt[:200]}')
-    db.session.commit()
-# ── AGREGAR en sale_controller.py — función create_sale() ────────────────
-# Después de db.session.commit() al final de create_sale(), agregar:
 
-    # Liberar reservas del carrito al confirmar la venta
+    db.session.commit()
+
+    # ── Liberar reservas del carrito ──────────────────────────────────────
     try:
         from controllers.cart_reservation_controller import CartReservation
         product_ids = [i.get('product_id') for i in items if i.get('product_id')]
@@ -270,22 +261,44 @@ def create_sale():
             CartReservation.product_id.in_(product_ids)
         ).all()
         for r in reservas:
-            product = Product.query.get(r.product_id)
-            if product:
-                product.reserved_stock = max(0, (product.reserved_stock or 0) - float(r.quantity))
+            prod = Product.query.get(r.product_id)
+            if prod:
+                prod.reserved_stock = max(0, (prod.reserved_stock or 0) - float(r.quantity))
             db.session.delete(r)
         db.session.commit()
     except Exception as e:
         print(f'[create_sale] Error liberando reservas: {e}')
-    # Verificar reabastecimiento en segundo plano
+
+    # ── Reabastecimiento en segundo plano ─────────────────────────────────
     try:
         import threading
         from services.replenishment_service import check_and_alert_replenishment
         product_ids_sold = [i.get('product_id') for i in items if i.get('product_id')]
         if product_ids_sold:
-            t = threading.Thread(target=check_and_alert_replenishment, args=(product_ids_sold,), daemon=True)
-            t.start()
+            threading.Thread(
+                target=check_and_alert_replenishment,
+                args=(product_ids_sold,),
+                daemon=True
+            ).start()
     except Exception:
         pass
+
+    # ── WhatsApp ticket al cliente ────────────────────────────────────────
+    try:
+        import threading
+        from services.whatsapp_service import enviar_ticket_whatsapp
+        from models.customer import Customer
+
+        def _enviar_wp():
+            try:
+                customer = Customer.query.get(data.get('customer_id')) if data.get('customer_id') else None
+                if customer and customer.phone:
+                    enviar_ticket_whatsapp(sale, customer, cashier.name if cashier else 'Cajero')
+            except Exception as ex:
+                print(f'[WhatsApp ticket] Error: {ex}')
+
+        threading.Thread(target=_enviar_wp, daemon=True).start()
+    except Exception as e:
+        print(f'[WhatsApp] Error iniciando thread: {e}')
 
     return jsonify(sale.to_dict()), 201

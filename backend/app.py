@@ -34,7 +34,8 @@ from routes.authorization_routes    import auth_admin_bp
 from routes.import_export_routes    import import_export_bp
 from routes.multicaja_routes import multicaja_bp
 from routes.reservas_routes import reservas_bp
-
+from routes.whatsapp_routes import whatsapp_bp
+from routes.predictive_routes import predictive_bp
 try:
     from routes.promotions    import promotions_bp
     from routes.policy        import policy_bp
@@ -52,6 +53,8 @@ def create_app():
     db.init_app(app)
     jwt.init_app(app)
     mail.init_app(app)
+    app.register_blueprint(predictive_bp, url_prefix='/api/dashboard')
+    app.register_blueprint(whatsapp_bp, url_prefix='/api/whatsapp')
     app.register_blueprint(reservas_bp, url_prefix='/api/reservas')
     app.register_blueprint(multicaja_bp, url_prefix='/api/cajas')
     app.register_blueprint(auth_bp,              url_prefix='/api/auth')

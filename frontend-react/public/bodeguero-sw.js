@@ -1,4 +1,4 @@
-const CACHE = 'bodeguero-v3';
+const CACHE  = 'bodeguero-v4';
 const ASSETS = ['/bodeguero.html', '/bodeguero-manifest.json'];
 
 self.addEventListener('install', e => {
@@ -14,14 +14,14 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Para API calls — intentar red primero, luego cache
+  // API calls — red primero, luego cache
   if (e.request.url.includes('/api/')) {
     e.respondWith(
       fetch(e.request).catch(() => caches.match(e.request))
     );
     return;
   }
-  // Para assets — cache primero
+  // Assets — cache primero
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
       const clone = res.clone();

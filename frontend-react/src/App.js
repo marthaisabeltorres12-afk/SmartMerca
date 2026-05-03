@@ -13,6 +13,7 @@ import ContadorDashboard   from './pages/Roles/ContadorDashboard';
 import AuditorDashboard    from './pages/Roles/AuditorDashboard';
 
 // ── Admin ──
+import DashboardPredictivo from './pages/Admin/DashboardPredictivo';
 import AdminDashboard        from './pages/Admin/AdminDashboard';
 import CuentasPagar          from './pages/Admin/CuentasPagar';
 import Merma                 from './pages/Admin/Merma';
@@ -132,6 +133,7 @@ function App() {
             <Route path="/admin/nomina"            element={<PrivateRoute roles={['admin','admin_tecnico']}><Nomina /></PrivateRoute>} />
             <Route path="/admin/politicas"         element={<PrivateRoute roles={['admin','admin_tecnico']}><BusinessPolicy /></PrivateRoute>} />
             <Route path="/admin/importar" element={<PrivateRoute roles={['admin','admin_tecnico']}><ImportarProductos /></PrivateRoute>} />
+            <Route path="/admin/predicciones" element={<PrivateRoute roles={['admin','admin_tecnico']}><DashboardPredictivo /></PrivateRoute>} />
             {/* ── Cajero ── */}
             <Route path="/cajero/ventas"       element={<PrivateRoute roles={['cajero']}><Sales /></PrivateRoute>} />
             <Route path="/cajero/historial"    element={<PrivateRoute roles={['cajero']}><SalesHistory /></PrivateRoute>} />

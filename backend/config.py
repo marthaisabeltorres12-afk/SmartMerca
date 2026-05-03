@@ -6,7 +6,7 @@ class Config:
     # Railway provee DATABASE_URL automáticamente cuando conectas MySQL
     # Formato: mysql+pymysql://user:pass@host:port/dbname
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'mysql+pymysql://root:@localhost/smartmerca'
+        'mysql+pymysql://root:@localhost:3307/smartmerca'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_recycle': 280,

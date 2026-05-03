@@ -11,13 +11,6 @@ from datetime import datetime, timedelta
 
 
 def calculate_replenishment_needs(weeks_ahead=3):
-    """
-    Para cada producto activo con stock <= min_stock:
-    1. Calcula rotación semanal promedio (últimas 4 semanas)
-    2. Calcula cantidad sugerida = (rotacion * weeks_ahead) - stock_actual
-    3. Agrupa por proveedor
-    Retorna lista de proveedores con sus productos sugeridos.
-    """
     hoy        = datetime.now()
     hace_4_sem = hoy - timedelta(weeks=4)
 
@@ -29,7 +22,6 @@ def calculate_replenishment_needs(weeks_ahead=3):
     if not productos_bajos:
         return []
 
-    # Rotación de los últimos 28 días
     ids = [p.id for p in productos_bajos]
     rotacion_map = {}
 
@@ -44,9 +36,8 @@ def calculate_replenishment_needs(weeks_ahead=3):
     ).group_by(SaleItem.product_id).all()
 
     for row in rotacion_q:
-        rotacion_map[row.product_id] = float(row.total_vendido) / 4  # promedio semanal
+        rotacion_map[row.product_id] = float(row.total_vendido) / 4
 
-    # Último costo de compra
     costo_map = {}
     costos_q = db.session.query(
         InventoryMovement.product_id,
@@ -66,7 +57,6 @@ def calculate_replenishment_needs(weeks_ahead=3):
             costo_map[row.product_id] = float(row.unit_cost)
             seen.add(row.product_id)
 
-    # Agrupar por proveedor
     por_proveedor = {}
     for p in productos_bajos:
         rotacion  = rotacion_map.get(p.id, 0)
@@ -83,15 +73,15 @@ def calculate_replenishment_needs(weeks_ahead=3):
         costo          = costo_map.get(p.id, 0)
         valor_estimado = cantidad_sugerida * costo
 
-        proveedor_id   = p.supplier_id or 0
+        proveedor_id     = p.supplier_id or 0
         proveedor_nombre = p.supplier.company_name or p.supplier.name if p.supplier else 'Sin proveedor'
 
         if proveedor_id not in por_proveedor:
             por_proveedor[proveedor_id] = {
-                'proveedor_id':     proveedor_id,
-                'proveedor_nombre': proveedor_nombre,
-                'productos':        [],
-                'valor_total_estimado': 0,
+                'proveedor_id':           proveedor_id,
+                'proveedor_nombre':        proveedor_nombre,
+                'productos':              [],
+                'valor_total_estimado':   0,
             }
 
         por_proveedor[proveedor_id]['productos'].append({
@@ -111,14 +101,27 @@ def calculate_replenishment_needs(weeks_ahead=3):
 
 def check_and_alert_replenishment(product_ids):
     """
-    Verifica si alguno de los productos vendidos quedó bajo el mínimo
-    y crea notificaciones en el sistema.
-    Llamar con threading.Thread desde sale_controller.
+    Verifica si alguno de los productos vendidos quedó bajo el mínimo,
+    crea notificaciones en el sistema y envía alerta por WhatsApp al admin.
     """
     try:
         from extensions import db
         with db.engine.connect() as conn:
-            pass  # asegurar conexión en thread separado
+            pass
+    except Exception:
+        pass
+
+    # Buscar admin con teléfono para alertas WhatsApp
+    admin_telefono = None
+    try:
+        from models.user import User
+        admin = User.query.filter(
+            User.role.in_(['admin', 'admin_tecnico']),
+            User.is_active == True,
+            User.phone != None
+        ).first()
+        if admin:
+            admin_telefono = admin.phone
     except Exception:
         pass
 
@@ -129,28 +132,44 @@ def check_and_alert_replenishment(product_ids):
                 continue
             min_stock = product.min_stock or 5
             if product.stock <= min_stock:
-                rotacion = 0
+                rotacion  = 0
                 hace_4_sem = datetime.now() - timedelta(weeks=4)
                 rot_q = db.session.query(func.sum(SaleItem.quantity)).filter(
                     SaleItem.product_id == pid,
                     SaleItem.created_at >= hace_4_sem,
                 ).scalar()
-                rotacion = round(float(rot_q or 0) / 4, 1)
+                rotacion          = round(float(rot_q or 0) / 4, 1)
                 cantidad_sugerida = max(min_stock * 2, round(rotacion * 3 - product.stock, 0))
-                proveedor = product.supplier.company_name or product.supplier.name if product.supplier else 'sin proveedor'
+                proveedor         = product.supplier.company_name or product.supplier.name if product.supplier else 'sin proveedor'
 
-                # Agregar a notificaciones en memoria (tabla simple)
+                # ── Notificación interna ──────────────────────────────────
                 try:
                     from models.notification_log import NotificationLog
                     db.session.add(NotificationLog(
-                        tipo      = 'warning',
-                        titulo    = 'Reabastecimiento sugerido',
-                        mensaje   = f'{product.name} tiene {product.stock} uds. Rotación: {rotacion} uds/sem. Sugerido pedir {int(cantidad_sugerida)} al proveedor {proveedor}.',
-                        link      = '/admin/reabastecimiento',
+                        tipo    = 'warning',
+                        titulo  = 'Reabastecimiento sugerido',
+                        mensaje = f'{product.name} tiene {product.stock} uds. Rotación: {rotacion} uds/sem. Sugerido pedir {int(cantidad_sugerida)} al proveedor {proveedor}.',
+                        link    = '/admin/reabastecimiento',
                     ))
                     db.session.commit()
                 except Exception:
                     pass
+
+                # ── Alerta WhatsApp al admin ───────────────────────────────
+                # Solo enviar si stock llegó exactamente al mínimo (no en cada venta)
+                if product.stock == min_stock and admin_telefono:
+                    try:
+                        from services.whatsapp_service import enviar_alerta_stock
+                        enviar_alerta_stock(
+                            producto_nombre = product.name,
+                            stock_actual    = product.stock,
+                            stock_minimo    = min_stock,
+                            admin_telefono  = admin_telefono,
+                        )
+                    except Exception as e:
+                        import logging
+                        logging.error(f'[WhatsApp alerta stock] {e}')
+
     except Exception as e:
         import logging
         logging.error(f'check_and_alert_replenishment error: {e}')

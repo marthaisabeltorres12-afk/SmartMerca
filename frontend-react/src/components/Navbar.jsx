@@ -66,6 +66,7 @@ const adminLinks = [
     group: true, label: "Reportes", icon: "bi-bar-chart", key: "reportes",
     children: [
       { path: "/admin/reportes",        icon: "bi-bar-chart",       label: "Reportes" },
+      { path: "/admin/predicciones", icon: "bi-robot", label: "IA Predictiva" },
       { path: "/admin/analisis-ventas", icon: "bi-graph-up-arrow",  label: "Análisis Ventas" },
       { path: "/admin/finanzas",        icon: "bi-currency-dollar", label: "Finanzas" },
       { path: "/admin/auditoria",       icon: "bi-clipboard-data",  label: "Auditoría" },

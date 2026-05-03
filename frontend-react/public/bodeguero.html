@@ -12,24 +12,18 @@
   <style>
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f172a;color:#fff;min-height:100vh;max-width:480px;margin:0 auto}
-    /* Header */
     .hdr{background:#1e3a5f;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-    .hdr h1{font-size:17px;font-weight:800}
     .hdr-sub{font-size:11px;opacity:.7;margin-top:1px}
     .online-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}
     .online-dot.off{background:#ef4444}
-    /* Nav tabs */
     .nav{display:flex;background:#1e293b;border-bottom:1px solid #334155}
     .nav-btn{flex:1;padding:12px 4px;border:none;background:none;color:#94a3b8;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .2s}
     .nav-btn.active{color:#3b82f6;border-bottom:2px solid #3b82f6}
     .nav-icon{font-size:20px}
-    /* Content */
     .page{display:none;padding:16px;padding-bottom:20px}
     .page.show{display:block}
-    /* Cards */
     .card{background:#1e293b;border-radius:14px;padding:16px;margin-bottom:12px}
     .card-title{font-size:14px;font-weight:700;color:#94a3b8;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-    /* Botones */
     .btn{padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:700;cursor:pointer;width:100%;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px}
     .btn-primary{background:#3b82f6;color:#fff}
     .btn-success{background:#22c55e;color:#fff}
@@ -37,17 +31,14 @@
     .btn-danger{background:#ef4444;color:#fff}
     .btn-outline{background:none;border:2px solid #334155;color:#94a3b8}
     .btn:active{transform:scale(.97)}
-    /* Input */
     .inp{width:100%;padding:12px 14px;background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:15px;outline:none;margin-bottom:10px}
     .inp:focus{border-color:#3b82f6}
     .inp-label{font-size:12px;color:#94a3b8;margin-bottom:6px;font-weight:600}
     .select{width:100%;padding:12px 14px;background:#0f172a;border:2px solid #334155;border-radius:10px;color:#fff;font-size:15px;outline:none;margin-bottom:10px;appearance:none}
-    /* Producto encontrado */
     .prod-card{background:#0f2740;border:2px solid #3b82f6;border-radius:12px;padding:14px;margin-bottom:12px}
     .prod-name{font-size:17px;font-weight:800;margin-bottom:4px}
     .prod-detail{font-size:12px;color:#94a3b8}
     .prod-stock{font-size:22px;font-weight:800;color:#22c55e;margin:8px 0 4px}
-    /* Lista stock */
     .stock-item{background:#1e293b;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
     .si-name{font-size:14px;font-weight:700}
     .si-cat{font-size:11px;color:#64748b;margin-top:2px}
@@ -55,26 +46,15 @@
     .si-qty.low{color:#f59e0b}
     .si-qty.ok{color:#22c55e}
     .si-qty.zero{color:#ef4444}
-    /* Badge */
-    .badge{padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700}
-    .badge-red{background:#ef4444}
-    .badge-yellow{background:#f59e0b;color:#000}
-    .badge-green{background:#22c55e;color:#000}
-    /* Alert */
     .alert{padding:12px 14px;border-radius:10px;margin-bottom:12px;font-size:14px;font-weight:600}
     .alert-success{background:#14532d;color:#86efac;border:1px solid #16a34a}
     .alert-danger{background:#450a0a;color:#fca5a5;border:1px solid #ef4444}
     .alert-info{background:#0c2a4a;color:#93c5fd;border:1px solid #3b82f6}
-    /* Scanner */
-    .scanner-box{background:#0f172a;border:2px dashed #334155;border-radius:12px;padding:20px;text-align:center;margin-bottom:12px}
-    .scanner-icon{font-size:48px;margin-bottom:8px}
-    /* Login */
     .login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
     .login-card{background:#1e293b;border-radius:20px;padding:28px 24px;width:100%}
     .login-logo{font-size:48px;text-align:center;margin-bottom:8px}
     .login-title{font-size:22px;font-weight:800;text-align:center;margin-bottom:4px}
     .login-sub{font-size:13px;color:#64748b;text-align:center;margin-bottom:24px}
-    /* Conteo */
     .conteo-item{background:#1e293b;border-radius:10px;padding:12px;margin-bottom:8px}
     .ci-row{display:flex;align-items:center;gap:10px}
     .ci-name{flex:1;font-size:14px;font-weight:600}
@@ -82,8 +62,8 @@
     .ci-input{width:80px;padding:8px;background:#0f172a;border:2px solid #334155;border-radius:8px;color:#fff;font-size:16px;font-weight:700;text-align:center;outline:none}
     .ci-input.diff-pos{border-color:#22c55e}
     .ci-input.diff-neg{border-color:#ef4444}
-    /* Toast */
     .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e3a5f;color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;z-index:9999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.4);display:none}
+    .srv-config{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;margin-top:10px}
   </style>
 </head>
 <body>
@@ -100,8 +80,28 @@
     <div class="inp-label">Contraseña</div>
     <input type="password" class="inp" id="l-pass" placeholder="••••••••" autocomplete="current-password"/>
     <button class="btn btn-primary" onclick="doLogin()">🔐 Ingresar</button>
-    <div style="text-align:center;font-size:12px;color:#64748b;margin-top:8px" id="server-url-hint">
-      Servidor: <span id="srv-hint">localhost:5000</span>
+
+    <!-- ✅ Configuración servidor mejorada -->
+    <div style="text-align:center;margin-top:8px">
+      <button onclick="toggleServerConfig()" style="background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline">
+        ⚙️ Servidor: <span id="srv-hint">configurar</span>
+      </button>
+    </div>
+    <div id="server-config" class="srv-config" style="display:none">
+      <div class="inp-label">URL del servidor backend</div>
+      <input type="url" class="inp" id="server-url-input"
+        placeholder="https://smartmerca.railway.app"
+        style="font-size:13px;margin-bottom:8px"/>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" style="flex:1;padding:10px;font-size:13px;margin-bottom:0"
+          onclick="toggleServerConfig()">Cancelar</button>
+        <button class="btn btn-primary" style="flex:1;padding:10px;font-size:13px;margin-bottom:0"
+          onclick="saveServerUrl()">💾 Guardar</button>
+      </div>
+      <div style="font-size:11px;color:#475569;margin-top:8px;text-align:center">
+        Red local: http://10.x.x.x:5000<br/>
+        Producción: https://tu-app.railway.app
+      </div>
     </div>
   </div>
 </div>
@@ -110,7 +110,7 @@
 <div id="app" style="display:none">
   <div class="hdr">
     <div>
-      <div class="hdr h1" style="font-size:17px;font-weight:800">📦 Bodeguero</div>
+      <div style="font-size:17px;font-weight:800">📦 Bodeguero</div>
       <div class="hdr-sub" id="user-name">Cargando...</div>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
@@ -137,7 +137,7 @@
     </button>
   </div>
 
-  <!-- RECIBIR MERCANCÍA -->
+  <!-- RECIBIR -->
   <div class="page show" id="page-recibir">
     <div id="recibir-alert"></div>
     <div class="card">
@@ -150,8 +150,6 @@
       </div>
       <div style="margin-bottom:10px"></div>
       <div id="r-resultados"></div>
-
-      <!-- Sección producto no encontrado -->
       <div id="r-faltante-section" style="display:none">
         <div style="background:#1a2744;border:1px solid #3b82f6;border-radius:12px;padding:14px;margin-bottom:10px">
           <div style="font-weight:800;font-size:15px;margin-bottom:12px">📨 Enviar reporte al admin</div>
@@ -163,16 +161,11 @@
           </select>
           <div class="inp-label">Descripción / observación</div>
           <input type="text" class="inp" id="r-notas-faltante" placeholder="Ej: Llegaron 20 cajas sin registrar..."/>
-          <button class="btn btn-warning" onclick="notificarProductoFaltante()">
-            📨 Enviar reporte al administrador
-          </button>
-          <button class="btn btn-outline" onclick="document.getElementById('r-faltante-section').style.display='none';document.getElementById('r-query').value=''">
-            ✕ Cancelar
-          </button>
+          <button class="btn btn-warning" onclick="notificarProductoFaltante()">📨 Enviar reporte al administrador</button>
+          <button class="btn btn-outline" onclick="document.getElementById('r-faltante-section').style.display='none';document.getElementById('r-query').value=''">✕ Cancelar</button>
         </div>
       </div>
     </div>
-
     <div id="r-prod-card" style="display:none">
       <div class="prod-card" id="r-prod-info"></div>
       <div class="card">
@@ -203,7 +196,7 @@
     <div id="s-list"></div>
   </div>
 
-  <!-- BODEGAS / TRASLADOS -->
+  <!-- BODEGAS -->
   <div class="page" id="page-bodegas">
     <div id="bodegas-alert"></div>
     <div class="card">
@@ -236,7 +229,7 @@
     </div>
   </div>
 
-  <!-- Scanner modal con ZXing -->
+  <!-- Scanner modal -->
   <div id="scanner-modal" style="display:none;position:fixed;inset:0;background:#000;z-index:9999;flex-direction:column">
     <div style="background:#1e3a5f;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
       <span style="font-weight:800;font-size:16px">📷 Escanear código</span>
@@ -250,6 +243,8 @@
       Apunta la cámara al código de barras
     </div>
   </div>
+
+  <!-- CONTEO -->
   <div class="page" id="page-conteo">
     <div id="conteo-alert"></div>
     <div class="card">
@@ -291,25 +286,60 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Config ────────────────────────────────────────────────────────────────
-let API = localStorage.getItem('b_api') || 'http://10.54.83.130:5000/api';
-let token = localStorage.getItem('b_token') || '';
-let userName = localStorage.getItem('b_user') || '';
+// ── Config ─────────────────────────────────────────────────────────────────
+let API      = localStorage.getItem('b_api') || 'http://localhost:5000/api';
+let token    = localStorage.getItem('b_token') || '';
+let userName = localStorage.getItem('b_user')  || '';
 let products = [];
-let selProd = null;
+let selProd  = null;
 let conteoData = {};
-let activeCat = 'Todos';
+let activeCat  = 'Todos';
+let bodegas    = [];
+let selProdTraslado = null;
 
-// ── Utils ─────────────────────────────────────────────────────────────────
-const fmt = n => '$' + Number(n||0).toLocaleString('es-CO');
+// ── Servidor configurable ──────────────────────────────────────────────────
+function actualizarHint() {
+  const hint = document.getElementById('srv-hint');
+  if (!hint) return;
+  try {
+    const url = new URL(API);
+    hint.textContent = url.hostname + (url.port ? ':' + url.port : '');
+  } catch { hint.textContent = 'configurar'; }
+}
+
+function toggleServerConfig() {
+  const div = document.getElementById('server-config');
+  const inp = document.getElementById('server-url-input');
+  if (div.style.display === 'none') {
+    div.style.display = 'block';
+    inp.value = API.replace('/api', '');
+    inp.focus();
+  } else { div.style.display = 'none'; }
+}
+
+function saveServerUrl() {
+  const val = document.getElementById('server-url-input').value.trim();
+  if (!val) return;
+  const url = val.endsWith('/api') ? val : val.replace(/\/$/, '') + '/api';
+  localStorage.setItem('b_api', url);
+  API = url;
+  actualizarHint();
+  toggleServerConfig();
+  toast('✅ Servidor actualizado');
+}
+
+document.addEventListener('DOMContentLoaded', actualizarHint);
+
+// ── Utils ──────────────────────────────────────────────────────────────────
+const fmt   = n => '$' + Number(n||0).toLocaleString('es-CO');
 const toast = (msg, dur=2500) => {
   const t = document.getElementById('toast');
   t.textContent = msg; t.style.display = 'block';
-  setTimeout(() => t.style.display='none', dur);
+  setTimeout(() => t.style.display = 'none', dur);
 };
 
 async function api(path, opts={}) {
-  const res = await fetch(API + path, {
+  const res  = await fetch(API + path, {
     ...opts,
     headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${token}`, ...(opts.headers||{}) }
   });
@@ -318,41 +348,36 @@ async function api(path, opts={}) {
   return data;
 }
 
-// ── Login ─────────────────────────────────────────────────────────────────
+// ── Login ──────────────────────────────────────────────────────────────────
 async function doLogin() {
   const email = document.getElementById('l-email').value.trim();
   const pass  = document.getElementById('l-pass').value;
-  const alert = document.getElementById('login-alert');
-  if (!email || !pass) { alert.innerHTML = '<div class="alert alert-danger">Ingresa correo y contraseña</div>'; return; }
+  const alrt  = document.getElementById('login-alert');
+  if (!email || !pass) { alrt.innerHTML = '<div class="alert alert-danger">Ingresa correo y contraseña</div>'; return; }
   try {
     const data = await fetch(API + '/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ email, password: pass })
     }).then(r => r.json());
     if (!data.access_token) throw new Error(data.message || 'Credenciales inválidas');
-    if (!['bodeguero','admin','admin_tecnico','supervisor'].includes(data.user?.role)) {
+    if (!['bodeguero','admin','admin_tecnico','supervisor'].includes(data.user?.role))
       throw new Error('No tienes permiso para usar esta app');
-    }
     token = data.access_token;
     userName = data.user?.name || email;
     localStorage.setItem('b_token', token);
     localStorage.setItem('b_user', userName);
     initApp();
-  } catch(e) {
-    alert.innerHTML = `<div class="alert alert-danger">❌ ${e.message}</div>`;
-  }
+  } catch(e) { alrt.innerHTML = `<div class="alert alert-danger">❌ ${e.message}</div>`; }
 }
 
 function doLogout() {
-  localStorage.removeItem('b_token');
-  localStorage.removeItem('b_user');
+  localStorage.removeItem('b_token'); localStorage.removeItem('b_user');
   token = ''; userName = '';
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────
+// ── Init ───────────────────────────────────────────────────────────────────
 async function initApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
@@ -361,55 +386,48 @@ async function initApp() {
   await loadProducts();
   await loadBodegas();
   renderAlertas();
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/bodeguero-sw.js').catch(()=>{});
-  }
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/bodeguero-sw.js').catch(()=>{});
 }
 
 function updateOnline() {
   const dot = document.getElementById('online-dot');
-  dot.className = 'online-dot' + (navigator.onLine ? '' : ' off');
+  if (dot) dot.className = 'online-dot' + (navigator.onLine ? '' : ' off');
 }
-window.addEventListener('online', updateOnline);
+window.addEventListener('online',  updateOnline);
 window.addEventListener('offline', updateOnline);
 
 async function loadProducts() {
   try {
     products = await api('/products/');
     if (!Array.isArray(products)) products = [];
-    renderStock();
-    renderConteo();
-    renderAlertas();
-  } catch(e) {
-    // Usar cache si no hay conexión
+    renderStock(); renderConteo(); renderAlertas();
+  } catch {
     const cached = localStorage.getItem('b_products');
-    if (cached) products = JSON.parse(cached);
+    if (cached) { products = JSON.parse(cached); toast('📴 Usando datos en caché', 2000); }
   }
   localStorage.setItem('b_products', JSON.stringify(products));
 }
 
-// ── Navegación ────────────────────────────────────────────────────────────
+// ── Navegación ─────────────────────────────────────────────────────────────
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('show'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('show');
-  document.getElementById('tab-' + name).classList.add('active');
-  if (name === 'stock') renderStock();
+  document.getElementById('tab-'  + name).classList.add('active');
+  if (name === 'stock')   renderStock();
   if (name === 'alertas') renderAlertas();
   if (name === 'bodegas' || name === 'conteo') loadBodegas();
 }
 
-// ── RECIBIR ───────────────────────────────────────────────────────────────
+// ── RECIBIR ────────────────────────────────────────────────────────────────
 let searchTimeout;
 function buscarProducto(immediate=false) {
   clearTimeout(searchTimeout);
-  const delay = immediate ? 0 : 400;
   searchTimeout = setTimeout(() => {
     const q = document.getElementById('r-query').value.trim().toLowerCase();
     if (!q) { document.getElementById('r-resultados').innerHTML = ''; return; }
     const found = products.filter(p =>
-      p.name?.toLowerCase().includes(q) ||
-      (p.barcode && p.barcode.includes(q))
+      p.name?.toLowerCase().includes(q) || (p.barcode && p.barcode.includes(q))
     ).slice(0, 6);
     if (found.length === 1) { selectProd(found[0]); return; }
     if (!found.length) {
@@ -419,39 +437,36 @@ function buscarProducto(immediate=false) {
     }
     document.getElementById('r-faltante-section').style.display = 'none';
     document.getElementById('r-resultados').innerHTML = found.map(p => `
-      <div onclick="selectProd(${JSON.stringify(p).replace(/"/g,'&quot;')})"
+      <div onclick='selectProd(${JSON.stringify(JSON.stringify(p))})'
         style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer">
         <div style="font-weight:700;font-size:14px">${p.name}</div>
         <div style="font-size:11px;color:#64748b">${p.category||'—'} · Stock: ${p.stock} · ${p.barcode||'Sin código'}</div>
-      </div>
-    `).join('') || '<div style="color:#64748b;font-size:13px;padding:8px">Sin resultados</div>';
-  }, delay);
+      </div>`).join('');
+  }, immediate ? 0 : 400);
 }
 
 function selectProd(p) {
   if (typeof p === 'string') p = JSON.parse(p);
   selProd = p;
   document.getElementById('r-resultados').innerHTML = '';
+  document.getElementById('r-faltante-section').style.display = 'none';
   document.getElementById('r-query').value = p.name;
   document.getElementById('r-prod-info').innerHTML = `
     <div class="prod-name">${p.name}</div>
     <div class="prod-detail">${p.category||'—'} · ${p.barcode||'Sin código'}</div>
     <div class="prod-stock">${p.stock} unidades en sistema</div>
-    <div style="font-size:11px;color:#64748b">Stock mínimo: ${p.min_stock||5}</div>
-  `;
+    <div style="font-size:11px;color:#64748b">Stock mínimo: ${p.min_stock||5}</div>`;
   document.getElementById('r-prod-card').style.display = 'block';
   document.getElementById('r-qty').focus();
 }
 
 function limpiarRecibir() {
   selProd = null;
-  document.getElementById('r-query').value = '';
+  ['r-query','r-qty','r-lote','r-costo','r-venc'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
   document.getElementById('r-resultados').innerHTML = '';
   document.getElementById('r-prod-card').style.display = 'none';
-  document.getElementById('r-qty').value = '';
-  document.getElementById('r-lote').value = '';
-  document.getElementById('r-venc').value = '';
-  document.getElementById('r-costo').value = '';
 }
 
 async function confirmarEntrada() {
@@ -459,60 +474,51 @@ async function confirmarEntrada() {
   const qty = parseInt(document.getElementById('r-qty').value);
   if (!qty || qty <= 0) { toast('⚠️ Ingresa una cantidad válida'); return; }
   const body = {
-    product_id:   selProd.id,
-    quantity:     qty,
-    numero_lote:  document.getElementById('r-lote').value || null,
-    expiry_date:  document.getElementById('r-venc').value || null,
-    unit_cost:    parseFloat(document.getElementById('r-costo').value) || null,
-    reason:       'Recepción de mercancía — Bodeguero',
+    product_id:  selProd.id, quantity: qty,
+    numero_lote: document.getElementById('r-lote').value || null,
+    expiry_date: document.getElementById('r-venc').value || null,
+    unit_cost:   parseFloat(document.getElementById('r-costo').value) || null,
+    reason:      'Recepción de mercancía — Bodeguero',
   };
   try {
     await api('/inventory/entrada', { method:'POST', body: JSON.stringify(body) });
     toast(`✅ +${qty} unidades de ${selProd.name}`);
-    limpiarRecibir();
-    await loadProducts();
-  } catch(e) {
-    // Guardar offline
+    limpiarRecibir(); await loadProducts();
+  } catch {
     const pending = JSON.parse(localStorage.getItem('b_pending') || '[]');
     pending.push({ ...body, _ts: Date.now(), _prod_name: selProd.name });
     localStorage.setItem('b_pending', JSON.stringify(pending));
-    toast('📴 Guardado sin internet — se enviará cuando haya conexión', 3500);
+    toast('📴 Sin internet — se enviará al reconectar', 3500);
     limpiarRecibir();
   }
 }
 
-// Sync entradas pendientes cuando vuelve el internet
 window.addEventListener('online', async () => {
   const pending = JSON.parse(localStorage.getItem('b_pending') || '[]');
   if (!pending.length) return;
-  let synced = 0;
-  const remaining = [];
+  let synced = 0; const remaining = [];
   for (const entry of pending) {
-    try {
-      await api('/inventory/entrada', { method:'POST', body: JSON.stringify(entry) });
-      synced++;
-    } catch { remaining.push(entry); }
+    try { await api('/inventory/entrada', { method:'POST', body: JSON.stringify(entry) }); synced++; }
+    catch { remaining.push(entry); }
   }
   localStorage.setItem('b_pending', JSON.stringify(remaining));
   if (synced) toast(`🔄 ${synced} entrada(s) sincronizada(s)`, 3000);
 });
 
-// ── STOCK ─────────────────────────────────────────────────────────────────
+// ── STOCK ──────────────────────────────────────────────────────────────────
 function renderStock() {
-  const q = (document.getElementById('s-search')?.value || '').toLowerCase();
+  const q    = (document.getElementById('s-search')?.value || '').toLowerCase();
   const cats = ['Todos', ...new Set(products.map(p=>p.category).filter(Boolean).sort())];
-  document.getElementById('s-cats').innerHTML = cats.map(c =>
+  const catsEl = document.getElementById('s-cats');
+  if (catsEl) catsEl.innerHTML = cats.map(c =>
     `<button onclick="activeCat='${c}';renderStock()" style="padding:5px 12px;border-radius:20px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:${activeCat===c?'#3b82f6':'#1e293b'};color:${activeCat===c?'#fff':'#94a3b8'}">${c}</button>`
   ).join('');
-
   const filtered = products.filter(p =>
-    (activeCat==='Todos' || p.category===activeCat) &&
-    (!q || p.name?.toLowerCase().includes(q)) && p.is_active
-  ).sort((a,b)=>a.name?.localeCompare(b.name));
-
-  document.getElementById('s-list').innerHTML = filtered.map(p => {
-    const min = p.min_stock || 5;
-    const cls = p.stock <= 0 ? 'zero' : p.stock <= min ? 'low' : 'ok';
+    (activeCat==='Todos' || p.category===activeCat) && (!q || p.name?.toLowerCase().includes(q)) && p.is_active
+  ).sort((a,b) => a.name?.localeCompare(b.name));
+  const listEl = document.getElementById('s-list');
+  if (listEl) listEl.innerHTML = filtered.map(p => {
+    const min = p.min_stock||5; const cls = p.stock<=0?'zero':p.stock<=min?'low':'ok';
     return `
       <div class="stock-item">
         <div>
@@ -524,406 +530,229 @@ function renderStock() {
             <div class="si-qty ${cls}">${p.stock}</div>
             <div style="font-size:10px;color:#64748b">mín: ${min}</div>
           </div>
-          <button onclick="reportarProducto('${p.name.replace(/'/g,'')}')" 
-            style="background:none;border:1px solid #334155;border-radius:8px;padding:4px 8px;color:#f59e0b;font-size:16px;cursor:pointer" title="Reportar problema">⚠️</button>
+          <button onclick="reportarProducto('${p.name.replace(/'/g,'')}')"
+            style="background:none;border:1px solid #334155;border-radius:8px;padding:4px 8px;color:#f59e0b;font-size:16px;cursor:pointer">⚠️</button>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join('') || '<div style="color:#64748b;text-align:center;padding:20px">Sin productos</div>';
 }
 
-// ── CONTEO ────────────────────────────────────────────────────────────────
+// ── CONTEO ─────────────────────────────────────────────────────────────────
 function renderConteo() {
-  const bodegaId = document.getElementById('c-bodega')?.value;
-  const bodegaNombre = bodegaId
-    ? bodegas.find(b => String(b.id) === String(bodegaId))?.nombre || 'Sin nombre'
-    : '';
-
+  const bodegaId     = document.getElementById('c-bodega')?.value;
+  const bodegaNombre = bodegaId ? bodegas.find(b=>String(b.id)===String(bodegaId))?.nombre||'Sin nombre' : '';
+  const listEl = document.getElementById('c-list');
+  const btnEl  = document.getElementById('btn-enviar-conteo');
   if (!bodegaId) {
-    document.getElementById('c-list').innerHTML =
-      '<div style="color:#64748b;text-align:center;padding:20px;font-size:13px">Selecciona una bodega para comenzar el conteo</div>';
-    document.getElementById('btn-enviar-conteo').style.display = 'none';
-    return;
+    if (listEl) listEl.innerHTML = '<div style="color:#64748b;text-align:center;padding:20px;font-size:13px">Selecciona una bodega para comenzar el conteo</div>';
+    if (btnEl) btnEl.style.display = 'none'; return;
   }
-
-  const q = (document.getElementById('c-search')?.value || '').toLowerCase();
-  const filtered = products.filter(p =>
-    p.is_active && (!q || p.name?.toLowerCase().includes(q) || (p.barcode && p.barcode.includes(q)))
-  ).slice(0, 50);
-
-  if (!filtered.length) {
-    document.getElementById('c-list').innerHTML =
-      '<div style="color:#64748b;text-align:center;padding:20px">Sin productos</div>';
-    return;
-  }
-
-  document.getElementById('c-list').innerHTML = filtered.map(p => {
+  const q        = (document.getElementById('c-search')?.value || '').toLowerCase();
+  const filtered = products.filter(p => p.is_active && (!q || p.name?.toLowerCase().includes(q) || (p.barcode && p.barcode.includes(q)))).slice(0, 50);
+  if (!listEl) return;
+  if (!filtered.length) { listEl.innerHTML = '<div style="color:#64748b;text-align:center;padding:20px">Sin productos</div>'; return; }
+  listEl.innerHTML = filtered.map(p => {
     const val  = conteoData[p.id] ?? '';
     const diff = val !== '' ? parseInt(val) - p.stock : null;
     let diffHtml = '';
     if (diff !== null) {
-      const color = diff > 0 ? '#22c55e' : diff < 0 ? '#ef4444' : '#94a3b8';
-      diffHtml = `<div style="font-size:11px;color:${color}">${diff > 0 ? '+' : ''}${diff} vs sistema</div>`;
+      const color = diff>0?'#22c55e':diff<0?'#ef4444':'#94a3b8';
+      diffHtml = `<div style="font-size:11px;color:${color}">${diff>0?'+':''}${diff} vs sistema</div>`;
     }
-    const inputCls = val === '' ? '' : diff > 0 ? 'diff-pos' : diff < 0 ? 'diff-neg' : '';
+    const inputCls = val===''?'':diff>0?'diff-pos':diff<0?'diff-neg':'';
     return `
       <div class="conteo-item">
         <div class="ci-row">
           <div style="flex:1">
             <div class="ci-name">${p.name}</div>
-            <div class="ci-sistema">Sistema: ${p.stock}</div>
-            ${diffHtml}
+            <div class="ci-sistema">Sistema: ${p.stock}</div>${diffHtml}
           </div>
           <input type="number" class="ci-input ${inputCls}" min="0" value="${val}"
-            placeholder="?" oninput="conteoData[${p.id}]=this.value;renderDiffClass(this,${p.stock})"
-            style="width:80px"/>
+            placeholder="?" oninput="conteoData[${p.id}]=this.value;renderDiffClass(this,${p.stock})" style="width:80px"/>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join('');
-
-  // Resumen
-  const contados = Object.keys(conteoData).filter(k => conteoData[k] !== '').length;
-  const diffs    = Object.entries(conteoData)
-    .filter(([,v]) => v !== '')
-    .map(([id,v]) => parseInt(v) - (products.find(p=>p.id===parseInt(id))?.stock||0))
-    .filter(d => d !== 0).length;
-
+  const contados = Object.keys(conteoData).filter(k => conteoData[k]!=='').length;
+  const diffs    = Object.entries(conteoData).filter(([,v])=>v!=='').map(([id,v])=>parseInt(v)-(products.find(p=>p.id===parseInt(id))?.stock||0)).filter(d=>d!==0).length;
+  const resEl    = document.getElementById('c-resumen');
   if (contados > 0) {
-    document.getElementById('c-resumen').style.display = 'block';
-    document.getElementById('c-resumen').innerHTML =
-      `📦 <strong>${bodegaNombre}</strong> — ${contados} producto(s) contado(s) · ${diffs} diferencia(s)`;
-    document.getElementById('btn-enviar-conteo').style.display = 'block';
+    if (resEl) { resEl.style.display='block'; resEl.innerHTML=`📦 <strong>${bodegaNombre}</strong> — ${contados} producto(s) contado(s) · ${diffs} diferencia(s)`; }
+    if (btnEl) btnEl.style.display = 'block';
   } else {
-    document.getElementById('c-resumen').style.display = 'none';
-    document.getElementById('btn-enviar-conteo').style.display = 'none';
+    if (resEl) resEl.style.display = 'none';
+    if (btnEl) btnEl.style.display = 'none';
   }
 }
 
 function renderDiffClass(input, sistemaQty) {
-  const val = parseInt(input.value);
-  const diff = val - sistemaQty;
-  input.className = 'ci-input' + (isNaN(diff) ? '' : diff > 0 ? ' diff-pos' : diff < 0 ? ' diff-neg' : '');
-  document.getElementById('btn-enviar-conteo').style.display =
-    Object.keys(conteoData).length > 0 ? 'block' : 'none';
+  const val = parseInt(input.value); const diff = val - sistemaQty;
+  input.className = 'ci-input' + (isNaN(diff)?'':diff>0?' diff-pos':diff<0?' diff-neg':'');
+  const btnEl = document.getElementById('btn-enviar-conteo');
+  if (btnEl) btnEl.style.display = Object.keys(conteoData).length > 0 ? 'block' : 'none';
 }
 
 async function enviarConteo() {
-  const bodegaId  = document.getElementById('c-bodega')?.value;
-  const bodegaNombre = bodegaId
-    ? bodegas.find(b => String(b.id) === String(bodegaId))?.nombre || 'Sin nombre'
-    : 'Sin bodega';
-
+  const bodegaId     = document.getElementById('c-bodega')?.value;
+  const bodegaNombre = bodegaId ? bodegas.find(b=>String(b.id)===String(bodegaId))?.nombre||'Sin nombre' : 'Sin bodega';
   if (!bodegaId) { toast('⚠️ Selecciona una bodega primero'); return; }
-
-  const items = Object.entries(conteoData)
-    .filter(([,v]) => v !== '')
-    .map(([id, v]) => ({ product_id: parseInt(id), cantidad_contada: parseInt(v) }));
-
+  const items = Object.entries(conteoData).filter(([,v])=>v!=='').map(([id,v])=>({ product_id:parseInt(id), cantidad_contada:parseInt(v) }));
   if (!items.length) { toast('⚠️ No hay datos para enviar'); return; }
-
   try {
-    // Enviar conteo
-    const res = await api('/inventory/conteo-rapido', {
-      method: 'POST',
-      body: JSON.stringify({
-        items,
-        notas: `Conteo de ${bodegaNombre} — App bodeguero`,
-        location_id: parseInt(bodegaId),
-        location_name: bodegaNombre,
-      })
-    });
-
-    // Enviar notificación al admin
-    await api('/inventory/notificar-faltante', {
-      method: 'POST',
-      body: JSON.stringify({
-        tipo: 'conteo_diferencia',
-        producto: `Conteo de ${bodegaNombre}`,
-        notas: `${userName} envió conteo de ${items.length} producto(s) en ${bodegaNombre}. Ajustados: ${res.ajustados || 0}`,
-      })
-    }).catch(() => {});
-
+    const res = await api('/inventory/conteo-rapido', { method:'POST', body: JSON.stringify({ items, notas:`Conteo de ${bodegaNombre} — App bodeguero`, location_id:parseInt(bodegaId), location_name:bodegaNombre }) });
+    await api('/inventory/notificar-faltante', { method:'POST', body: JSON.stringify({ tipo:'conteo_diferencia', producto:`Conteo de ${bodegaNombre}`, notas:`${userName} envió conteo de ${items.length} producto(s). Ajustados: ${res.ajustados||0}` }) }).catch(()=>{});
     toast(`✅ Conteo de ${bodegaNombre} enviado (${items.length} productos)`, 3000);
     conteoData = {};
-    document.getElementById('c-bodega').value = '';
-    document.getElementById('c-resumen').style.display = 'none';
-    document.getElementById('btn-enviar-conteo').style.display = 'none';
+    const bodegaEl = document.getElementById('c-bodega'); if (bodegaEl) bodegaEl.value = '';
+    const resEl = document.getElementById('c-resumen'); if (resEl) resEl.style.display = 'none';
+    const btnEl = document.getElementById('btn-enviar-conteo'); if (btnEl) btnEl.style.display = 'none';
     renderConteo();
-  } catch(e) {
-    toast(`❌ Error: ${e.message}`, 3000);
-  }
+  } catch(e) { toast(`❌ Error: ${e.message}`, 3000); }
 }
 
-// ── ALERTAS ───────────────────────────────────────────────────────────────
+// ── ALERTAS ────────────────────────────────────────────────────────────────
 function renderAlertas() {
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  const bajos = products.filter(p => p.is_active && p.stock <= (p.min_stock||5) && p.stock >= 0);
-  const vencidos = products.filter(p => {
-    if (!p.expiry_date) return false;
-    const d = new Date(p.expiry_date);
-    const dias = Math.round((d - hoy) / (1000*60*60*24));
-    return dias <= 30;
-  });
-
-  document.getElementById('alertas-list').innerHTML = !bajos.length
+  const hoy     = new Date(); hoy.setHours(0,0,0,0);
+  const bajos   = products.filter(p => p.is_active && p.stock<=(p.min_stock||5) && p.stock>=0);
+  const vencidos = products.filter(p => { if (!p.expiry_date) return false; return Math.round((new Date(p.expiry_date)-hoy)/(1000*60*60*24))<=30; });
+  const alertasEl = document.getElementById('alertas-list');
+  if (alertasEl) alertasEl.innerHTML = !bajos.length
     ? '<div style="color:#22c55e;font-size:13px">✅ Sin alertas de stock bajo</div>'
-    : bajos.map(p => `
-      <div class="stock-item" style="background:#1a0f0f">
-        <div>
-          <div class="si-name">${p.name}</div>
-          <div class="si-cat">${p.category||'—'}</div>
-        </div>
-        <div style="text-align:right">
-          <div class="si-qty ${p.stock<=0?'zero':'low'}">${p.stock}</div>
-          <div style="font-size:10px;color:#64748b">mín: ${p.min_stock||5}</div>
-        </div>
-      </div>
-    `).join('');
-
-  document.getElementById('vencimientos-list').innerHTML = !vencidos.length
+    : bajos.map(p => `<div class="stock-item" style="background:#1a0f0f"><div><div class="si-name">${p.name}</div><div class="si-cat">${p.category||'—'}</div></div><div style="text-align:right"><div class="si-qty ${p.stock<=0?'zero':'low'}">${p.stock}</div><div style="font-size:10px;color:#64748b">mín: ${p.min_stock||5}</div></div></div>`).join('');
+  const vencEl = document.getElementById('vencimientos-list');
+  if (vencEl) vencEl.innerHTML = !vencidos.length
     ? '<div style="color:#22c55e;font-size:13px">✅ Sin vencimientos próximos</div>'
     : vencidos.map(p => {
-        const d = new Date(p.expiry_date);
-        const dias = Math.round((d - hoy) / (1000*60*60*24));
-        const color = dias < 0 ? '#ef4444' : dias <= 7 ? '#f59e0b' : '#94a3b8';
-        return `
-          <div class="stock-item" style="background:#1a1200">
-            <div>
-              <div class="si-name">${p.name}</div>
-              <div class="si-cat">${p.expiry_date}</div>
-            </div>
-            <div style="color:${color};font-weight:800;font-size:13px">
-              ${dias < 0 ? `Vencido hace ${Math.abs(dias)}d` : dias === 0 ? 'Vence hoy' : `${dias} días`}
-            </div>
-          </div>
-        `;
+        const dias = Math.round((new Date(p.expiry_date)-hoy)/(1000*60*60*24));
+        const color = dias<0?'#ef4444':dias<=7?'#f59e0b':'#94a3b8';
+        return `<div class="stock-item" style="background:#1a1200"><div><div class="si-name">${p.name}</div><div class="si-cat">${p.expiry_date}</div></div><div style="color:${color};font-weight:800;font-size:13px">${dias<0?`Vencido hace ${Math.abs(dias)}d`:dias===0?'Vence hoy':`${dias} días`}</div></div>`;
       }).join('');
 }
 
-// ── BODEGAS ───────────────────────────────────────────────────────────────
-let bodegas = [];
-let selProdTraslado = null;
-
+// ── BODEGAS ────────────────────────────────────────────────────────────────
 async function loadBodegas() {
   try {
     const data = await api('/locations/');
     bodegas = Array.isArray(data) ? data : [];
-    if (!bodegas.length) {
-      toast('⚠️ No hay ubicaciones creadas. Pídele al admin que las cree.', 4000);
-      return;
-    }
-    const tipoLabel = { bodega:'🏪 Bodega', sala:'🛒 Sala de ventas', produccion:'⚙️ Producción', frio:'🧊 Cuarto frío' };
-    const opts = '<option value="">— Seleccionar —</option>' +
-      bodegas.map(b => {
-        const nombre = b.nombre || b.name || `Ubicación ${b.id}`;
-        const tipo   = tipoLabel[b.tipo] || b.tipo || '';
-        return `<option value="${b.id}">${nombre} (${tipo})</option>`;
-      }).join('');
-    ['b-sel','t-origen','t-destino','c-bodega'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.innerHTML = opts;
-    });
-    toast(`✅ ${bodegas.length} ubicación(es) cargada(s)`, 1500);
+    if (!bodegas.length) { toast('⚠️ Sin ubicaciones — pídele al admin que las cree', 4000); return; }
+    const tipoLabel = { bodega:'🏪 Bodega', sala:'🛒 Sala', produccion:'⚙️ Producción', frio:'🧊 Frío' };
+    const opts = '<option value="">— Seleccionar —</option>' + bodegas.map(b => `<option value="${b.id}">${b.nombre||b.name||`Ubicación ${b.id}`} (${tipoLabel[b.tipo]||b.tipo||''})</option>`).join('');
+    ['b-sel','t-origen','t-destino','c-bodega'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML=opts; });
   } catch(e) {
-    toast(`❌ Error cargando ubicaciones: ${e.message}`, 4000);
-    if (e.message.includes('401') || e.message.includes('Missing')) {
-      setTimeout(doLogout, 2000);
-    }
+    toast(`❌ Error bodegas: ${e.message}`, 4000);
+    if (e.message.includes('401') || e.message.includes('Missing')) setTimeout(doLogout, 2000);
   }
 }
 
 async function renderBodegaStock() {
   const id = document.getElementById('b-sel').value;
-  if (!id) { document.getElementById('b-stock-list').innerHTML = ''; return; }
+  if (!id) { document.getElementById('b-stock-list').innerHTML=''; return; }
   try {
-    const data = await api(`/locations/${id}/stock`);
-    const items = Array.isArray(data) ? data : (data.stock || []);
+    const data  = await api(`/locations/${id}/stock`);
+    const items = Array.isArray(data) ? data : (data.stock||[]);
     document.getElementById('b-stock-list').innerHTML = !items.length
       ? '<div style="color:#64748b;text-align:center;padding:20px">Sin stock registrado</div>'
-      : items.map(i => `
-        <div class="stock-item">
-          <div>
-            <div class="si-name">${i.product_name || i.name || '—'}</div>
-          </div>
-          <div class="si-qty ok">${i.quantity ?? i.stock ?? 0}</div>
-        </div>
-      `).join('');
-  } catch(e) {
-    document.getElementById('b-stock-list').innerHTML = `<div style="color:#ef4444;font-size:13px">${e.message}</div>`;
-  }
+      : items.map(i => `<div class="stock-item"><div><div class="si-name">${i.product_name||i.name||'—'}</div></div><div class="si-qty ok">${i.quantity??i.stock??0}</div></div>`).join('');
+  } catch(e) { document.getElementById('b-stock-list').innerHTML=`<div style="color:#ef4444;font-size:13px">${e.message}</div>`; }
 }
 
 function buscarProdTraslado() {
   const q = document.getElementById('t-query').value.trim().toLowerCase();
-  if (!q) { document.getElementById('t-resultados').innerHTML = ''; return; }
-  const found = products.filter(p =>
-    p.name?.toLowerCase().includes(q) || (p.barcode && p.barcode.includes(q))
-  ).slice(0, 5);
-  document.getElementById('t-resultados').innerHTML = found.map(p => `
-    <div onclick="selectProdTraslado(${p.id})"
-      style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer">
-      <div style="font-weight:700;font-size:14px">${p.name}</div>
-      <div style="font-size:11px;color:#64748b">Stock total: ${p.stock}</div>
-    </div>
-  `).join('');
+  if (!q) { document.getElementById('t-resultados').innerHTML=''; return; }
+  document.getElementById('t-resultados').innerHTML = products.filter(p => p.name?.toLowerCase().includes(q)||(p.barcode&&p.barcode.includes(q))).slice(0,5).map(p =>
+    `<div onclick="selectProdTraslado(${p.id})" style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer"><div style="font-weight:700;font-size:14px">${p.name}</div><div style="font-size:11px;color:#64748b">Stock total: ${p.stock}</div></div>`
+  ).join('');
 }
 
 function selectProdTraslado(id) {
-  selProdTraslado = products.find(p => p.id === id);
+  selProdTraslado = products.find(p => p.id===id);
   if (!selProdTraslado) return;
-  document.getElementById('t-resultados').innerHTML = '';
+  document.getElementById('t-resultados').innerHTML='';
   document.getElementById('t-query').value = selProdTraslado.name;
-  document.getElementById('t-prod-info').innerHTML = `
-    <div class="prod-name">${selProdTraslado.name}</div>
-    <div class="prod-stock">${selProdTraslado.stock} unidades totales</div>
-  `;
-  document.getElementById('t-prod-sel').style.display = 'block';
-  loadBodegas();
+  document.getElementById('t-prod-info').innerHTML = `<div class="prod-name">${selProdTraslado.name}</div><div class="prod-stock">${selProdTraslado.stock} unidades totales</div>`;
+  document.getElementById('t-prod-sel').style.display='block';
 }
 
 function limpiarTraslado() {
-  selProdTraslado = null;
-  document.getElementById('t-query').value = '';
-  document.getElementById('t-resultados').innerHTML = '';
-  document.getElementById('t-prod-sel').style.display = 'none';
-  document.getElementById('t-qty').value = '';
+  selProdTraslado=null;
+  document.getElementById('t-query').value='';
+  document.getElementById('t-resultados').innerHTML='';
+  document.getElementById('t-prod-sel').style.display='none';
+  document.getElementById('t-qty').value='';
 }
 
 async function confirmarTraslado() {
   if (!selProdTraslado) return;
-  const origen  = document.getElementById('t-origen').value;
-  const destino = document.getElementById('t-destino').value;
-  const qty     = parseInt(document.getElementById('t-qty').value);
-  if (!origen || !destino) { toast('⚠️ Selecciona origen y destino'); return; }
-  if (origen === destino)  { toast('⚠️ Origen y destino deben ser diferentes'); return; }
-  if (!qty || qty <= 0)    { toast('⚠️ Ingresa una cantidad válida'); return; }
+  const origen=document.getElementById('t-origen').value, destino=document.getElementById('t-destino').value, qty=parseInt(document.getElementById('t-qty').value);
+  if (!origen||!destino) { toast('⚠️ Selecciona origen y destino'); return; }
+  if (origen===destino)  { toast('⚠️ Origen y destino deben ser diferentes'); return; }
+  if (!qty||qty<=0)      { toast('⚠️ Ingresa una cantidad válida'); return; }
   try {
-    await api('/locations/transfers', {
-      method: 'POST',
-      body: JSON.stringify({
-        product_id:       selProdTraslado.id,
-        from_location_id: parseInt(origen),
-        to_location_id:   parseInt(destino),
-        quantity:         qty,
-        reason:           'Traslado desde app bodeguero',
-      })
-    });
+    await api('/locations/transfers', { method:'POST', body:JSON.stringify({ product_id:selProdTraslado.id, from_location_id:parseInt(origen), to_location_id:parseInt(destino), quantity:qty, reason:'Traslado desde app bodeguero' }) });
     toast(`✅ Traslado de ${qty} unidades realizado`);
-    limpiarTraslado();
-    await loadProducts();
+    limpiarTraslado(); await loadProducts();
   } catch(e) { toast(`❌ ${e.message}`); }
 }
 
-// ── ESCÁNER CÁMARA (html5-qrcode) ────────────────────────────────────────
-let html5QrCode = null;
-let scannerTarget = 'recibir';
-
+// ── ESCÁNER ────────────────────────────────────────────────────────────────
+let html5QrCode=null, scannerTarget='recibir';
 async function openScanner(target) {
-  scannerTarget = target;
-  const modal = document.getElementById('scanner-modal');
-  modal.style.display = 'flex';
-
+  scannerTarget=target;
+  const modal=document.getElementById('scanner-modal'); modal.style.display='flex';
   try {
-    const container = document.getElementById('scanner-container');
-    container.innerHTML = '<div id="qr-reader" style="width:100%;height:100%"></div>';
-
-    if (typeof Html5Qrcode === 'undefined') {
-      toast('❌ Librería no cargó. Verifica internet.', 3000);
-      modal.style.display = 'none';
-      return;
-    }
-
-    html5QrCode = new Html5Qrcode('qr-reader');
-
-    await html5QrCode.start(
-      { facingMode: 'environment' },
-      { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.5 },
+    document.getElementById('scanner-container').innerHTML='<div id="qr-reader" style="width:100%;height:100%"></div>';
+    if (typeof Html5Qrcode==='undefined') { toast('❌ Librería no cargó.',3000); modal.style.display='none'; return; }
+    html5QrCode=new Html5Qrcode('qr-reader');
+    await html5QrCode.start({ facingMode:'environment' }, { fps:10, qrbox:{width:250,height:150}, aspectRatio:1.5 },
       (decodedText) => {
         closeScanner();
-        if (scannerTarget === 'recibir') {
-          document.getElementById('r-query').value = decodedText;
-          buscarProducto(true);
-        } else if (scannerTarget === 'traslado') {
-          document.getElementById('t-query').value = decodedText;
-          buscarProdTraslado();
-        } else if (scannerTarget === 'conteo') {
-          document.getElementById('c-search').value = decodedText;
-          renderConteo();
-        } else if (scannerTarget === 'stock') {
-          document.getElementById('s-search').value = decodedText;
-          renderStock();
-        }
+        if (scannerTarget==='recibir')  { document.getElementById('r-query').value=decodedText; buscarProducto(true); }
+        else if (scannerTarget==='traslado') { document.getElementById('t-query').value=decodedText; buscarProdTraslado(); }
+        else if (scannerTarget==='conteo')   { document.getElementById('c-search').value=decodedText; renderConteo(); }
+        else if (scannerTarget==='stock')    { document.getElementById('s-search').value=decodedText; renderStock(); }
         toast(`✅ Código: ${decodedText}`);
-      },
-      () => {} // error silencioso mientras escanea
+      }, ()=>{}
     );
-  } catch(e) {
-    toast(`❌ Error cámara: ${e.message}`, 3000);
-    modal.style.display = 'none';
-  }
+  } catch(e) { toast(`❌ Error cámara: ${e.message}`,3000); modal.style.display='none'; }
 }
-
 async function closeScanner() {
-  try {
-    if (html5QrCode) {
-      await html5QrCode.stop();
-      html5QrCode.clear();
-      html5QrCode = null;
-    }
-  } catch {}
-  document.getElementById('scanner-modal').style.display = 'none';
+  try { if(html5QrCode){await html5QrCode.stop();html5QrCode.clear();html5QrCode=null;} } catch{}
+  document.getElementById('scanner-modal').style.display='none';
 }
 
-// ── PRODUCTO NO ENCONTRADO — notificar al admin ───────────────────────────
+// ── REPORTAR ───────────────────────────────────────────────────────────────
 function reportarProducto(nombre) {
-  document.getElementById('r-query').value = nombre;
-  document.getElementById('r-notas-faltante').value = '';
-  document.getElementById('r-tipo-reporte').value = 'producto_danado';
-  document.getElementById('r-faltante-section').style.display = 'block';
+  document.getElementById('r-query').value=nombre;
+  document.getElementById('r-notas-faltante').value='';
+  document.getElementById('r-tipo-reporte').value='producto_danado';
+  document.getElementById('r-faltante-section').style.display='block';
   showPage('recibir');
   document.getElementById('r-notas-faltante').focus();
 }
 
 async function notificarProductoFaltante() {
-  const nombre = document.getElementById('r-query').value.trim();
-  const notas  = document.getElementById('r-notas-faltante')?.value || '';
-  const tipo   = document.getElementById('r-tipo-reporte')?.value || 'producto_faltante';
+  const nombre=document.getElementById('r-query').value.trim();
+  const notas=document.getElementById('r-notas-faltante')?.value||'';
+  const tipo=document.getElementById('r-tipo-reporte')?.value||'producto_faltante';
   if (!nombre) { toast('⚠️ Escribe el nombre del producto'); return; }
   try {
-    await api('/inventory/notificar-faltante', {
-      method: 'POST',
-      body: JSON.stringify({ producto: nombre, notas, tipo })
-    });
-    toast('✅ Reporte enviado al administrador', 2500);
-    document.getElementById('r-faltante-section').style.display = 'none';
-    document.getElementById('r-query').value = '';
-    document.getElementById('r-notas-faltante').value = '';
+    await api('/inventory/notificar-faltante',{method:'POST',body:JSON.stringify({producto:nombre,notas,tipo})});
+    toast('✅ Reporte enviado al administrador',2500);
+    document.getElementById('r-faltante-section').style.display='none';
+    document.getElementById('r-query').value=''; document.getElementById('r-notas-faltante').value='';
   } catch(e) {
-    // Mostrar error real, no asumir que es sin conexión
     if (!navigator.onLine) {
-      const faltantes = JSON.parse(localStorage.getItem('b_faltantes') || '[]');
-      faltantes.push({ producto: nombre, notas, tipo, bodeguero: userName, fecha: new Date().toLocaleString('es-CO') });
-      localStorage.setItem('b_faltantes', JSON.stringify(faltantes));
-      toast('📴 Sin internet. Guardado localmente.', 3000);
-    } else {
-      toast(`❌ Error: ${e.message}`, 4000);
-    }
+      const faltantes=JSON.parse(localStorage.getItem('b_faltantes')||'[]');
+      faltantes.push({producto:nombre,notas,tipo,bodeguero:userName,fecha:new Date().toLocaleString('es-CO')});
+      localStorage.setItem('b_faltantes',JSON.stringify(faltantes));
+      toast('📴 Sin internet. Guardado localmente.',3000);
+    } else toast(`❌ Error: ${e.message}`,4000);
   }
-}
-if (token) {
-  initApp();
-} else {
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
 }
 
-// Enter en login
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') {
-    doLogin();
-  }
-});
+// ── Arranque ───────────────────────────────────────────────────────────────
+if (token) initApp();
+else { document.getElementById('login-screen').style.display='flex'; document.getElementById('app').style.display='none'; }
+document.addEventListener('keydown', e => { if(e.key==='Enter'&&document.getElementById('login-screen').style.display!=='none') doLogin(); });
 </script>
 </body>
 </html>
