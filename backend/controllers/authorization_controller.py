@@ -59,8 +59,10 @@ def verificar_autorizacion_admin(pin=None, codigo_tarjeta=None, tipo_operacion='
                 break
 
     if codigo_tarjeta:
+        # Normalizar: el lector puede enviar comilla en vez de guión (ADMIN'644479 → ADMIN-644479)
+        codigo_tarjeta = codigo_tarjeta.strip().upper().replace("'", '-').replace('`', '-')
         card = AdminCard.query.filter_by(
-            code=codigo_tarjeta.strip(), is_active=True
+            code=codigo_tarjeta, is_active=True
         ).first()
         if card:
             tarjeta_ok = True

@@ -9,7 +9,7 @@ const Catalogo = () => {
   const [products, setProducts] = useState([]);
   const [copied,   setCopied]   = useState(false);
 
-  const catalogUrl = `http://${ip}:3000/catalogo.html`;
+  const catalogUrl = `http://${ip}:3002/catalogo.html`;
 
   useEffect(() => {
     // Obtener IP local del servidor
@@ -153,7 +153,7 @@ const Catalogo = () => {
                   <span className="input-group-text">http://</span>
                   <input type="text" className="form-control" value={ip}
                     onChange={e=>setIp(e.target.value)} placeholder="192.168.1.100" />
-                  <span className="input-group-text">:3000/catalogo.html</span>
+                  <span className="input-group-text">:3002/catalogo.html</span>
                 </div>
                 <div className="text-muted mt-2" style={{fontSize:11}}>
                   💡 Para encontrar tu IP: en Windows abre CMD y escribe <code>ipconfig</code> — busca "IPv4" en tu adaptador WiFi

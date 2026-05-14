@@ -312,9 +312,12 @@ const AdvancedFinance = () => {
                               : <span className="text-muted" style={{ fontSize:11 }}>Sin registro</span>}
                           </td>
                           <td style={{ padding:'9px 10px', color:'#7c3aed', fontWeight:600 }}>
-                            {fmt(d.iva_dian_unit)}
+                            {d.iva_type === 0
+                              ? <span style={{ color:'#64748b', fontWeight:400 }}>Excluido</span>
+                              : fmt(d.iva_dian_unit)
+                            }
                             <div style={{ fontSize:9, color:'#94a3b8', fontWeight:400 }}>
-                              {fmt(d.precio_venta)} ÷ 1.19 × 19%
+                              IVA {d.iva_type ?? 19}%
                             </div>
                           </td>
                           <td style={{ padding:'9px 10px', fontWeight:700 }}>

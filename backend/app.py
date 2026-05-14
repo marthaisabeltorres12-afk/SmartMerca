@@ -2,6 +2,7 @@ from flask import Flask, request, Response
 from extensions import db, jwt, mail
 from config import Config
 from routes.audit_routes        import audit_bp
+from routes.ia_routes           import ia_bp
 from routes.auth                import auth_bp
 from routes.products            import products_bp
 from routes.suppliers           import suppliers_bp
@@ -36,6 +37,10 @@ from routes.multicaja_routes import multicaja_bp
 from routes.reservas_routes import reservas_bp
 from routes.whatsapp_routes import whatsapp_bp
 from routes.predictive_routes import predictive_bp
+from routes.dian_routes import dian_bp
+from routes.datafono_routes import datafono_bp
+from routes.wompi_routes import wompi_bp
+
 try:
     from routes.promotions    import promotions_bp
     from routes.policy        import policy_bp
@@ -53,6 +58,7 @@ def create_app():
     db.init_app(app)
     jwt.init_app(app)
     mail.init_app(app)
+    app.register_blueprint(wompi_bp, url_prefix='/api/wompi')
     app.register_blueprint(predictive_bp, url_prefix='/api/dashboard')
     app.register_blueprint(whatsapp_bp, url_prefix='/api/whatsapp')
     app.register_blueprint(reservas_bp, url_prefix='/api/reservas')
@@ -86,12 +92,14 @@ def create_app():
     app.register_blueprint(replenishment_bp,     url_prefix='/api/replenishment')
     app.register_blueprint(auth_admin_bp,        url_prefix='/api/auth-admin')
     app.register_blueprint(import_export_bp,     url_prefix='/api/import-export')
-
+    app.register_blueprint(datafono_bp, url_prefix='/api/datafono')
+    app.register_blueprint(dian_bp, url_prefix='/api/dian')
     from routes.catalogo_routes     import catalogo_bp
     from routes.notificacion_routes import notificaciones_bp
     app.register_blueprint(notificaciones_bp, url_prefix='/api/notificaciones')
     app.register_blueprint(catalogo_bp,       url_prefix='/api/catalogo')
     app.register_blueprint(audit_bp,          url_prefix='/api/audit')
+    app.register_blueprint(ia_bp,             url_prefix='/api/ia')
 
     from flask_cors import CORS
     CORS(app, resources={r"/api/catalogo/*": {"origins": "*"}})

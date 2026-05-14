@@ -112,12 +112,12 @@ const AdminPinSetup = () => {
       <html><head><title>Tarjeta Admin</title>
       <style>
         body { font-family: Arial; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; background:#f8f8f8; }
-        .card { background:#fff; border:2px solid #1e3a5f; border-radius:12px; padding:20px; text-align:center; width:300px; box-shadow:0 4px 12px rgba(0,0,0,0.15); }
-        .logo { font-size:24px; font-weight:800; color:#1e3a5f; margin-bottom:4px; }
-        .sub { font-size:12px; color:#666; margin-bottom:12px; }
-        .nombre { font-size:14px; font-weight:600; color:#333; margin-bottom:8px; }
-        .code { font-family:monospace; font-size:13px; color:#1e3a5f; font-weight:700; margin-top:8px; }
-        .instruccion { font-size:10px; color:#888; margin-top:8px; border-top:1px solid #eee; padding-top:8px; }
+        .card { background:#fff; border:2px solid #1e3a5f; border-radius:12px; padding:16px; text-align:center; width:250px; box-shadow:0 4px 12px rgba(0,0,0,0.15); }
+        .logo { font-size:20px; font-weight:800; color:#1e3a5f; margin-bottom:4px; }
+        .sub { font-size:10px; color:#666; margin-bottom:12px; }
+        .nombre { font-size:12px; font-weight:600; color:#333; margin-bottom:8px; }
+        .code { font-family:monospace; font-size:10px; color:#1e3a5f; font-weight:700; margin-top:8px; }
+        .instruccion { font-size:9px; color:#888; margin-top:8px; border-top:1px solid #eee; padding-top:8px; }
       </style></head>
       <body><div class="card">
         <div class="logo">🛒 SmartMerca</div>
@@ -130,7 +130,7 @@ const AdminPinSetup = () => {
       <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
       <script>
         window.onload = function() {
-          JsBarcode("#bc", "${tarjeta?.code}", {format:"CODE128",width:2,height:50,displayValue:false,margin:5});
+          JsBarcode("#bc", "${tarjeta?.code}", {format:"CODE128",width:1.5,height:45,displayValue:true,fontSize:10,textMargin:2,margin:4});
           setTimeout(function(){ window.print(); window.close(); }, 500);
         }
       </script>

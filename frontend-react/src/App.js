@@ -7,6 +7,7 @@ import Login                 from './pages/Login';
 import ForgotPassword        from './pages/ForgotPassword';
 import ResetPassword         from './pages/ResetPassword';
 
+
 // ── Roles ──
 import SupervisorDashboard from './pages/Roles/SupervisorDashboard';
 import ContadorDashboard   from './pages/Roles/ContadorDashboard';
@@ -79,7 +80,7 @@ function App() {
             <Route path="/login"           element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password"  element={<ResetPassword />} />
-
+            
             {/* ── Supervisor ── */}
             <Route path="/supervisor"           element={<PrivateRoute roles={['supervisor']}><SupervisorDashboard /></PrivateRoute>} />
             <Route path="/supervisor/ventas"    element={<PrivateRoute roles={['supervisor']}><SupervisorDashboard /></PrivateRoute>} />

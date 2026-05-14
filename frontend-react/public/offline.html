@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SmartMerca — Sin conexión</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 20px;
+    }
+    .card {
+      background: #1e293b; border-radius: 20px;
+      padding: 40px 32px; max-width: 400px; width: 100%; text-align: center;
+    }
+    .icon { font-size: 64px; margin-bottom: 16px; }
+    h1 { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+    p { color: #94a3b8; font-size: 14px; line-height: 1.6; margin-bottom: 24px; }
+    .btn {
+      display: inline-block; padding: 14px 28px;
+      background: #3b82f6; color: #fff; border: none;
+      border-radius: 12px; font-size: 15px; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+    }
+    .btn:hover { background: #2563eb; }
+    .status {
+      margin-top: 20px; padding: 12px;
+      background: #0f172a; border-radius: 10px;
+      font-size: 12px; color: #64748b;
+    }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; margin-right: 6px; }
+    .dot.online { background: #22c55e; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">📡</div>
+    <h1>Sin conexión</h1>
+    <p>
+      SmartMerca no puede conectarse al servidor.<br/>
+      Las ventas realizadas sin internet se sincronizarán automáticamente cuando vuelva la conexión.
+    </p>
+    <button class="btn" onclick="location.reload()">🔄 Reintentar</button>
+    <div class="status">
+      <span class="dot" id="dot"></span>
+      <span id="status-text">Verificando conexión...</span>
+    </div>
+  </div>
+  <script>
+    function checkOnline() {
+      const dot  = document.getElementById('dot');
+      const text = document.getElementById('status-text');
+      if (navigator.onLine) {
+        dot.className  = 'dot online';
+        text.textContent = 'Conexión restaurada — recargando...';
+        setTimeout(() => location.href = '/', 1500);
+      } else {
+        dot.className  = 'dot';
+        text.textContent = 'Sin internet';
+      }
+    }
+    checkOnline();
+    window.addEventListener('online',  checkOnline);
+    window.addEventListener('offline', checkOnline);
+    setInterval(checkOnline, 3000);
+  </script>
+</body>
+</html>

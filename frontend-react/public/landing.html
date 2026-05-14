@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SmartMerca POS — El POS más innovador de Colombia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:linear-gradient(160deg,#020617,#0f172a);color:#e2e8f0;min-height:100vh}
+    .sidebar{position:fixed;left:0;top:0;height:100vh;width:240px;background:linear-gradient(160deg,#020617,#0f172a);color:white;z-index:1000;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.05);transition:width .3s}
+    .sidebar.collapsed{width:70px}
+    .brand{display:flex;align-items:center;gap:10px;padding:20px;font-weight:700;font-size:18px;border-bottom:1px solid rgba(255,255,255,.05);white-space:nowrap;overflow:hidden}
+    .brand-icon{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);flex-shrink:0;font-size:18px}
+    .nav-links{flex:1;padding:10px;overflow-y:auto}
+    .nav-link-sm{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;color:#cbd5e1;text-decoration:none;font-size:14px;cursor:pointer;border:none;background:none;width:100%;text-align:left;white-space:nowrap;overflow:hidden;transition:.15s}
+    .nav-link-sm:hover{background:rgba(255,255,255,.07);color:white}
+    .nav-link-sm.active{background:rgba(59,130,246,.18);color:#60a5fa}
+    .icon-box{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:17px;border-radius:8px;background:rgba(255,255,255,.07);flex-shrink:0}
+    .nav-sep{padding:10px 16px 4px;font-size:.65rem;font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,.35);text-transform:uppercase;border-top:1px solid rgba(255,255,255,.08);margin-top:6px}
+    .sidebar-footer{padding:15px;border-top:1px solid rgba(255,255,255,.05);background:#0f172a}
+    .toggle-btn{position:absolute;top:15px;right:-12px;background:#1e293b;border:none;width:25px;height:25px;border-radius:50%;color:white;cursor:pointer;z-index:1001;font-size:14px;display:flex;align-items:center;justify-content:center}
+    .main-content{margin-left:240px;transition:margin-left .3s;min-height:100vh}
+    .main-content.collapsed{margin-left:70px}
+    .section-tag{display:inline-block;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#93c5fd;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 14px;border-radius:20px;margin-bottom:14px}
+    .section-title{font-size:clamp(24px,3.5vw,40px);font-weight:800;line-height:1.15;margin-bottom:12px}
+    .section-sub{color:#64748b;font-size:16px;max-width:540px;line-height:1.7}
+    .hero-glow{position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.15) 0%,transparent 70%);top:-80px;right:0;pointer-events:none}
+    .hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:5px 14px;font-size:13px;color:rgba(255,255,255,.8);margin-bottom:18px}
+    .dot{width:8px;height:8px;border-radius:50%;background:#22c55e;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .grad{background:linear-gradient(90deg,#60a5fa,#0d9488);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .hero-screen{background:linear-gradient(135deg,#111827,#1e293b);border-radius:16px;border:1px solid rgba(255,255,255,.1);padding:20px;box-shadow:0 24px 80px rgba(0,0,0,.5)}
+    .screen-bar{display:flex;gap:6px;margin-bottom:14px}
+    .screen-bar span{width:10px;height:10px;border-radius:50%}
+    .screen-prod{background:rgba(255,255,255,.04);border-radius:8px;padding:8px 12px;border:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;margin-bottom:5px}
+    .screen-total{background:linear-gradient(90deg,#2563eb,#0d9488);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;margin-top:8px;font-weight:700}
+    .feat-card{background:#111827;border-radius:14px;padding:22px;border:1px solid rgba(255,255,255,.06);transition:.2s;height:100%}
+    .feat-card:hover{border-color:rgba(59,130,246,.4);transform:translateY(-3px)}
+    .feat-badge{background:rgba(59,130,246,.15);color:#93c5fd;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px}
+    .sector-card{background:#111827;border-radius:12px;padding:24px 18px;border:1px solid rgba(255,255,255,.06);transition:.2s;text-align:center;height:100%}
+    .sector-card:hover{border-color:rgba(13,148,136,.5);transform:translateY(-3px)}
+    .plan-card{background:#111827;border-radius:18px;border:2px solid rgba(255,255,255,.07);overflow:hidden;display:flex;flex-direction:column;height:100%}
+    .plan-card.popular{border-color:#16a34a}
+    .pf{font-size:13px;color:#cbd5e1;display:flex;gap:8px;align-items:flex-start;margin-bottom:5px}
+    .pf.no{color:#334155}
+    .demo-screen{background:#111827;border-radius:10px;padding:16px;border:1px solid rgba(255,255,255,.06);text-align:center}
+    .support-card{background:#111827;border-radius:12px;padding:22px;border:1px solid rgba(255,255,255,.06);transition:.2s;height:100%}
+    .support-card:hover{border-color:rgba(59,130,246,.4);transform:translateY(-3px)}
+    .sup-time{background:rgba(34,197,94,.1);color:#4ade80;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px}
+    .channel{display:flex;align-items:center;gap:14px;background:#111827;border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,.06);text-decoration:none;color:#fff;transition:.2s;margin-bottom:10px}
+    .channel:hover{border-color:rgba(59,130,246,.4);color:#fff;transform:translateX(4px)}
+    .contact-form{background:#111827;border-radius:16px;padding:28px;border:1px solid rgba(255,255,255,.06)}
+    .form-ctrl{background:#0f172a;border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:10px 14px;width:100%;font-size:14px;margin-bottom:12px;outline:none;font-family:inherit}
+    .form-ctrl:focus{border-color:#3b82f6}
+    .form-ctrl option{background:#0f172a}
+    .urgency-bar{background:linear-gradient(90deg,#dc2626,#b91c1c);border-radius:10px;padding:10px 20px;text-align:center;font-size:14px;font-weight:700;margin-bottom:36px}
+    .billing-toggle{display:inline-flex;align-items:center;gap:12px;background:#1e293b;border-radius:30px;padding:8px 18px}
+    .tw{width:48px;height:26px;border-radius:13px;background:#334155;cursor:pointer;position:relative;transition:.3s}
+    .tw.on{background:#16a34a}
+    .tk{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.3s}
+    .tw.on .tk{left:25px}
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;align-items:center;justify-content:center;padding:16px}
+    .modal-overlay.open{display:flex}
+    .modal-box{background:#1e293b;border-radius:20px;width:100%;max-width:460px;padding:28px}
+    .wa-float{position:fixed;bottom:24px;right:24px;z-index:900;background:#25d366;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 20px rgba(37,211,102,.4);text-decoration:none;animation:bounce 3s ease infinite}
+    @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+    .sec{padding:80px 50px;border-top:1px solid rgba(255,255,255,.05)}
+    @media(max-width:768px){.sidebar{width:0;overflow:hidden}.sidebar.mobile-open{width:240px}.main-content{margin-left:0!important}.sec{padding:60px 20px}.mobile-btn{display:flex!important}}
+    .mobile-btn{display:none;position:fixed;top:14px;left:14px;z-index:1100;background:#1e293b;border:none;color:#fff;border-radius:8px;padding:8px 10px;font-size:18px;cursor:pointer}
+  </style>
+</head>
+<body>
+
+<button class="mobile-btn" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+
+<div class="sidebar" id="sidebar">
+  <button class="toggle-btn" onclick="toggleCollapse()" id="toggleBtn">‹</button>
+  <div class="brand">
+    <div class="brand-icon">🛒</div>
+    <span id="brand-text">SmartMerca</span>
+  </div>
+  <div class="nav-links">
+    <div class="nav-sep ll">MENÚ</div>
+    <a href="#inicio"   class="nav-link-sm active" onclick="setActive(this)"><div class="icon-box"><i class="bi bi-house-fill"></i></div><span class="ll"> Inicio</span></a>
+    <a href="#funciones" class="nav-link-sm" onclick="setActive(this)"><div class="icon-box"><i class="bi bi-grid-3x3-gap-fill"></i></div><span class="ll"> Funciones</span></a>
+    <a href="#sectores"  class="nav-link-sm" onclick="setActive(this)"><div class="icon-box"><i class="bi bi-shop"></i></div><span class="ll"> Sectores</span></a>
+    <div class="nav-sep ll">CONTRATAR</div>
+    <a href="#planes"   class="nav-link-sm" onclick="setActive(this)"><div class="icon-box"><i class="bi bi-credit-card-fill"></i></div><span class="ll"> Planes y Precios</span></a>
+    <a href="#demo"     class="nav-link-sm" onclick="setActive(this)"><div class="icon-box"><i class="bi bi-play-circle-fill"></i></div><span class="ll"> Demo gratis</span></a>
+    <div class="nav-sep ll">EMPRESA</div>
+    <a href="#nosotros" class="nav-link-sm" onclick="setActive(this)"><div class="icon-box"><i class="bi bi-people-fill"></i></div><span class="ll"> Nosotros</span></a>
+    <a href="#soporte"  class="nav-link-sm" onclick="setActive(this)"><div class="icon-box"><i class="bi bi-headset"></i></div><span class="ll"> Soporte</span></a>
+    <a href="#contacto" class="nav-link-sm" onclick="setActive(this)"><div class="icon-box"><i class="bi bi-envelope-fill"></i></div><span class="ll"> Contacto</span></a>
+  </div>
+  <div class="sidebar-footer">
+    <a href="https://wa.me/573001234567?text=Hola,%20quiero%20información%20de%20SmartMerca" target="_blank" class="btn btn-success btn-sm w-100 fw-bold">
+      <i class="bi bi-whatsapp"></i><span class="ll"> Hablar por WhatsApp</span>
+    </a>
+    <a href="/login" class="btn btn-outline-secondary btn-sm w-100 mt-2" style="color:#cbd5e1">
+      <i class="bi bi-box-arrow-in-right"></i><span class="ll"> Iniciar sesión</span>
+    </a>
+  </div>
+</div>
+
+<div class="main-content" id="mainContent">
+
+  <!-- INICIO -->
+  <section id="inicio" style="min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden;padding:80px 50px">
+    <div class="hero-glow"></div>
+    <div style="max-width:1100px;width:100%">
+      <div class="row align-items-center g-5">
+        <div class="col-lg-6">
+          <div class="hero-badge"><span class="dot"></span> 🇨🇴 Hecho en Colombia · v1.0</div>
+          <h1 class="section-title" style="font-size:clamp(30px,4vw,52px)">El POS más <span class="grad">innovador</span><br/>de Colombia</h1>
+          <p class="section-sub mb-4">Gestiona ventas, inventario, domicilios y más desde un solo sistema. Diseñado para tiendas colombianas, con IA incluida.</p>
+          <div class="d-flex gap-3 flex-wrap">
+            <a href="#planes" class="btn btn-primary fw-bold px-4 py-2"><i class="bi bi-rocket-takeoff"></i> Ver planes</a>
+            <a href="https://wa.me/573001234567?text=Hola,%20quiero%20una%20demo%20gratis%20de%20SmartMerca" target="_blank" class="btn btn-success fw-bold px-4 py-2"><i class="bi bi-whatsapp"></i> Demo gratis</a>
+          </div>
+          <div class="d-flex gap-4 mt-4">
+            <div><div style="font-size:24px;font-weight:800">+30</div><div style="font-size:12px;color:#64748b">Funcionalidades</div></div>
+            <div><div style="font-size:24px;font-weight:800">3</div><div style="font-size:12px;color:#64748b">Planes</div></div>
+            <div><div style="font-size:24px;font-weight:800">100%</div><div style="font-size:12px;color:#64748b">Colombiano</div></div>
+          </div>
+        </div>
+        <div class="col-lg-6 d-none d-lg-block">
+          <div class="hero-screen">
+            <div class="screen-bar"><span style="background:#ef4444"></span><span style="background:#f59e0b"></span><span style="background:#22c55e"></span></div>
+            <div class="row g-2 mb-3">
+              <div class="col-6"><div style="background:rgba(255,255,255,.04);border-radius:8px;padding:12px;border:1px solid rgba(255,255,255,.06)"><div style="font-size:11px;color:#64748b">Ventas hoy</div><div style="font-size:20px;font-weight:800;color:#4ade80">$847.500</div></div></div>
+              <div class="col-6"><div style="background:rgba(255,255,255,.04);border-radius:8px;padding:12px;border:1px solid rgba(255,255,255,.06)"><div style="font-size:11px;color:#64748b">Productos</div><div style="font-size:20px;font-weight:800;color:#60a5fa">342</div></div></div>
+            </div>
+            <div class="screen-prod"><span style="font-size:13px">🍎 Manzana x3</span><span style="font-size:13px;font-weight:700;color:#4ade80">$7.500</span></div>
+            <div class="screen-prod"><span style="font-size:13px">🥛 Leche Alquería</span><span style="font-size:13px;font-weight:700;color:#4ade80">$3.200</span></div>
+            <div class="screen-prod"><span style="font-size:13px">🍞 Pan tajado</span><span style="font-size:13px;font-weight:700;color:#4ade80">$5.800</span></div>
+            <div class="screen-total"><span>Total</span><span>$16.500</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FUNCIONES -->
+  <section id="funciones" class="sec">
+    <div style="max-width:1100px">
+      <div class="section-tag">Funcionalidades</div>
+      <h2 class="section-title">Todo lo que necesita tu negocio</h2>
+      <p class="section-sub mb-5">Más de 30 funcionalidades integradas para que tu tienda opere como una empresa de verdad.</p>
+      <div class="row g-3">
+        <div class="col-md-4 col-6"><div class="feat-card"><div style="font-size:24px;margin-bottom:8px">🛒</div><div style="font-weight:700;margin-bottom:5px;font-size:15px">Punto de Venta POS</div><div style="font-size:12px;color:#64748b;margin-bottom:8px">Ventas rápidas con escáner, pago mixto y vuelto automático.</div><span class="feat-badge">TODOS</span></div></div>
+        <div class="col-md-4 col-6"><div class="feat-card"><div style="font-size:24px;margin-bottom:8px">📦</div><div style="font-weight:700;margin-bottom:5px;font-size:15px">Inventario Inteligente</div><div style="font-size:12px;color:#64748b;margin-bottom:8px">Control de stock en tiempo real, alertas y trazabilidad FIFO.</div><span class="feat-badge">TODOS</span></div></div>
+        <div class="col-md-4 col-6"><div class="feat-card"><div style="font-size:24px;margin-bottom:8px">🤖</div><div style="font-weight:700;margin-bottom:5px;font-size:15px">IA Predictiva</div><div style="font-size:12px;color:#64748b;margin-bottom:8px">Predice ventas y genera órdenes de compra automáticamente.</div><span class="feat-badge">ESTÁNDAR Y PREMIUM</span></div></div>
+        <div class="col-md-4 col-6"><div class="feat-card"><div style="font-size:24px;margin-bottom:8px">📡</div><div style="font-weight:700;margin-bottom:5px;font-size:15px">Modo Offline</div><div style="font-size:12px;color:#64748b;margin-bottom:8px">Funciona sin internet y sincroniza al reconectarse.</div><span class="feat-badge">TODOS</span></div></div>
+        <div class="col-md-4 col-6"><div class="feat-card"><div style="font-size:24px;margin-bottom:8px">📱</div><div style="font-weight:700;margin-bottom:5px;font-size:15px">WhatsApp Automático</div><div style="font-size:12px;color:#64748b;margin-bottom:8px">Ticket al cliente, alerta de domicilio y avisos de stock bajo.</div><span class="feat-badge">ESTÁNDAR Y PREMIUM</span></div></div>
+        <div class="col-md-4 col-6"><div class="feat-card"><div style="font-size:24px;margin-bottom:8px">🛵</div><div style="font-weight:700;margin-bottom:5px;font-size:15px">Módulo Domicilios</div><div style="font-size:12px;color:#64748b;margin-bottom:8px">Gestión y rastreo de pedidos a domicilio en tiempo real.</div><span class="feat-badge">PREMIUM</span></div></div>
+        <div class="col-md-4 col-6"><div class="feat-card"><div style="font-size:24px;margin-bottom:8px">🌐</div><div style="font-weight:700;margin-bottom:5px;font-size:15px">Catálogo en Línea</div><div style="font-size:12px;color:#64748b;margin-bottom:8px">Catálogo con QR y pago en línea con Wompi.</div><span class="feat-badge">PREMIUM</span></div></div>
+        <div class="col-md-4 col-6"><div class="feat-card"><div style="font-size:24px;margin-bottom:8px">🧾</div><div style="font-weight:700;margin-bottom:5px;font-size:15px">Facturación DIAN</div><div style="font-size:12px;color:#64748b;margin-bottom:8px">Facturas electrónicas válidas ante la DIAN con Alegra.</div><span class="feat-badge">ESTÁNDAR Y PREMIUM</span></div></div>
+        <div class="col-md-4 col-6"><div class="feat-card"><div style="font-size:24px;margin-bottom:8px">🍎</div><div style="font-weight:700;margin-bottom:5px;font-size:15px">Cámara con IA</div><div style="font-size:12px;color:#64748b;margin-bottom:8px">Identifica frutas y verduras automáticamente con Google Vision.</div><span class="feat-badge">PREMIUM</span></div></div>
+        <div class="col-md-4 col-6"><div class="feat-card"><div style="font-size:24px;margin-bottom:8px">⚖️</div><div style="font-weight:700;margin-bottom:5px;font-size:15px">Báscula Digital</div><div style="font-size:12px;color:#64748b;margin-bottom:8px">Lee el peso automáticamente desde báscula USB.</div><span class="feat-badge">PREMIUM</span></div></div>
+        <div class="col-md-4 col-6"><div class="feat-card"><div style="font-size:24px;margin-bottom:8px">👷</div><div style="font-weight:700;margin-bottom:5px;font-size:15px">App Bodeguero</div><div style="font-size:12px;color:#64748b;margin-bottom:8px">App Android separada para gestión de bodega.</div><span class="feat-badge">PREMIUM</span></div></div>
+        <div class="col-md-4 col-6"><div class="feat-card"><div style="font-size:24px;margin-bottom:8px">📊</div><div style="font-weight:700;margin-bottom:5px;font-size:15px">Reportes y Dashboard</div><div style="font-size:12px;color:#64748b;margin-bottom:8px">Reportes exportables a Excel y PDF, dashboard gerencial.</div><span class="feat-badge">ESTÁNDAR Y PREMIUM</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTORES -->
+  <section id="sectores" class="sec">
+    <div style="max-width:1100px">
+      <div class="section-tag">Sectores</div>
+      <h2 class="section-title">Diseñado para tu tipo de negocio</h2>
+      <p class="section-sub mb-5">SmartMerca se adapta a diferentes tipos de comercio en Colombia.</p>
+      <div class="row g-3">
+        <div class="col-md-3 col-6"><div class="sector-card"><div style="font-size:34px;margin-bottom:8px">🏪</div><div style="font-weight:700;margin-bottom:4px">Tiendas de barrio</div><div style="font-size:12px;color:#64748b">Ventas, fiados y stock sin complicaciones.</div></div></div>
+        <div class="col-md-3 col-6"><div class="sector-card"><div style="font-size:34px;margin-bottom:8px">🛒</div><div style="font-weight:700;margin-bottom:4px">Minimercados</div><div style="font-size:12px;color:#64748b">Multi-caja, inventario avanzado y catálogo online.</div></div></div>
+        <div class="col-md-3 col-6"><div class="sector-card"><div style="font-size:34px;margin-bottom:8px">💊</div><div style="font-weight:700;margin-bottom:4px">Droguerías</div><div style="font-size:12px;color:#64748b">Control de vencimientos, lotes y trazabilidad.</div></div></div>
+        <div class="col-md-3 col-6"><div class="sector-card"><div style="font-size:34px;margin-bottom:8px">🍽️</div><div style="font-weight:700;margin-bottom:4px">Restaurantes</div><div style="font-size:12px;color:#64748b">Domicilios, catálogo digital y pedidos en tiempo real.</div></div></div>
+        <div class="col-md-3 col-6"><div class="sector-card"><div style="font-size:34px;margin-bottom:8px">🥦</div><div style="font-weight:700;margin-bottom:4px">Fruterías</div><div style="font-size:12px;color:#64748b">Venta por peso con báscula y cámara IA.</div></div></div>
+        <div class="col-md-3 col-6"><div class="sector-card"><div style="font-size:34px;margin-bottom:8px">🏬</div><div style="font-weight:700;margin-bottom:4px">Supermercados</div><div style="font-size:12px;color:#64748b">Hasta 30 cajas, sucursales y BI predictivo.</div></div></div>
+        <div class="col-md-3 col-6"><div class="sector-card"><div style="font-size:34px;margin-bottom:8px">🐾</div><div style="font-weight:700;margin-bottom:4px">Veterinarias</div><div style="font-size:12px;color:#64748b">Insumos, productos por peso y facturación DIAN.</div></div></div>
+        <div class="col-md-3 col-6"><div class="sector-card"><div style="font-size:34px;margin-bottom:8px">🛍️</div><div style="font-weight:700;margin-bottom:4px">Tiendas de ropa</div><div style="font-size:12px;color:#64748b">Catálogo online, códigos de barras y reportes.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLANES -->
+  <section id="planes" class="sec">
+    <div style="max-width:1100px">
+      <div class="section-tag">Planes y Precios</div>
+      <h2 class="section-title">Elige el plan ideal para tu negocio</h2>
+      <p class="section-sub mb-4">Precios de lanzamiento. Tu precio nunca sube mientras sigas activo.</p>
+      <div class="urgency-bar">🔥 Precio de lanzamiento — Solo <strong id="cupos-rest">8 cupos</strong> disponibles · Válido hasta el 31 de mayo de 2026</div>
+      <div class="d-flex justify-content-center mb-4">
+        <div class="billing-toggle">
+          <span id="lbl-m" style="color:#fff;font-weight:700;font-size:14px">Mensual</span>
+          <div class="tw" id="tw" onclick="toggleBilling()"><div class="tk"></div></div>
+          <span id="lbl-a" style="color:#64748b;font-size:14px">Anual <span class="badge bg-success" style="font-size:10px">-15%</span></span>
+        </div>
+      </div>
+      <div class="row g-4" id="plansGrid"></div>
+    </div>
+  </section>
+
+  <!-- DEMO -->
+  <section id="demo" class="sec">
+    <div style="max-width:1100px">
+      <div class="section-tag">Demo</div>
+      <h2 class="section-title">Ve SmartMerca en acción</h2>
+      <div class="row g-4 mt-2 align-items-center">
+        <div class="col-md-6">
+          <div class="row g-3">
+            <div class="col-6"><div class="demo-screen"><div style="font-size:26px;margin-bottom:6px">🛒</div><div style="font-weight:700;font-size:13px">Punto de Venta</div><div style="font-size:11px;color:#64748b">Multi-caja, escáner</div></div></div>
+            <div class="col-6"><div class="demo-screen"><div style="font-size:26px;margin-bottom:6px">📦</div><div style="font-weight:700;font-size:13px">Inventario</div><div style="font-size:11px;color:#64748b">Stock en tiempo real</div></div></div>
+            <div class="col-6"><div class="demo-screen"><div style="font-size:26px;margin-bottom:6px">📊</div><div style="font-weight:700;font-size:13px">Dashboard</div><div style="font-size:11px;color:#64748b">KPIs y reportes</div></div></div>
+            <div class="col-6"><div class="demo-screen"><div style="font-size:26px;margin-bottom:6px">🛵</div><div style="font-weight:700;font-size:13px">Domicilios</div><div style="font-size:11px;color:#64748b">Rastreo en tiempo real</div></div></div>
+            <div class="col-6"><div class="demo-screen"><div style="font-size:26px;margin-bottom:6px">🌐</div><div style="font-weight:700;font-size:13px">Catálogo</div><div style="font-size:11px;color:#64748b">Ventas en línea</div></div></div>
+            <div class="col-6"><div class="demo-screen"><div style="font-size:26px;margin-bottom:6px">🤖</div><div style="font-weight:700;font-size:13px">IA Predictiva</div><div style="font-size:11px;color:#64748b">Órdenes automáticas</div></div></div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <h3 style="font-size:22px;font-weight:800;margin-bottom:12px">Solicita una demo personalizada gratis</h3>
+          <p style="color:#64748b;font-size:15px;line-height:1.7;margin-bottom:18px">Te mostramos el sistema funcionando en vivo con los productos de tu negocio. Sin costo, sin compromisos.</p>
+          <div class="d-flex flex-column gap-3 mb-4">
+            <div class="d-flex gap-3 align-items-start"><div style="width:28px;height:28px;border-radius:50%;background:#2563eb;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">1</div><div><strong>Escríbenos por WhatsApp</strong><br/><span style="font-size:13px;color:#64748b">Cuéntanos qué tipo de negocio tienes</span></div></div>
+            <div class="d-flex gap-3 align-items-start"><div style="width:28px;height:28px;border-radius:50%;background:#2563eb;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">2</div><div><strong>Agendamos 30 minutos</strong><br/><span style="font-size:13px;color:#64748b">Por videollamada o presencial</span></div></div>
+            <div class="d-flex gap-3 align-items-start"><div style="width:28px;height:28px;border-radius:50%;background:#2563eb;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">3</div><div><strong>Ves el sistema en vivo</strong><br/><span style="font-size:13px;color:#64748b">Con tus productos reales cargados</span></div></div>
+          </div>
+          <a href="https://wa.me/573001234567?text=Hola,%20quiero%20una%20demo%20gratis%20de%20SmartMerca" target="_blank" class="btn btn-success fw-bold px-4 py-2">
+            <i class="bi bi-whatsapp"></i> Agendar demo gratis
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NOSOTROS -->
+  <section id="nosotros" class="sec">
+    <div style="max-width:1100px">
+      <div class="section-tag">Nosotros</div>
+      <div class="row g-5 align-items-center">
+        <div class="col-md-6">
+          <h2 class="section-title">Somos Creatsoft</h2>
+          <p style="color:#64748b;font-size:15px;line-height:1.8;margin-bottom:14px">Somos un equipo colombiano de desarrolladores apasionados por la tecnología y por ayudar a los negocios locales a crecer con herramientas modernas.</p>
+          <p style="color:#64748b;font-size:15px;line-height:1.8;margin-bottom:20px">SmartMerca nació de una necesidad real: los tenderos y dueños de minimercados en Colombia merecen un sistema asequible y fácil de usar.</p>
+          <div class="row g-2">
+            <div class="col-6"><div style="background:#111827;border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,.06)"><div style="font-size:18px;margin-bottom:5px">🇨🇴</div><div style="font-weight:700;font-size:13px">100% colombiano</div></div></div>
+            <div class="col-6"><div style="background:#111827;border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,.06)"><div style="font-size:18px;margin-bottom:5px">💡</div><div style="font-weight:700;font-size:13px">Innovación real</div></div></div>
+            <div class="col-6"><div style="background:#111827;border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,.06)"><div style="font-size:18px;margin-bottom:5px">🤝</div><div style="font-weight:700;font-size:13px">Soporte en español</div></div></div>
+            <div class="col-6"><div style="background:#111827;border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,.06)"><div style="font-size:18px;margin-bottom:5px">🔄</div><div style="font-weight:700;font-size:13px">Actualizaciones gratis</div></div></div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div style="background:#111827;border-radius:16px;padding:28px;border:1px solid rgba(255,255,255,.06);text-align:center">
+            <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#1d4ed8);display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 12px">👨‍💻</div>
+            <div style="font-size:18px;font-weight:800;margin-bottom:4px">Grupo Creatsoft</div>
+            <div style="font-size:13px;color:#64748b;margin-bottom:12px">Desarrollo de Software · Colombia</div>
+            <p style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.6;margin-bottom:18px">Equipo de desarrolladores especializados en soluciones tecnológicas para el comercio colombiano.</p>
+            <div class="d-flex justify-content-center gap-2">
+              <a href="#" class="btn btn-outline-secondary btn-sm" style="color:#cbd5e1"><i class="bi bi-instagram"></i> Instagram</a>
+              <a href="#" class="btn btn-outline-secondary btn-sm" style="color:#cbd5e1"><i class="bi bi-linkedin"></i> LinkedIn</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOPORTE -->
+  <section id="soporte" class="sec">
+    <div style="max-width:1100px">
+      <div class="section-tag">Soporte</div>
+      <h2 class="section-title">Estamos contigo en cada paso</h2>
+      <p class="section-sub mb-5">Desde la instalación hasta el día a día, te acompañamos.</p>
+      <div class="row g-3">
+        <div class="col-md-4 col-sm-6"><div class="support-card"><div style="font-size:26px;margin-bottom:8px">🔧</div><div style="font-weight:700;margin-bottom:5px">Instalación incluida</div><div style="font-size:13px;color:#64748b;margin-bottom:10px">Te instalamos y configuramos SmartMerca con los productos de tu negocio.</div><span class="sup-time">Todos los planes</span></div></div>
+        <div class="col-md-4 col-sm-6"><div class="support-card"><div style="font-size:26px;margin-bottom:8px">🎓</div><div style="font-weight:700;margin-bottom:5px">Capacitación</div><div style="font-size:13px;color:#64748b;margin-bottom:10px">Capacitamos a ti y a tus cajeros para dominar el sistema desde el primer día.</div><span class="sup-time">Todos los planes</span></div></div>
+        <div class="col-md-4 col-sm-6"><div class="support-card"><div style="font-size:26px;margin-bottom:8px">🚨</div><div style="font-weight:700;margin-bottom:5px">Soporte urgente</div><div style="font-size:13px;color:#64748b;margin-bottom:10px">Si el sistema no vende, respondemos de forma inmediata sin importar el plan.</div><span class="sup-time">Respuesta inmediata</span></div></div>
+        <div class="col-md-4 col-sm-6"><div class="support-card"><div style="font-size:26px;margin-bottom:8px">💬</div><div style="font-weight:700;margin-bottom:5px">WhatsApp de soporte</div><div style="font-size:13px;color:#64748b;margin-bottom:10px">Canal directo para consultas y seguimiento. En español, por colombianos.</div><span class="sup-time">Horario laboral</span></div></div>
+        <div class="col-md-4 col-sm-6"><div class="support-card"><div style="font-size:26px;margin-bottom:8px">🎥</div><div style="font-weight:700;margin-bottom:5px">Videollamada</div><div style="font-size:13px;color:#64748b;margin-bottom:10px">Para problemas que necesitan verse en pantalla. Plan Premium incluido.</div><span class="sup-time">Plan Premium</span></div></div>
+        <div class="col-md-4 col-sm-6"><div class="support-card"><div style="font-size:26px;margin-bottom:8px">🔄</div><div style="font-weight:700;margin-bottom:5px">Actualizaciones</div><div style="font-size:13px;color:#64748b;margin-bottom:10px">Nuevas funciones y mejoras incluidas sin costo adicional en todos los planes.</div><span class="sup-time">Automáticas</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACTO -->
+  <section id="contacto" class="sec">
+    <div style="max-width:1100px">
+      <div class="section-tag">Contacto</div>
+      <div class="row g-5">
+        <div class="col-md-5">
+          <h2 class="section-title">¿Listo para transformar tu negocio?</h2>
+          <p style="color:#64748b;font-size:15px;line-height:1.7;margin-bottom:22px">Escríbenos o llena el formulario. Respondemos en menos de 24 horas y la primera demo es gratis.</p>
+          <a href="https://wa.me/573001234567" target="_blank" class="channel"><span style="font-size:20px">💬</span><div><div style="font-size:11px;color:#64748b">WhatsApp</div><div style="font-size:14px;font-weight:600">+57 300 123 4567</div></div></a>
+          <a href="mailto:info@smartmerca.co" class="channel"><span style="font-size:20px">📧</span><div><div style="font-size:11px;color:#64748b">Correo</div><div style="font-size:14px;font-weight:600">info@smartmerca.co</div></div></a>
+          <div class="channel" style="cursor:default"><span style="font-size:20px">📍</span><div><div style="font-size:11px;color:#64748b">Ubicación</div><div style="font-size:14px;font-weight:600">Colombia</div></div></div>
+        </div>
+        <div class="col-md-7">
+          <div class="contact-form">
+            <h5 class="fw-bold mb-4">Solicitar información</h5>
+            <input class="form-ctrl" type="text" id="cf-nombre" placeholder="Nombre completo"/>
+            <input class="form-ctrl" type="tel" id="cf-tel" placeholder="Teléfono / WhatsApp"/>
+            <select class="form-ctrl" id="cf-tipo"><option value="">Tipo de negocio...</option><option>Tienda de barrio</option><option>Minimercado</option><option>Droguería</option><option>Restaurante</option><option>Frutería</option><option>Supermercado</option><option>Otro</option></select>
+            <select class="form-ctrl" id="cf-plan"><option value="">Plan de interés...</option><option>Plan Básico — $80.000/mes</option><option>Plan Estándar — $150.000/mes</option><option>Plan Premium — $250.000/mes</option><option>No sé cuál elegir</option></select>
+            <textarea class="form-ctrl" id="cf-msg" rows="3" placeholder="Mensaje (opcional)"></textarea>
+            <button class="btn btn-primary fw-bold w-100 py-2" onclick="enviarContacto()"><i class="bi bi-send-fill"></i> Solicitar información</button>
+            <div id="form-ok" style="display:none;text-align:center;padding:12px;color:#4ade80;font-weight:700;margin-top:8px">✅ ¡Recibido! Te contactamos pronto.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="background:#020617;border-top:1px solid rgba(255,255,255,.05);padding:28px 50px;text-align:center">
+    <div style="font-size:17px;font-weight:800;margin-bottom:5px">🛒 SmartMerca POS</div>
+    <p style="font-size:13px;color:#64748b;margin-bottom:5px">El POS más innovador de Colombia · Desarrollado por Creatsoft</p>
+    <p style="font-size:12px;color:#334155">© 2026 SmartMerca · <a href="#planes" style="color:#3b82f6;text-decoration:none">Ver planes</a> · <a href="https://wa.me/573001234567" target="_blank" style="color:#25d366;text-decoration:none">WhatsApp</a></p>
+  </footer>
+</div>
+
+<a href="https://wa.me/573001234567" target="_blank" class="wa-float">💬</a>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div><div style="font-size:17px;font-weight:800" id="modal-name"></div><div style="font-size:12px;color:#64748b" id="modal-cupos"></div></div>
+      <button onclick="closeModal()" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer">✕</button>
+    </div>
+    <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:16px">
+      <div class="d-flex justify-content-between mb-1"><span style="color:#64748b;font-size:13px">Precio real:</span><span style="text-decoration:line-through;color:#64748b;font-size:13px" id="m-old"></span></div>
+      <div class="d-flex justify-content-between"><span style="color:#64748b;font-size:13px">Pagas hoy:</span><span style="font-weight:900;font-size:20px;color:#4ade80" id="m-new"></span></div>
+      <div style="margin-top:8px;background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:6px;padding:5px 10px;font-size:12px;color:#fca5a5;text-align:center" id="m-urgency"></div>
+    </div>
+    <input class="form-ctrl" type="text" id="m-empresa" placeholder="Nombre del negocio *" style="margin-bottom:10px"/>
+    <input class="form-ctrl" type="email" id="m-email" placeholder="Correo electrónico *" style="margin-bottom:10px"/>
+    <input class="form-ctrl" type="tel" id="m-tel" placeholder="Teléfono / Nequi" style="margin-bottom:12px"/>
+    <div style="font-size:12px;color:#475569;text-align:center;margin-bottom:12px">🔒 Sin contratos · Tu precio queda fijo para siempre</div>
+    <button class="btn fw-bold w-100 py-2" id="m-btn" onclick="contratarPlan()" style="color:#fff">🚀 Reservar plan</button>
+    <div id="m-ok" style="display:none;text-align:center;padding:14px;color:#4ade80;font-weight:700">🎉 ¡Solicitud recibida! Te contactamos pronto.</div>
+  </div>
+</div>
+
+<script>
+const CUPOS_USADOS=7,CUPOS_TOTALES=15;
+const BACKEND=window.location.hostname==='localhost'?'http://localhost:5000/api':'https://TU-BACKEND.railway.app/api';
+const CUPOS_REST=CUPOS_TOTALES-CUPOS_USADOS;
+document.getElementById('cupos-rest').textContent=CUPOS_REST+' cupos';
+const fmt=n=>'$'+Number(n||0).toLocaleString('es-CO');
+let anual=false,collapsed=false,selectedPlan=null;
+
+const PLANES=[
+  {id:1,icono:'🔵',nombre:'Básico',color:'#2563eb',popular:false,precio:80000,precioReal:150000,limite:'1 caja · 3 usuarios · 1 sucursal',soporte:'Urgencias inmediatas · Consultas 24h',features:['Ventas con escáner de código de barras','Pago efectivo, Nequi y transferencia','Pago mixto (dos métodos en una venta)','Venta por presentaciones, cubetas y packs','Descuentos temporales en productos','PIN de autorización para acciones sensibles','Control de stock en tiempo real','Alertas de stock bajo y vencimientos','Importación masiva desde Excel','Registro de clientes básico','Turnos de caja con apertura y cierre','Auditoría completa','Backup de base de datos','Modo offline 2 horas'],no:['Devoluciones','Facturación DIAN','Multi-caja']},
+  {id:2,icono:'🟢',nombre:'Estándar',color:'#16a34a',popular:true,precio:150000,precioReal:300000,limite:'5 cajas · 15 usuarios · 1 sucursal',soporte:'Urgencias inmediatas · Consultas 8h',features:['Todo lo del Plan Básico +','Multi-caja con reservas de stock','Roles: admin, cajero, bodeguero, supervisor','Devoluciones en dinero o cambio','Promociones (descuento %, fijo, lleva X gratis)','Listas de precios por tipo de cliente','Crédito a clientes con límite y abonos','Fidelización avanzada y cupones','Dashboard financiero con margen e IVA','Reportes exportables a Excel y PDF','Órdenes de compra con recepción parcial','Trazabilidad por lote FIFO','Merma, averías y conteo físico','Etiquetas y códigos de barras','Nómina básica colombiana','Facturación DIAN real','IA predictiva de ventas e inventario','Modo offline 4 horas'],no:[]},
+  {id:3,icono:'🟣',nombre:'Premium',color:'#7c3aed',popular:false,precio:250000,precioReal:500000,limite:'Cajas ilimitadas · Usuarios ilimitados · Sucursales ilimitadas',soporte:'Urgencias inmediatas · Consultas 2h · Videollamada',features:['Todo lo del Plan Estándar +','Sucursales ilimitadas con panel comparativo','Cajas ilimitadas hasta 30 en paralelo','Roles: contador y auditor','Nómina completa con prestaciones sociales','Cámara IA identifica frutas y verduras','App bodeguero Android','Catálogo público con QR','Catálogo con pago en línea Wompi','Módulo de domicilios con rastreo','Báscula digital integrada','Datáfono integrado','Modo offline ilimitado'],no:[]},
+];
+
+function pf(p){return anual?Math.round(p*.85):p}
+function pAnual(p){return Math.round(p*.85)*12}
+
+function toggleBilling(){
+  anual=!anual;
+  document.getElementById('tw').classList.toggle('on',anual);
+  document.getElementById('lbl-m').style.cssText=anual?'color:#64748b;font-size:14px':'color:#fff;font-weight:700;font-size:14px';
+  document.getElementById('lbl-a').style.cssText=anual?'color:#fff;font-weight:700;font-size:14px':'color:#64748b;font-size:14px';
+  renderPlans();
+}
+
+function renderPlans(){
+  document.getElementById('plansGrid').innerHTML=PLANES.map(plan=>{
+    const price=pf(plan.precio);
+    const pd=anual?fmt(pAnual(plan.precio)):fmt(price);
+    const per=anual?'/año':'/mes';
+    const old=anual?fmt(plan.precioReal*12)+'/año':fmt(plan.precioReal)+'/mes';
+    const disc=Math.round((1-plan.precio/plan.precioReal)*100);
+    return`<div class="col-md-4"><div class="plan-card ${plan.popular?'popular':''}">
+      ${plan.popular?`<div class="text-center py-2 fw-bold" style="background:linear-gradient(90deg,${plan.color},#0d9488);font-size:13px">⭐ MÁS POPULAR</div>`:''}
+      <div class="p-4 d-flex flex-column h-100">
+        <div class="fw-bold mb-1" style="font-size:16px">${plan.icono} Plan ${plan.nombre}</div>
+        <div class="mb-3" style="font-size:11px;color:#64748b;background:rgba(255,255,255,.04);border-radius:6px;padding:3px 8px;display:inline-block">${plan.limite}</div>
+        <div class="d-flex align-items-baseline gap-2 mb-1"><div style="font-size:36px;font-weight:900">${pd}</div><div style="font-size:13px;color:#64748b">${per}</div></div>
+        <div class="mb-1" style="font-size:12px;color:#64748b;text-decoration:line-through">${old} <span class="badge bg-danger" style="font-size:10px">-${disc}%</span></div>
+        ${anual?`<div style="font-size:12px;color:#4ade80;margin-bottom:12px">💰 Ahorras ${fmt(plan.precioReal*12-pAnual(plan.precio))} al año</div>`:'<div style="margin-bottom:12px"></div>'}
+        <button class="btn fw-bold py-2 mb-3" style="background:${plan.popular?`linear-gradient(90deg,${plan.color},#0d9488)`:'transparent'};border:2px solid ${plan.color};color:#fff" onclick="openModal(${plan.id})">
+          ${plan.popular?'🚀 Empezar ahora':`Contratar Plan ${plan.nombre}`}
+        </button>
+        <div class="flex-grow-1">
+          ${plan.features.map(f=>`<div class="pf"><span style="color:${plan.color};flex-shrink:0">✓</span><span>${f}</span></div>`).join('')}
+          ${plan.no.map(f=>`<div class="pf no"><span style="flex-shrink:0">✗</span><span>${f}</span></div>`).join('')}
+        </div>
+        <div style="margin-top:12px;padding:8px;background:rgba(255,255,255,.04);border-radius:8px;font-size:11px;color:#64748b">🎧 ${plan.soporte}</div>
+      </div></div></div>`;
+  }).join('');
+}
+
+function openModal(id){
+  selectedPlan=PLANES.find(p=>p.id===id);
+  const price=anual?fmt(pAnual(selectedPlan.precio))+'/año':fmt(pf(selectedPlan.precio))+'/mes';
+  const old=anual?fmt(selectedPlan.precioReal*12)+'/año':fmt(selectedPlan.precioReal)+'/mes';
+  document.getElementById('modal-name').textContent=`${selectedPlan.icono} Plan ${selectedPlan.nombre}`;
+  document.getElementById('modal-cupos').textContent=`Precio de lanzamiento — ${CUPOS_REST} cupos restantes`;
+  document.getElementById('m-old').textContent=old;
+  document.getElementById('m-new').textContent=price;
+  document.getElementById('m-urgency').textContent=`⚠️ Solo quedan ${CUPOS_REST} cupos a este precio`;
+  document.getElementById('m-btn').style.background=`linear-gradient(90deg,${selectedPlan.color},#0d9488)`;
+  document.getElementById('m-btn').textContent=`🚀 Reservar Plan ${selectedPlan.nombre} — ${price}`;
+  document.getElementById('m-ok').style.display='none';
+  document.getElementById('m-btn').style.display='block';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('open');
+  ['m-empresa','m-email','m-tel'].forEach(id=>document.getElementById(id).value='');
+}
+
+async function contratarPlan(){
+  const empresa=document.getElementById('m-empresa').value.trim();
+  const email=document.getElementById('m-email').value.trim();
+  const tel=document.getElementById('m-tel').value.trim();
+  if(!empresa||!email){alert('Nombre y email son obligatorios');return}
+  try{
+    const res=await fetch(`${BACKEND}/wompi/suscribir`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan_id:selectedPlan.id,empresa_nombre:empresa,email,telefono:tel})});
+    const data=await res.json();
+    if(data.link_pago){window.location.href=data.link_pago;return}
+  }catch{}
+  const price=anual?fmt(pAnual(selectedPlan.precio))+'/año':fmt(pf(selectedPlan.precio))+'/mes';
+  const msg=`Hola, quiero contratar SmartMerca Plan ${selectedPlan.nombre} — ${price}.\n\nNegocio: ${empresa}\nEmail: ${email}\nTeléfono: ${tel}`;
+  window.open(`https://wa.me/573001234567?text=${encodeURIComponent(msg)}`,'_blank');
+  document.getElementById('m-btn').style.display='none';
+  document.getElementById('m-ok').style.display='block';
+}
+
+function enviarContacto(){
+  const nombre=document.getElementById('cf-nombre').value.trim();
+  const tel=document.getElementById('cf-tel').value.trim();
+  if(!nombre||!tel){alert('Nombre y teléfono son obligatorios');return}
+  const tipo=document.getElementById('cf-tipo').value;
+  const plan=document.getElementById('cf-plan').value;
+  const msg=document.getElementById('cf-msg').value.trim();
+  const wa=`Hola, me llamo ${nombre}.\nNegocio: ${tipo||'No especificado'}\nPlan: ${plan||'No especificado'}\n${msg?'Mensaje: '+msg:''}`;
+  window.open(`https://wa.me/573001234567?text=${encodeURIComponent(wa)}`,'_blank');
+  document.getElementById('form-ok').style.display='block';
+  setTimeout(()=>document.getElementById('form-ok').style.display='none',4000);
+}
+
+function toggleCollapse(){
+  collapsed=!collapsed;
+  document.getElementById('sidebar').classList.toggle('collapsed',collapsed);
+  document.getElementById('mainContent').classList.toggle('collapsed',collapsed);
+  document.getElementById('toggleBtn').textContent=collapsed?'›':'‹';
+  document.querySelectorAll('.ll').forEach(el=>el.style.display=collapsed?'none':'');
+}
+
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('mobile-open')}
+
+function setActive(el){
+  document.querySelectorAll('.nav-link-sm').forEach(a=>a.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Scroll spy
+const secs=['inicio','funciones','sectores','planes','demo','nosotros','soporte','contacto'];
+window.addEventListener('scroll',()=>{
+  let cur='';
+  secs.forEach(id=>{const el=document.getElementById(id);if(el&&window.scrollY>=el.offsetTop-120)cur=id});
+  document.querySelectorAll('.nav-link-sm').forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+cur));
+});
+
+renderPlans();
+</script>
+</body>
+</html>

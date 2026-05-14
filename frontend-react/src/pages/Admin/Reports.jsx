@@ -33,7 +33,14 @@ const Reports = () => {
   const [tab,       setTab]       = useState('diarias');
   const [dateFrom,  setDateFrom]  = useState('');
   const [dateTo,    setDateTo]    = useState('');
+  const [timeFrom,  setTimeFrom]  = useState('');
+  const [timeTo,    setTimeTo]    = useState('');
   const [expandedCashier, setExpandedCashier] = useState(null);
+  // Filtros propios de rentabilidad (independientes de los globales)
+  const [rentDesde,    setRentDesde]    = useState('');
+  const [rentHasta,    setRentHasta]    = useState('');
+  const [rentHoraDesde,setRentHoraDesde]= useState('');
+  const [rentHoraHasta,setRentHoraHasta]= useState('');
 
   // ── Filtros pestaña Por Producto ─────────────────────────────────────────
   const [prodQuery,  setProdQuery]  = useState('');  // nombre O código de barras
@@ -61,8 +68,11 @@ const Reports = () => {
 
   const filtered = sales.filter(s => {
     const d = s.created_at?.slice(0,10);
+    const h = s.created_at?.slice(11,16) || '';
     if (dateFrom && d < dateFrom) return false;
     if (dateTo   && d > dateTo)   return false;
+    if (timeFrom && d === dateFrom && h < timeFrom) return false;
+    if (timeTo   && d === dateTo   && h > timeTo)   return false;
     return true;
   });
 
@@ -81,7 +91,7 @@ const Reports = () => {
     const key = itemDname(i);
     soldMap[key] = (soldMap[key] || 0) + i.quantity;
   }));
-  const topProducts = Object.entries(soldMap).sort((a,b) => b[1]-a[1]).slice(0,10);
+  const topProducts = Object.entries(soldMap).sort((a,b) => b[1]-a[1]); // todos los productos
 
   const dailyMap = {};
   filtered.forEach(s => {
@@ -122,6 +132,17 @@ const Reports = () => {
     return 'bg-secondary';
   };
 
+  // ── Mapa de costo unitario por producto (último movimiento de entrada) ─────
+  const costoMap = useMemo(() => {
+    const map = {};
+    // Ordenar por fecha para quedarse con el más reciente
+    const entradas = movements
+      .filter(m => m.type === 'entrada' && m.unit_cost && m.product_id)
+      .sort((a,b) => (a.created_at||'').localeCompare(b.created_at||''));
+    entradas.forEach(m => { map[m.product_id] = parseFloat(m.unit_cost); });
+    return map;
+  }, [movements]);
+
   // ── Reporte por producto — filas expandidas ──────────────────────────────
   // Cada item de venta = una fila con todos los datos del contexto
   // CATEGORÍA y LÍNEA se tratan como lo mismo: se usa category del producto
@@ -143,6 +164,7 @@ const Reports = () => {
           cantidad:     item.quantity,
           precio_unit:  parseFloat(item.price)    || 0,
           subtotal:     parseFloat(item.subtotal) || 0,
+          costo_unit:   costoMap[item.product_id] || 0,
           // Contexto de la venta
           fecha:        sale.created_at || '',
           fecha_date:   (sale.created_at || '').slice(0,10),
@@ -191,8 +213,10 @@ const Reports = () => {
     return rows;
   }, [allRows, prodQuery, prodCat, prodCajero, prodPago, prodSort]);
 
-  const prodTotalQty   = prodFiltered.reduce((a,r) => a + r.cantidad,  0);
-  const prodTotalMonto = prodFiltered.reduce((a,r) => a + r.subtotal,  0);
+  const prodTotalQty     = prodFiltered.reduce((a,r) => a + r.cantidad, 0);
+  const prodTotalMonto   = prodFiltered.reduce((a,r) => a + r.subtotal, 0);
+  const prodTotalCosto   = prodFiltered.reduce((a,r) => a + (r.costo_unit * r.cantidad), 0);
+  const prodTotalGanancia= prodTotalMonto - prodTotalCosto;
   const prodTotalPages = Math.max(1, Math.ceil(prodFiltered.length / PAGE_SIZE));
   const prodPageRows   = prodFiltered.slice((prodPage-1)*PAGE_SIZE, prodPage*PAGE_SIZE);
 
@@ -276,17 +300,25 @@ const Reports = () => {
                     </button>
                   ))}
                   <button className="btn btn-sm btn-outline-danger py-0"
-                    onClick={() => { setDateFrom(''); setDateTo(''); }}>✕ Limpiar</button>
+                    onClick={() => { setDateFrom(''); setDateTo(''); setTimeFrom(''); setTimeTo(''); }}>✕ Limpiar</button>
                 </div>
               </div>
               {/* Fechas manuales */}
-              <div className="col-md-3">
-                <label className="form-label small fw-semibold">Desde</label>
+              <div className="col-md-2">
+                <label className="form-label small fw-semibold">Fecha inicio</label>
                 <input type="date" className="form-control" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
               </div>
-              <div className="col-md-3">
-                <label className="form-label small fw-semibold">Hasta</label>
+              <div className="col-md-2">
+                <label className="form-label small fw-semibold">Hora inicio</label>
+                <input type="time" className="form-control" value={timeFrom} onChange={e => setTimeFrom(e.target.value)} disabled={!dateFrom} />
+              </div>
+              <div className="col-md-2">
+                <label className="form-label small fw-semibold">Fecha fin</label>
                 <input type="date" className="form-control" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+              </div>
+              <div className="col-md-2">
+                <label className="form-label small fw-semibold">Hora fin</label>
+                <input type="time" className="form-control" value={timeTo} onChange={e => setTimeTo(e.target.value)} disabled={!dateTo} />
               </div>
               {dateFrom && <div className="col-auto align-self-end">
                 <span className="badge bg-primary py-2">{dateFrom} → {dateTo || 'hoy'} · {filtered.length} ventas</span>
@@ -383,6 +415,29 @@ const Reports = () => {
         {/* ── RENTABILIDAD ── */}
         {tab === 'financiero' && (() => {
           const mesActual = new Date().toISOString().slice(0,7);
+
+          // Filtrar ventas con rango propio de fecha+hora
+          const rentSales = sales.filter(s => {
+            const d = s.created_at?.slice(0,10) || '';
+            const h = s.created_at?.slice(11,16) || '';
+            if (rentDesde && (d < rentDesde || (d === rentDesde && rentHoraDesde && h < rentHoraDesde))) return false;
+            if (rentHasta && (d > rentHasta || (d === rentHasta && rentHoraHasta && h > rentHoraHasta))) return false;
+            return true;
+          });
+
+          // Resumen del rango seleccionado
+          const rentTotalVentas   = rentSales.reduce((a,s) => a + parseFloat(s.total||0), 0);
+          const rentMovs = movements.filter(m => {
+            if (m.type !== 'entrada' || !m.total_cost) return false;
+            const d = m.created_at?.slice(0,10) || '';
+            if (rentDesde && d < rentDesde) return false;
+            if (rentHasta && d > rentHasta) return false;
+            return true;
+          });
+          const rentTotalCosto    = rentMovs.reduce((a,m) => a + (m.total_cost||0), 0);
+          const rentTotalGanancia = rentTotalVentas - rentTotalCosto;
+
+          // Tabla por mes (sin filtro de hora, solo fecha para la tabla histórica)
           const meses = {};
           movements.filter(m => m.type==='entrada' && m.total_cost).forEach(m => {
             const mes = m.created_at?.slice(0,7);
@@ -399,6 +454,64 @@ const Reports = () => {
           const ganAct  = actual.ventas - actual.inversion;
           return (
             <div className="d-flex flex-column gap-3">
+
+              {/* ── Filtros de fecha y hora propios de rentabilidad ── */}
+              <div className="card border-0 shadow-sm">
+                <div className="card-body">
+                  <div className="row g-2 align-items-end">
+                    <div className="col-12"><span className="fw-semibold small">📅 Filtrar rentabilidad por rango</span></div>
+                    <div className="col-md-2">
+                      <label className="form-label small">Fecha inicio</label>
+                      <input type="date" className="form-control form-control-sm" value={rentDesde} onChange={e => setRentDesde(e.target.value)} />
+                    </div>
+                    <div className="col-md-2">
+                      <label className="form-label small">Hora inicio</label>
+                      <input type="time" className="form-control form-control-sm" value={rentHoraDesde} onChange={e => setRentHoraDesde(e.target.value)} disabled={!rentDesde} />
+                    </div>
+                    <div className="col-md-2">
+                      <label className="form-label small">Fecha fin</label>
+                      <input type="date" className="form-control form-control-sm" value={rentHasta} onChange={e => setRentHasta(e.target.value)} />
+                    </div>
+                    <div className="col-md-2">
+                      <label className="form-label small">Hora fin</label>
+                      <input type="time" className="form-control form-control-sm" value={rentHoraHasta} onChange={e => setRentHoraHasta(e.target.value)} disabled={!rentHasta} />
+                    </div>
+                    <div className="col-auto">
+                      <button className="btn btn-sm btn-outline-secondary" onClick={() => { setRentDesde(''); setRentHasta(''); setRentHoraDesde(''); setRentHoraHasta(''); }}>✕ Limpiar</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Tarjetas resumen del rango seleccionado ── */}
+              {(rentDesde || rentHasta) && (
+                <div className="row g-3">
+                  <div className="col-12">
+                    <small className="text-muted">
+                      Resumen del rango: <strong>{rentDesde || '…'} {rentHoraDesde}</strong> → <strong>{rentHasta || 'hoy'} {rentHoraHasta}</strong>
+                      {' · '}{rentSales.length} venta(s)
+                    </small>
+                  </div>
+                  {[
+                    { icon:'💰', label:'Ventas del rango',   value: rentTotalVentas,   color:'success' },
+                    { icon:'📈', label:'Ganancia estimada del rango', value: rentTotalGanancia, color: rentTotalGanancia>=0?'success':'danger' },
+                  ].map((k,i) => (
+                    <div key={i} className="col-md-6">
+                      <div className={`card border-${k.color} border-2`}>
+                        <div className="card-body d-flex align-items-center gap-3">
+                          <span style={{ fontSize:'2rem' }}>{k.icon}</span>
+                          <div>
+                            <div className={`fs-4 fw-bold text-${k.color}`}>{fmtMoney(k.value)}</div>
+                            <div className="text-muted small">{k.label}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* ── Tarjetas del mes actual (siempre visibles) ── */}
               <div className="row g-3">
                 {[
                   { icon:'📦', label:'Inversión del mes',  value: actual.inversion, color:'danger'  },
@@ -455,17 +568,21 @@ const Reports = () => {
             <div className="card-header fw-semibold">📈 Productos más vendidos</div>
             <div className="table-responsive">
               <table className="table table-hover mb-0">
-                <thead className="table-light"><tr><th>#</th><th>Producto</th><th>Unidades</th></tr></thead>
+                <thead className="table-light"><tr><th>#</th><th>Producto</th><th>Unidades</th><th className="text-end">Total vendido</th></tr></thead>
                 <tbody>
                   {!topProducts.length
                     ? <tr><td colSpan="3" className="text-center text-muted py-3">Sin datos</td></tr>
-                    : topProducts.map(([name,qty],i) => (
-                      <tr key={name}>
-                        <td>{i===0?'🥇':i===1?'🥈':i===2?'🥉':<span className="badge bg-secondary">{i+1}</span>}</td>
-                        <td className="fw-semibold">{name}</td>
-                        <td><span className="badge bg-success">{qty}</span></td>
-                      </tr>
-                    ))}
+                    : topProducts.map(([name,qty],i) => {
+                      const totalVendido = allRows.filter(r => r.producto === name).reduce((a,r) => a + r.subtotal, 0);
+                      return (
+                        <tr key={name}>
+                          <td>{i===0?'🥇':i===1?'🥈':i===2?'🥉':<span className="badge bg-secondary">{i+1}</span>}</td>
+                          <td className="fw-semibold">{name}</td>
+                          <td><span className="badge bg-success">{qty}</span></td>
+                          <td className="text-end fw-semibold text-success">{fmtMoney(totalVendido)}</td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </div>
@@ -559,6 +676,7 @@ const Reports = () => {
                 {prodPago   && <> · pago: <strong>{PAGO_LABEL[prodPago]||prodPago}</strong></>}
               </span>
               <span className="ms-auto fw-semibold text-success">{fmtMoney(prodTotalMonto)}</span>
+              {prodTotalCosto > 0 && <span className={`ms-3 fw-semibold ${prodTotalGanancia>=0?'text-success':'text-danger'}`}>Ganancia: {fmtMoney(prodTotalGanancia)}</span>}
               <span className="badge bg-primary">{prodTotalQty} uds</span>
             </div>
 
@@ -573,6 +691,7 @@ const Reports = () => {
                       <th className="text-center">Cant.</th>
                       <th className="text-end">Precio/ud</th>
                       <th className="text-end">Subtotal</th>
+                      <th className="text-end">Ganancia</th>
                       <th>Cliente</th>
                       <th>Fecha y hora</th>
                       <th>Pago</th>
@@ -599,6 +718,11 @@ const Reports = () => {
                         </td>
                         <td className="text-end text-muted">{fmtMoney(r.precio_unit)}</td>
                         <td className="text-end fw-bold text-success">{fmtMoney(r.subtotal)}</td>
+                        <td className="text-end">
+                          {r.costo_unit > 0
+                            ? <span className={r.subtotal - r.costo_unit*r.cantidad >= 0 ? 'text-success fw-semibold' : 'text-danger fw-semibold'}>{fmtMoney(r.subtotal - r.costo_unit*r.cantidad)}</span>
+                            : <span className="text-muted small">—</span>}
+                        </td>
                         <td>
                           {r.cliente !== '—'
                             ? <span className="badge bg-light text-dark border">{r.cliente}</span>

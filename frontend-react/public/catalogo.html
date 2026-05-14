@@ -183,6 +183,21 @@
       <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/></svg>
       Enviar pedido por WhatsApp
     </button>
+    <!-- Separador -->
+    <div style="display:flex;align-items:center;gap:10px;margin:10px 0">
+      <div style="flex:1;height:1px;background:#e2e8f0"></div>
+      <span style="font-size:11px;color:#94a3b8;font-weight:600">O PAGAR EN LÍNEA</span>
+      <div style="flex:1;height:1px;background:#e2e8f0"></div>
+    </div>
+
+    <!-- Botón Wompi -->
+    <button id="btn-wompi" onclick="pagarConWompi()"
+      style="width:100%;background:#f0f4ff;border:2px solid #4f46e5;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;color:#4f46e5;display:flex;align-items:center;justify-content:center;gap:8px">
+      💳 Pagar con tarjeta / PSE / Nequi
+    </button>
+    <div id="wompi-loading" style="display:none;text-align:center;padding:10px;color:#64748b;font-size:13px">⏳ Preparando pago seguro...</div>
+    <div id="wompi-error" style="display:none;background:#fee2e2;border-radius:10px;padding:10px;font-size:13px;color:#dc2626;margin-top:6px"></div>
+
     <button onclick="document.getElementById('envio-bg').classList.remove('show')"
       style="width:100%;margin-top:10px;background:none;border:none;color:#64748b;font-size:14px;cursor:pointer;padding:8px">
       ← Volver al pedido
@@ -191,7 +206,59 @@
 </div>
 
 <script>
-const API = 'http://localhost:5000/api/catalogo/productos';
+// ══════════════════════════════════════════════════════════════════
+// URL BACKEND — CAMBIAR cuando esté en Railway
+// ══════════════════════════════════════════════════════════════════
+const BACKEND = window.location.hostname === 'localhost'
+  ? 'http://localhost:5000/api'
+  : 'https://TU-BACKEND.railway.app/api'; // ← CAMBIAR en producción
+// ══════════════════════════════════════════════════════════════════
+
+const API = BACKEND + '/catalogo/productos';
+
+async function pagarConWompi() {
+  if (!cart.length) { alert('Agrega productos primero'); return; }
+  if (!envioType)   { alert('Selecciona cómo recibes el pedido'); return; }
+  if (envioType === 'domicilio') {
+    const addr = document.getElementById('addr-input').value.trim();
+    if (!addr) { alert('Ingresa tu dirección'); return; }
+  }
+  const nombre   = prompt('Tu nombre completo:');   if (!nombre)   return;
+  const email    = prompt('Tu correo electrónico:'); if (!email)    return;
+  const telefono = prompt('Tu teléfono:');           if (!telefono) return;
+  const total    = cart.reduce((a, i) => a + i.total, 0);
+  const direccion = envioType === 'domicilio' ? document.getElementById('addr-input').value : 'Recoger en tienda';
+
+  document.getElementById('btn-wompi').style.display     = 'none';
+  document.getElementById('wompi-loading').style.display = 'block';
+  document.getElementById('wompi-error').style.display   = 'none';
+
+  try {
+    const res = await fetch(`${BACKEND}/wompi/pago-catalogo`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items:      cart.map(i => ({ nombre: i.name, cantidad: i.qty || i.kg || i.peso, precio: i.total / (i.qty || i.kg || 1), subtotal: i.total })),
+        total, nombre, email, telefono,
+        direccion, tipo_envio: envioType,
+      }),
+    });
+    const data = await res.json();
+    if (data.link_pago) {
+      window.location.href = data.link_pago;
+    } else {
+      // Sin Wompi configurado — pedido guardado, contacto manual
+      alert(`✅ Pedido registrado!\n\nRef: ${data.referencia}\nTotal: ${fmt(total)}\n\nTe contactaremos para coordinar el pago.`);
+      document.getElementById('envio-bg').classList.remove('show');
+    }
+  } catch(e) {
+    document.getElementById('wompi-error').style.display = 'block';
+    document.getElementById('wompi-error').textContent   = '❌ ' + e.message;
+    document.getElementById('btn-wompi').style.display   = 'flex';
+  } finally {
+    document.getElementById('wompi-loading').style.display = 'none';
+  }
+}
 const fmt = n => '$' + Number(n||0).toLocaleString('es-CO');
 const CATS_PESO = ['frutas','verduras','tuberculos','carnes','pescados','granos'];
 const EMOJI_MAP = {frutas:'🍎',verduras:'🥦',tuberculos:'🥔',carnes:'🥩',lacteos:'🥛',

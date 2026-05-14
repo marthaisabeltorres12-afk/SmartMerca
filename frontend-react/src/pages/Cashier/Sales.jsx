@@ -1,18 +1,19 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../components/ConfirmModal';
 import CamaraIA from '../../components/CamaraIA';
 import { productService } from '../../services/productService';
 import { saleService } from '../../services/saleService';
 import { customerService } from '../../services/customerService';
-import { creditService } from '../../services/creditService';
 import { presentationService } from '../../services/presentationService';
 import AuthModal from '../../components/AuthModal';
-
+import useOfflineMode from '../../hooks/useOfflineMode';
+import OfflineIndicator from '../../components/OfflineIndicator';
+import BasculaWidget from '../../components/BasculaWidget';
 import useCartReservations from '../../hooks/useCartReservations';
-const todayStr = () => new Date().toISOString().slice(0, 10);
+const todayStr = () => new Date().toISOString().slice(0, 10); // eslint-disable-line
 
 const fmtDate = (iso) => {
   if (!iso) return '';
@@ -25,6 +26,7 @@ const fmtMoney = (n) => {
   return isNaN(v) ? '$0' : v.toLocaleString('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
 };
 
+// eslint-disable-next-line no-unused-vars
 const logAudit = async (token, accion, descripcion) => {
   try {
     await fetch('http://localhost:5000/api/audit/log', {
@@ -74,21 +76,47 @@ const Invoice = ({ sale, cashierName, onClose, mode = 'sin_dian' }) => {
   const isDian = mode === 'dian';
 
   const handlePrint = () => {
-    const w = window.open('', '_blank', 'width=302,height=600');
-    w.document.write(
-      '<html><head><title>Ticket</title><style>' +
-      '@page{margin:0;size:80mm auto;padding:0;}' +
-      'html,body{margin:0;padding:0;width:80mm;}' +
-      'body{font-family:"Courier New",monospace;font-size:9px;color:#000;background:#fff;padding:3px 4px;}' +
-      'table{width:100%;border-collapse:collapse;font-size:9px;}' +
-      'td{padding:0 1px;vertical-align:top;}' +
-      'div{line-height:1.2;}' +
-      '</style></head><body>' +
-      printRef.current.innerHTML +
-      '<script>window.onload=function(){window.print();window.close();}<\/script>' +
-      '</body></html>'
-    );
-    w.document.close();
+    const content = printRef.current.innerHTML;
+    const css = `
+      @page { size: 72mm auto; margin: 0 !important; }
+      * { box-sizing: border-box; margin: 0; padding: 0; page-break-inside: avoid !important; break-inside: avoid !important; }
+      html, body { width: 72mm !important; margin: 0 !important; padding: 0 !important; height: auto !important; }
+      body { font-family: 'Courier New', Courier, monospace; font-size: 10px; color: #000; background: #fff; padding: 6px 6mm 6px 6mm; }
+      .c { text-align: center; }
+      .r { text-align: right; }
+      .b { font-weight: bold; }
+      .sep { border: none; border-top: 1px dashed #000; margin: 3px 0; display: block; }
+      .sep2 { border: none; border-top: 1px solid #000; margin: 1px 0; display: block; }
+      table { width: 100%; border-collapse: collapse; font-size: 10px; }
+      td, th { padding: 0 1px; line-height: 1.5; vertical-align: top; }
+      .info-table td:first-child { white-space: nowrap; min-width: 55px; }
+      .info-table td:last-child { text-align: right; }
+      .prod-table th { font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 1px; }
+      .prod-table td { border-bottom: 1px dashed #ccc; }
+      .prod-table th:first-child, .prod-table td:first-child { text-align: left; width: 38%; }
+      .prod-table th:nth-child(2), .prod-table td:nth-child(2) { text-align: center; width: 18%; }
+      .prod-table th:nth-child(3), .prod-table td:nth-child(3) { text-align: right; width: 22%; }
+      .prod-table th:last-child, .prod-table td:last-child { text-align: right; width: 22%; }
+      .tot-table td:first-child { font-weight: bold; font-size: 12px; }
+      .tot-table td:last-child { text-align: right; font-weight: bold; font-size: 12px; }
+      .iva-row td { font-size: 9px; }
+      .iva-row td:last-child { text-align: right; }
+      .pago-table td:first-child { white-space: nowrap; min-width: 80px; }
+      .pago-table td:last-child { text-align: right; }
+    `;
+    // Usar iframe oculto para evitar márgenes de Chrome
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:72mm;height:0;border:none;';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>${css}</style></head><body>${content}</body></html>`);
+    doc.close();
+    iframe.contentWindow.focus();
+    setTimeout(() => {
+      iframe.contentWindow.print();
+      setTimeout(() => document.body.removeChild(iframe), 1000);
+    }, 300);
   };
 
   const total = sale.items?.reduce((a, i) => a + i.subtotal, 0) || 0;
@@ -104,185 +132,129 @@ const Invoice = ({ sale, cashierName, onClose, mode = 'sin_dian' }) => {
             <button className="btn-close btn-close-white btn-sm" onClick={onClose} />
           </div>
           <div className="modal-body p-2" style={{ background:'#fafafa' }}>
-            <div ref={printRef} style={{ fontFamily:'"Courier New",monospace', fontSize:10, color:'#000', background:'#fff', padding:'4px 6px', lineHeight:1.2 }}>
+            <div ref={printRef} style={{ fontFamily:'"Courier New",Courier,monospace', fontSize:11, color:'#000', background:'#fff', padding:'2px 3px', width:'72mm', margin:'0' }}>
 
-              {/* Encabezado */}
-              <div style={{ textAlign:'center', marginBottom:2 }}>
-                <div style={{ fontSize:13, fontWeight:'bold' }}>LA ESQUINA DE DULCE</div>
-                <div style={{ fontSize:10 }}>EDUCARDO TORRES</div>
-                <div style={{ fontSize:10 }}>NIT: 17293830</div>
-                <div style={{ fontSize:10 }}>DIR: MZ 30 CASA 4 QUITAS FLANDES</div>
-                <div style={{ fontSize:10 }}>TEL: 3203308547 — FLANDES, TOLIMA</div>
-                {isDian && (
-                  <>
-                    <div style={{ fontSize:9, fontWeight:'bold', marginTop:2 }}>FACTURA DE VENTA</div>
-                    <div style={{ fontSize:8 }}>Res. DIAN No. 18764050366042</div>
-                    <div style={{ fontSize:8 }}>Del 2024-01-01 al 2025-12-31</div>
-                    <div style={{ fontSize:8 }}>Desde FACT-0001 hasta FACT-9999</div>
-                  </>
-                )}
+              {/* ENCABEZADO */}
+              <div className="c" style={{ textAlign:'center' }}>
+                <div style={{ fontWeight:'bold', fontSize:14, letterSpacing:1 }}>LA ESQUINA DE DULCE</div>
+                <div>EDUCARDO TORRES</div>
+                <div>NIT: 17293830</div>
+                <div>DIR: MZ 30 CASA 4 QUITAS FLANDES</div>
+                <div>TEL: 3203308547</div>
+                <div>FLANDES - TOLIMA</div>
+                <div>Responsable de IVA</div>
               </div>
 
-              <hr style={{ border:'none', borderTop:'1px dashed #000', margin:'2px 0' }} />
+              <hr className="sep"/>
 
-              {/* Info venta */}
-              <div style={{ fontSize:10 }}>
-                <div style={{ display:'flex', justifyContent:'space-between' }}>
-                  <span>{isDian ? 'Factura No:' : 'Ticket No:'}</span>
-                  <span style={{ fontWeight:'bold' }}>
-                    {isDian ? 'FACT-' : '#'}{String(sale.id).padStart(6,'0')}
-                  </span>
+              {isDian ? (
+                <div style={{ textAlign:'center' }}>
+                  <div style={{ fontWeight:'bold' }}>FACTURA DE VENTA</div>
+                  <div style={{ fontSize:9 }}>Res. DIAN No. 18764050366042</div>
+                  <div style={{ fontSize:9 }}>Del 2024-01-01 al 2025-12-31</div>
+                  <div style={{ fontSize:9 }}>Desde FACT-0001 hasta FACT-9999</div>
                 </div>
-                <div style={{ display:'flex', justifyContent:'space-between' }}>
-                  <span>Fecha:</span><span>{fmtDate(sale.created_at)}</span>
+              ) : (
+                <div style={{ textAlign:'center', fontSize:10 }}>
+                  <div>ESTE DOCUMENTO NO ES VALIDO</div>
+                  <div>COMO FACTURA DE VENTA</div>
                 </div>
-                <div style={{ display:'flex', justifyContent:'space-between' }}>
-                  <span>Cajero:</span><span>{cashierName}</span>
-                </div>
+              )}
 
-                {isDian ? (
-                  <>
-                    <hr style={{ border:'none', borderTop:'1px dashed #000', margin:'2px 0' }} />
-                    <div style={{ fontWeight:'bold', fontSize:9 }}>DATOS DEL CLIENTE</div>
-                    <div style={{ display:'flex', justifyContent:'space-between' }}>
-                      <span>Cliente:</span>
-                      <span style={{ maxWidth:'55mm', textAlign:'right' }}>
-                        {sale.dianCliente?.nombre || sale.customer?.full_name || 'Consumidor Final'}
-                      </span>
-                    </div>
-                    <div style={{ display:'flex', justifyContent:'space-between' }}>
-                      <span>{sale.dianCliente?.tipoDoc || 'CC'}:</span>
-                      <span>{sale.dianCliente?.nit || sale.customer?.doc_number || '—'}</span>
-                    </div>
-                    <div style={{ display:'flex', justifyContent:'space-between' }}>
-                      <span>Dir:</span>
-                      <span style={{ maxWidth:'50mm', textAlign:'right' }}>
-                        {sale.dianCliente?.direccion || '—'}
-                      </span>
-                    </div>
-                    <div style={{ display:'flex', justifyContent:'space-between' }}>
-                      <span>Tel:</span><span>{sale.dianCliente?.telefono || '—'}</span>
-                    </div>
-                  </>
-                ) : (
-                  <div style={{ display:'flex', justifyContent:'space-between' }}>
-                    <span>Cliente:</span>
-                    <span>{sale.customer?.full_name || 'Consumidor Final'}</span>
-                  </div>
+              <hr className="sep"/>
+
+              {/* INFO */}
+              <table className="info-table"><tbody>
+                <tr><td>{isDian ? 'Factura No:' : 'Ticket No:'}</td><td style={{ textAlign:'right', fontWeight:'bold' }}>{isDian ? 'FACT-' : '#'}{String(sale.id).padStart(6,'0')}</td></tr>
+                <tr><td>Fecha:</td><td style={{ textAlign:'right' }}>{fmtDate(sale.created_at)}</td></tr>
+                <tr><td>Cajero:</td><td style={{ textAlign:'right' }}>{cashierName}</td></tr>
+                <tr><td>Cliente:</td><td style={{ textAlign:'right' }}>{(sale.dianCliente?.nombre || sale.customer?.full_name || 'Consumidor Final').toUpperCase()}</td></tr>
+                {(sale.dianCliente?.nit || sale.customer?.doc_number) && (
+                  <tr><td>CC:</td><td style={{ textAlign:'right' }}>{sale.dianCliente?.nit || sale.customer?.doc_number}</td></tr>
                 )}
-              </div>
+                {isDian && sale.dianCliente?.direccion && <tr><td>Dir:</td><td style={{ textAlign:'right' }}>{sale.dianCliente.direccion}</td></tr>}
+                {isDian && sale.dianCliente?.telefono  && <tr><td>Tel:</td><td style={{ textAlign:'right' }}>{sale.dianCliente.telefono}</td></tr>}
+              </tbody></table>
 
-              <hr style={{ border:'none', borderTop:'1px dashed #000', margin:'2px 0' }} />
+              <hr className="sep"/>
 
-              {/* Productos */}
-              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:11 }}>
-                <thead>
-                  <tr style={{ borderBottom:'1px solid #000' }}>
-                    <td style={{ fontWeight:'bold', width:'45%' }}>Producto</td>
-                    <td style={{ fontWeight:'bold', textAlign:'center', width:'15%' }}>Cant</td>
-                    <td style={{ fontWeight:'bold', textAlign:'right', width:'20%' }}>Precio</td>
-                    <td style={{ fontWeight:'bold', textAlign:'right', width:'20%' }}>Subt.</td>
-                  </tr>
-                </thead>
+              {/* PRODUCTOS */}
+              <table className="prod-table">
+                <thead><tr><th>Producto</th><th>Cant</th><th>P.Unit</th><th>Total</th></tr></thead>
                 <tbody>
                   {sale.items?.map((item, i) => (
                     <tr key={i}>
-                      <td style={{ fontSize:10, wordBreak:'break-word', maxWidth:'45mm', paddingRight:2 }}>
-                        {item.product?.length > 18 ? item.product.substring(0,18)+'...' : item.product}
-                        {item.units_per_pack && (
-                          <div style={{ fontSize:8, color:'#666' }}>
-                            {item.quantity}p×{item.units_per_pack}={Number(item.quantity)*item.units_per_pack}u
-                          </div>
-                        )}
-                      </td>
+                      <td>{item.product}{item.units_per_pack && <span style={{ fontSize:8 }}> {item.quantity}p×{item.units_per_pack}u</span>}</td>
                       <td style={{ textAlign:'center' }}>
-                        {item.units_per_pack
-                          ? `${item.quantity} pack`
-                          : Number(item.quantity) % 1 === 0 ? `${item.quantity} und` : `${item.quantity} kg`}
+                        {item.units_per_pack ? `${item.quantity}p`
+                          : Number(item.quantity) % 1 === 0 ? `${item.quantity} und`
+                          : `${item.quantity} kg`}
                       </td>
                       <td style={{ textAlign:'right' }}>{Number(item.price).toLocaleString('es-CO')}</td>
-                      <td style={{ textAlign:'right' }}>{Number(item.subtotal).toLocaleString('es-CO')}</td>
+                      <td style={{ textAlign:'right', fontWeight:'bold' }}>{Number(item.subtotal).toLocaleString('es-CO')}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              <hr style={{ border:'none', borderTop:'2px solid #000', margin:'3px 0' }} />
+              <hr className="sep2"/>
 
-              {isDian && (
-                <>
-                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:10 }}>
-                    <span>Subtotal:</span>
-                    <span>${Number(total).toLocaleString('es-CO')}</span>
-                  </div>
-                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:10 }}>
-                    <span>IVA (0%):</span><span>$0</span>
-                  </div>
-                </>
-              )}
+              {/* IVA + TOTAL */}
+              {(() => {
+                const ivaGrupos = {};
+                sale.items?.forEach(item => {
+                  const rate = item.iva_type ?? 19;
+                  if (!ivaGrupos[rate]) ivaGrupos[rate] = 0;
+                  const sub = Number(item.subtotal) || 0;
+                  if (rate > 0) ivaGrupos[rate] += sub - sub / (1 + rate / 100);
+                });
+                return (<>
+                  {Object.entries(ivaGrupos).filter(([,v]) => v > 0).map(([rate, v]) => (
+                    <table key={rate} className="iva-row"><tbody>
+                      <tr><td>IVA {rate}% (incluido):</td><td style={{ textAlign:'right' }}>${Math.round(v).toLocaleString('es-CO')}</td></tr>
+                    </tbody></table>
+                  ))}
+                  <table className="tot-table"><tbody>
+                    <tr><td>TOTAL:</td><td>${Number(total).toLocaleString('es-CO')}</td></tr>
+                  </tbody></table>
+                </>);
+              })()}
 
-              <div style={{ display:'flex', justifyContent:'space-between', fontWeight:'bold', fontSize:12 }}>
-                <span>TOTAL:</span><span>${Number(total).toLocaleString('es-CO')}</span>
-              </div>
+              <hr className="sep"/>
 
-              {/* Pago */}
-              {sale.mixtoSegundo ? (
-                <>
-                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, marginTop:2 }}>
-                    <span>Efectivo:</span><span>${Number(sale.efectivo||0).toLocaleString('es-CO')}</span>
-                  </div>
-                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}>
-                    <span>{sale.mixtoSegundo}:</span><span>${Number(sale.mixtoMonto2||0).toLocaleString('es-CO')}</span>
-                  </div>
-                  {sale.mixtoRef && (
-                    <div style={{ display:'flex', justifyContent:'space-between', fontSize:10 }}>
-                      <span>Ref:</span><span>{sale.mixtoRef}</span>
-                    </div>
-                  )}
-                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}>
-                    <span>Cambio:</span><span>${Number(sale.cambio||0).toLocaleString('es-CO')}</span>
-                  </div>
-                </>
-              ) : sale.payment_method === 'credito' ? (
-                <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, marginTop:2 }}>
-                  <span>Pago:</span><span style={{ fontWeight:'bold' }}>A CREDITO</span>
-                </div>
-              ) : (
-                <>
-                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, marginTop:2 }}>
-                    <span>Pago:</span>
-                    <span style={{ fontWeight:'bold', textTransform:'uppercase' }}>{sale.payment_method || 'EFECTIVO'}</span>
-                  </div>
-                  {(sale.payment_method === 'efectivo' || !sale.payment_method) && (
-                    <>
-                      <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}>
-                        <span>Recibido:</span><span>${Number(sale.efectivo||0).toLocaleString('es-CO')}</span>
-                      </div>
-                      <div style={{ display:'flex', justifyContent:'space-between', fontSize:11 }}>
-                        <span>Cambio:</span><span>${Number(sale.cambio||0).toLocaleString('es-CO')}</span>
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
+              {/* PAGO */}
+              <table className="pago-table"><tbody>
+                {sale.mixtoSegundo ? (<>
+                  <tr><td>Efectivo:</td><td style={{ textAlign:'right' }}>${Number(sale.efectivo||0).toLocaleString('es-CO')}</td></tr>
+                  <tr><td>{sale.mixtoSegundo}:</td><td style={{ textAlign:'right' }}>${Number(sale.mixtoMonto2||0).toLocaleString('es-CO')}</td></tr>
+                  {sale.mixtoRef && <tr><td>Ref:</td><td style={{ textAlign:'right' }}>{sale.mixtoRef}</td></tr>}
+                  <tr><td>Cambio:</td><td style={{ textAlign:'right' }}>${Number(sale.cambio||0).toLocaleString('es-CO')}</td></tr>
+                </>) : sale.payment_method === 'credito' ? (
+                  <tr><td>Método de pago:</td><td style={{ textAlign:'right', fontWeight:'bold' }}>A CRÉDITO</td></tr>
+                ) : (<>
+                  <tr><td>Método de pago:</td><td style={{ textAlign:'right', fontWeight:'bold', textTransform:'uppercase' }}>{sale.payment_method || 'EFECTIVO'}</td></tr>
+                  {(!sale.payment_method || sale.payment_method === 'efectivo') && <>
+                    <tr><td>Recibido:</td><td style={{ textAlign:'right' }}>${Number(sale.efectivo||0).toLocaleString('es-CO')}</td></tr>
+                    <tr><td>Cambio:</td><td style={{ textAlign:'right' }}>${Number(sale.cambio||0).toLocaleString('es-CO')}</td></tr>
+                  </>}
+                </>)}
+              </tbody></table>
 
-              <hr style={{ border:'none', borderTop:'1px dashed #000', margin:'3px 0' }} />
+              <hr className="sep"/>
 
-              <div style={{ textAlign:'center', fontSize:11, marginTop:2 }}>
-                {!isDian && sale.customer && (
-                  <div style={{ fontWeight:'bold' }}>
-                    ⭐ Puntos ganados: +{Math.floor(total/1000)}<br/>
-                    ⭐ Puntos totales: {(sale.customer.points||0) + Math.floor(total/1000)}
-                  </div>
-                )}
-                {isDian && (
-                  <div style={{ fontSize:8, marginBottom:2 }}>
-                    Generado el {new Date().toLocaleDateString('es-CO')}<br/>
-                    Vendedor autorizado por resolución DIAN
-                  </div>
-                )}
-                <div style={{ fontWeight:'bold', marginTop:2 }}>¡Gracias por su compra!</div>
+              {/* PIE */}
+              <div style={{ textAlign:'center' }}>
+                <div style={{ letterSpacing:3 }}>★ ★ ★ ★ ★ ★ ★ ★ ★ ★</div>
+                {!isDian && sale.customer && <>
+                  <div>Puntos ganados: +{Math.floor(total/1000)}</div>
+                  <div>Puntos totales: {(sale.customer.points||0)+Math.floor(total/1000)}</div>
+                </>}
+                {isDian && <div style={{ fontSize:9 }}>Generado el {new Date().toLocaleDateString('es-CO')}<br/>Vendedor autorizado por resolución DIAN</div>}
+                <div style={{ fontWeight:'bold', fontSize:12, marginTop:2 }}>¡GRACIAS POR SU COMPRA!</div>
                 <div>Vuelva pronto</div>
+                <div style={{ fontSize:9, marginTop:2 }}>Este ticket es su comprobante</div>
+                <div style={{ letterSpacing:3 }}>★ ★ ★ ★ ★ ★ ★ ★ ★ ★</div>
+                <div style={{ fontSize:9 }}>Desarrollado por SmartMerca</div>
               </div>
             </div>
           </div>
@@ -303,11 +275,13 @@ const SalePanel = ({
   tab, products, presentations = [], onUpdate, onCompleted,
   onAddTab, showAlert, token, handleSaleRef,
   suspendedSales = [], onSuspend, onRecover, onOpenCamera,
-  onAddTabSinDian,
+  onAddTabSinDian,  isOnline,
+  guardarVentaPendiente,
 }) => {
   const queryRef  = useRef();
   const weightRef = useRef();
   const pinRef    = useRef();
+
 
   const [query,       setQuery]       = useState('');
   const [results,     setResults]     = useState([]);
@@ -315,6 +289,7 @@ const SalePanel = ({
   const [weightModal, setWeightModal] = useState(null);
   const [weightInput, setWeightInput] = useState('');
   const [pinModal,    setPinModal]    = useState(null);
+  // eslint-disable-next-line no-unused-vars
   const [pinLoading,  setPinLoading]  = useState(false);
   const [loading,     setLoading]     = useState(false);
   const [priceModal,  setPriceModal]  = useState(false);
@@ -330,7 +305,7 @@ const SalePanel = ({
   const [dianModal,   setDianModal]   = useState(false);
   const [dianForm,    setDianForm]    = useState({ tipoDoc:'NIT', nit:'', nombre:'', direccion:'', telefono:'' });
   const [dianLoading, setDianLoading] = useState(false);
-
+  
   const calcRef  = useRef();
   const priceRef = useRef();
 
@@ -487,15 +462,16 @@ const SalePanel = ({
       const exists      = draft.cart.find(c => c.product_id === product.id && !c.is_presentation);
       const stockReal   = stockDisponible(product.id, draft.cart, products);
       const directaActual = exists?.quantity || 0;
-      const disponible    = stockReal + directaActual;
+      const disponible    = stockReal;
+      // eslint-disable-next-line no-unused-vars
       const totalQty      = directaActual + 1;
-      if (totalQty > disponible) {
+      if (stockReal <= 0) {
         const packsComprometidos = draft.cart
           .filter(c => c.product_id === product.id && c.is_presentation)
           .reduce((a,c) => a + (parseFloat(c.quantity)||0)*(parseFloat(c.factor)||1), 0);
         const msg = packsComprometidos > 0
-          ? 'Solo hay ' + disponible + ' uds disponibles (' + packsComprometidos + ' comprometidas en packs)'
-          : 'Solo hay ' + product.stock + ' de ' + displayName(product);
+          ? 'Solo hay ' + disponible + ' uds libres (' + packsComprometidos + ' comprometidas en packs)'
+          : 'Solo hay ' + (disponible + directaActual) + ' uds de ' + displayName(product);
         showAlert('warning', msg);
         return draft;
       }
@@ -552,14 +528,14 @@ const SalePanel = ({
     setPinModal({ action, detail, label, onConfirm });
   };
 
-  const updateQtyDirect = (id, q) => {
+  const updateQtyDirect = (cartKey, q) => {
     onUpdate(tab.id, draft => {
-      const item = draft.cart.find(c => c.product_id === id);
+      const item = draft.cart.find(c => c.cart_key === cartKey);
       if (!item) return draft;
       if (item.porPeso) {
         const kg = parseFloat(q);
         if (!kg || kg <= 0) return draft;
-        return { ...draft, cart: draft.cart.map(c => c.product_id === id ? { ...c, quantity: parseFloat(kg.toFixed(3)) } : c) };
+        return { ...draft, cart: draft.cart.map(c => c.cart_key === cartKey ? { ...c, quantity: parseFloat(kg.toFixed(3)) } : c) };
       }
       if (q < 1) return draft;
       if (item.is_presentation) {
@@ -572,22 +548,22 @@ const SalePanel = ({
         const directas  = draft.cart
           .filter(c => c.product_id === item.product_id && !c.is_presentation)
           .reduce((a, c) => a + (parseFloat(c.quantity) || 0), 0);
-        const stockLibre = Math.max(0, stockBase - directas - otrosPacks);
-        const maxPacks   = Math.floor(stockLibre / factor);
+        const packsActual = (item.quantity || 0) * factor;
+        const stockLibre = Math.max(0, stockBase - directas - otrosPacks - packsActual);
+        const maxPacks   = Math.floor(stockLibre / factor) + (item.quantity || 0);
         if (q > maxPacks) {
-          showAlert('warning', 'Stock maximo: ' + maxPacks + ' packs (' + stockLibre + ' uds disponibles)');
+          showAlert('warning', 'Stock maximo: ' + maxPacks + ' packs (' + (maxPacks * factor) + ' uds disponibles)');
           return draft;
         }
       } else {
-        const stockReal  = stockDisponible(id, draft.cart, products);
-        const directa    = item.quantity || 0;
-        const disponible = stockReal + directa;
-        if (q > disponible) {
-          showAlert('warning', 'Stock maximo: ' + disponible + ' unidades');
+        const stockReal  = stockDisponible(item.product_id, draft.cart, products);
+        const disponible = stockReal;
+        if (q > disponible + item.quantity) {
+          showAlert('warning', 'Stock maximo: ' + (disponible + item.quantity) + ' unidades');
           return draft;
         }
       }
-      return { ...draft, cart: draft.cart.map(c => c.product_id === id ? { ...c, quantity: q } : c) };
+      return { ...draft, cart: draft.cart.map(c => c.cart_key === cartKey ? { ...c, quantity: q } : c) };
     });
   };
 
@@ -599,10 +575,10 @@ const SalePanel = ({
         'cambiar_cantidad',
         item.name + ': ' + oldQ + ' a ' + newQ,
         'Reducir "' + item.name + '" de ' + oldQ + ' a ' + newQ,
-        () => updateQtyDirect(id, newQ)
+        () => updateQtyDirect(item.cart_key, newQ)
       );
     } else {
-      updateQtyDirect(id, newQ);
+      updateQtyDirect(item.cart_key, newQ);
     }
   };
 
@@ -695,27 +671,36 @@ const SalePanel = ({
         { metodo: tab.paymentMethod, monto: total, cambio: cambioEfectivo, referencia: null },
       ];
 
-      const sale = await saleService.create({
-        items:          tab.cart.map(c => ({ product_id: c.product_id, presentation_id: c.presentation_id || null, quantity: c.quantity })),
-        customer_id:    tab.selectedCustomer?.id || null,
-        payment_method: pm,
-        payments,
-        cambio:         cambioEfectivo,
-        sale_mode:      mode,
-      }, token);
-
-      if (tab.selectedCustomer) {
-        const pts = Math.floor(total / 1000);
-        if (pts > 0) await customerService.addPoints(tab.selectedCustomer.id, pts, token);
-      }
-
-      if (tab.paymentMethod === 'credito' && tab.selectedCustomer) {
-        await creditService.addCredit(tab.selectedCustomer.id, {
-          amount:  total,
-          sale_id: sale.id,
-          note:    'Venta #' + sale.id + ' a credito',
-        }, token);
-      }
+ 
+let sale;
+if (!isOnline) {
+  // Sin internet — guardar localmente
+  const ventaData = {
+    items:          tab.cart.map(c => ({ product_id: c.product_id, presentation_id: c.presentation_id || null, quantity: c.quantity })),
+    customer_id:    tab.selectedCustomer?.id || null,
+    payment_method: pm,
+    payments,
+    cambio:         cambioEfectivo,
+    sale_mode:      mode,
+  };
+  await guardarVentaPendiente(ventaData);
+  // Crear venta local temporal para mostrar ticket
+  sale = {
+    id:         Date.now(),
+    created_at: new Date().toISOString(),
+    items:      tab.cart.map(c => ({ product: c.name, quantity: c.quantity, price: c.price, subtotal: c.price * c.quantity })),
+    offline:    true,
+  };
+} else {
+  sale = await saleService.create({
+    items:          tab.cart.map(c => ({ product_id: c.product_id, presentation_id: c.presentation_id || null, quantity: c.quantity })),
+    customer_id:    tab.selectedCustomer?.id || null,
+    payment_method: pm,
+    payments,
+    cambio:         cambioEfectivo,
+    sale_mode:      mode,
+  }, token);
+}
 
       onCompleted(tab.id, {
         ...sale,
@@ -744,6 +729,7 @@ const SalePanel = ({
   };
 
   // ── Cobrar: bifurca según sinDian ───────────────────────────────────────
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleSale = async () => {
     if (!tab.cart.length) { showAlert('danger', 'Agrega al menos un producto'); return; }
 
@@ -792,66 +778,72 @@ setDianModal(true);
       if (pinModal) return;
 
       switch(e.key) {
-        case 'F1':
+        case 'F1': // Mostrar/ocultar ayuda
           e.preventDefault();
           setHelpModal(h => !h);
           break;
-        case 'F2':
+        case 'F2': // Consultar precio
           e.preventDefault();
           setPriceQuery('');
           setPriceResult(null);
           setPriceModal(true);
           break;
-        case 'F3':
-          e.preventDefault();
-          queryRef.current?.focus();
-          queryRef.current?.select();
-          break;
-        case 'F4':
-          e.preventDefault();
-          setCalcTotal(tab.cart.length > 0 ? String(Math.round(tab.cart.reduce((a,c)=>(a+(parseFloat(c.price)||0)*(parseFloat(c.quantity)||0)),0))) : '');
-          setCalcPago('');
-          setCalcModal(true);
-          break;
-        case 'F5':
+        case 'F3': // Nueva venta sin factura DIAN
           e.preventDefault();
           onAddTabSinDian && onAddTabSinDian();
           break;
-        case 'F6':
+        case 'F4': // Descuento a toda la venta (requiere PIN)
           e.preventDefault();
           if (!tab.cart.length) { showAlert('warning','Agrega productos al carrito primero'); break; }
-          const pct = window.prompt('Descuento % para toda la venta (0-100):');
-          if (pct === null) break;
-          const p = parseFloat(pct);
-          if (isNaN(p) || p < 0 || p > 100) { showAlert('danger','Descuento inválido'); break; }
-          requestPin(
-            'descuento_venta',
-            'Descuento ' + p + '% a toda la venta',
-            'Aplicar ' + p + '% de descuento a todos los productos',
-            () => onUpdate(tab.id, d => ({
-              ...d,
-              cart: d.cart.map(c => ({
-                ...c,
-                original_price: c.original_price ?? c.price,
-                price: parseFloat(((c.original_price ?? c.price) * (1 - p/100)).toFixed(2)),
-                discount_pct: p,
+          {
+            const pct = window.prompt('Descuento % para toda la venta (0-100):');
+            if (pct === null) break;
+            const p = parseFloat(pct);
+            if (isNaN(p) || p < 0 || p > 100) { showAlert('danger','Descuento inválido'); break; }
+            requestPin(
+              'descuento_venta',
+              'Descuento ' + p + '% a toda la venta',
+              'Aplicar ' + p + '% de descuento a todos los productos',
+              () => onUpdate(tab.id, d => ({
+                ...d,
+                cart: d.cart.map(c => ({
+                  ...c,
+                  original_price: c.original_price ?? c.price,
+                  price: parseFloat(((c.original_price ?? c.price) * (1 - p/100)).toFixed(2)),
+                  discount_pct: p,
+                }))
               }))
-            }))
-          );
+            );
+          }
           break;
-        case 'F8':
+        case 'F5': // Suspender venta
           e.preventDefault();
           if (!tab.cart.length) { showAlert('warning','El carrito está vacío'); break; }
           onSuspend && onSuspend(tab.id, [...tab.cart]);
           break;
-        case 'F9':
+        case 'F6': // Recuperar venta suspendida
           e.preventDefault();
           if (!suspendedSales.length) { showAlert('warning','No hay ventas suspendidas'); break; }
           setRecoverModal(true);
           break;
-        case 'F12':
+        case 'F7': // Historial de ventas — manejado en Sales principal
           e.preventDefault();
-          showAlert('info','Para cerrar turno ve a Cajero → Cierre de caja');
+          break;
+        case 'F8': // Devoluciones
+          e.preventDefault();
+          window.location.href = '/cajero/devoluciones';
+          break;
+        case 'F9': // Abrir cajón de dinero
+          e.preventDefault();
+          showAlert('info','Abriendo cajón de dinero...');
+          // Aquí se puede agregar comando al cajón USB cuando esté disponible
+          break;
+        case 'F10': // Cierre de turno — manejado en Sales principal
+          e.preventDefault();
+          break;
+        case 'F12': // Cobrar
+          e.preventDefault();
+          handleSale();
           break;
         case 'Escape':
           e.preventDefault();
@@ -870,7 +862,7 @@ setDianModal(true);
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [tab, pinModal, suspendedSales, onSuspend, onUpdate, showAlert, onAddTabSinDian]);
+  }, [tab, pinModal, suspendedSales, onSuspend, onUpdate, showAlert, onAddTabSinDian, handleSale]);
 
   const total  = tab.cart.reduce((a, c) => a + (parseFloat(c.price) || 0) * (parseFloat(c.quantity) || 0), 0);
   const cambio = parseFloat(tab.cashReceived || 0) - total;
@@ -878,7 +870,7 @@ setDianModal(true);
   const stockBadge = (item) => {
     const maxStock = item.is_presentation
       ? (item.stock || 0)
-      : (products.find(x => x.id === item.product_id)?.stock || 0);
+      : stockDisponible(item.product_id, tab.cart, products) + item.quantity;
     const left = maxStock - item.quantity;
     if (left <= 0) return 'bg-danger';
     if (left <= 3) return 'bg-warning text-dark';
@@ -932,7 +924,7 @@ setDianModal(true);
                 <tbody>
                   {tab.cart.map(c => {
                     const p      = products.find(x => x.id === c.product_id);
-                    const maxQty = c.is_presentation ? (c.stock || 0) : (p?.stock || c.stock || 0);
+                    const maxQty = c.is_presentation ? (c.stock || 0) : stockDisponible(c.product_id, tab.cart, products) + c.quantity;
                     const warn   = p ? productWarning(p) : null;
                     return (
                       <tr key={c.product_id}>
@@ -963,7 +955,7 @@ setDianModal(true);
                               <input type="number" className="form-control form-control-sm text-center"
                                 style={{ width:80 }} min="0.001" step="0.001"
                                 value={c.quantity}
-                                onChange={e => updateQtyDirect(c.product_id, e.target.value)} />
+                                onChange={e => updateQtyDirect(c.cart_key, e.target.value)} />
                               <span className="text-muted small">kg</span>
                             </div>
                           ) : (
@@ -975,7 +967,7 @@ setDianModal(true);
                                 value={c.quantity}
                                 onChange={e => updateQty(c.product_id, parseInt(e.target.value) || 1)} />
                               <button className="btn btn-outline-secondary btn-sm px-2 py-0" style={{ lineHeight:1.5 }}
-                                onClick={() => updateQtyDirect(c.product_id, c.quantity + 1)}>+</button>
+                                onClick={() => updateQtyDirect(c.cart_key, c.quantity + 1)}>+</button>
                             </div>
                           )}
                         </td>
@@ -1226,13 +1218,15 @@ setDianModal(true);
                     {[
                       ['F1',    'Mostrar/ocultar esta ayuda'],
                       ['F2',    'Consultar precio de un producto'],
-                      ['F3',    'Enfocar buscador de productos'],
-                      ['F4',    'Calculadora de cambio'],
-                      ['F5',    'Nueva venta sin factura DIAN (ticket interno)'],
-                      ['F6',    'Descuento a toda la venta (requiere PIN)'],
-                      ['F8',    'Suspender venta (guardar para después)'],
-                      ['F9',    'Recuperar venta suspendida'],
-                      ['F12',   'Ir a cierre de turno'],
+                      ['F3',    'Nueva venta sin factura DIAN (ticket interno)'],
+                      ['F4',    'Descuento a toda la venta (requiere PIN)'],
+                      ['F5',    'Suspender venta (guardar para después)'],
+                      ['F6',    'Recuperar venta suspendida'],
+                      ['F7',    'Ir a historial de ventas'],
+                      ['F8',    'Devoluciones'],
+                      ['F9',    'Abrir cajón de dinero'],
+                      ['F10',   'Ir a cierre de turno'],
+                      ['F12',   'Cobrar'],
                       ['Enter', 'Agregar producto escaneado'],
                       ['ESC',   'Cerrar modal / cancelar búsqueda'],
                     ].map(([key, action]) => (
@@ -1253,40 +1247,72 @@ setDianModal(true);
       )}
 
       {/* Modal peso */}
-      {weightModal && (
-        <div className="modal d-block" style={{ background:'rgba(0,0,0,0.6)', zIndex:9999 }}>
-          <div className="modal-dialog modal-sm" style={{ marginTop:'20vh' }}>
-            <div className="modal-content">
-              <div className="modal-header">
-                <h6 className="modal-title fw-bold">Ingresar peso: {displayName(weightModal)}</h6>
-                <button className="btn-close" onClick={() => setWeightModal(null)} />
-              </div>
-              <div className="modal-body">
-                <p className="text-muted small mb-3">Precio: {fmtMoney(weightModal.final_price ?? weightModal.price)}/kg</p>
-                <div className="input-group">
-                  <input ref={weightRef} type="number" className="form-control form-control-lg text-center"
-                    placeholder="0.000" min="0.001" step="0.001"
-                    value={weightInput}
-                    onChange={e => setWeightInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && confirmWeight()} />
-                  <span className="input-group-text fw-bold">kg</span>
-                </div>
-                {weightInput && parseFloat(weightInput) > 0 && (
-                  <div className="mt-2 p-2 bg-success bg-opacity-10 rounded text-center">
-                    <span className="fw-bold text-success">
-                      {fmtMoney((weightModal.final_price ?? weightModal.price) * parseFloat(weightInput))}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setWeightModal(null)}>Cancelar</button>
-                <button className="btn btn-success fw-bold" onClick={confirmWeight}>Confirmar</button>
-              </div>
+     {weightModal && (
+  <div className="modal d-block" style={{ background:'rgba(0,0,0,0.6)', zIndex:9999 }}>
+    <div className="modal-dialog modal-sm" style={{ marginTop:'10vh' }}>
+      <div className="modal-content">
+        <div className="modal-header">
+          <h6 className="modal-title fw-bold">
+            ⚖️ Pesar: {displayName(weightModal)}
+          </h6>
+          <button className="btn-close" onClick={() => setWeightModal(null)} />
+        </div>
+        <div className="modal-body">
+          <p className="text-muted small mb-3">
+            Precio: {fmtMoney(weightModal.final_price ?? weightModal.price)}/kg
+          </p>
+ 
+          {/* ✅ Widget de báscula — se usa si el cliente tiene báscula USB */}
+          <BasculaWidget
+            productoNombre={displayName(weightModal)}
+            onPesoConfirmado={(kg) => {
+              if (kg && kg > 0) {
+                setWeightInput(String(kg));
+              }
+            }}
+          />
+ 
+          {/* Input manual como alternativa */}
+          <div className="mt-3">
+            <label className="form-label small fw-semibold text-muted">
+              O ingresar peso manualmente:
+            </label>
+            <div className="input-group">
+              <input
+                ref={weightRef}
+                type="number"
+                className="form-control form-control-lg text-center"
+                placeholder="0.000"
+                min="0.001"
+                step="0.001"
+                value={weightInput}
+                onChange={e => setWeightInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && confirmWeight()}
+              />
+              <span className="input-group-text fw-bold">kg</span>
             </div>
           </div>
+ 
+          {weightInput && parseFloat(weightInput) > 0 && (
+            <div className="mt-2 p-2 bg-success bg-opacity-10 rounded text-center">
+              <span className="fw-bold text-success">
+                {fmtMoney((weightModal.final_price ?? weightModal.price) * parseFloat(weightInput))}
+              </span>
+            </div>
+          )}
         </div>
-      )}
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={() => setWeightModal(null)}>
+            Cancelar
+          </button>
+          <button className="btn btn-success fw-bold" onClick={confirmWeight}>
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Modal PIN */}
      {/* ✅ AuthModal reemplaza el modal PIN */}
@@ -1512,8 +1538,8 @@ setDianModal(true);
                                 Disp: {p.stock_available}
                               </span>
                             ) : (
-                              <span className={`badge ${p.stock === 0 ? 'bg-danger' : p.stock <= (p.min_stock ?? 5) ? 'bg-warning text-dark' : 'bg-secondary'}`}>
-                                Stock: {p.stock}
+                              <span className={`badge ${stockDisponible(p.id, tab.cart, products) === 0 ? 'bg-danger' : stockDisponible(p.id, tab.cart, products) <= (p.min_stock ?? 5) ? 'bg-warning text-dark' : 'bg-secondary'}`}>
+                                Stock: {stockDisponible(p.id, tab.cart, products)}
                               </span>
                             )}
                             {warn && (
@@ -1849,7 +1875,7 @@ setDianModal(true);
 
 // ─── Componente principal ──────────────────────────────────────────────────
 const Sales = () => {
-  const { token, user } = useAuth();
+  const { token, user, logout } = useAuth();
   const navigate = useNavigate();
   const [shiftOk,        setShiftOk]        = React.useState(null);
   const [products,       setProducts]       = useState([]);
@@ -1862,6 +1888,7 @@ const Sales = () => {
   const [lastSale,       setLastSale]       = useState(null);
   const [suspendedSales, setSuspendedSales] = useState([]);
   const handleSaleRef = React.useRef(null);
+  // eslint-disable-next-line no-unused-vars
   const reservaciones = useCartReservations(token);
   const MAX_TABS = 5;
 
@@ -1880,7 +1907,7 @@ const Sales = () => {
     setAlert({ type, msg, retryable });
     if (!retryable) setTimeout(() => setAlert(null), 4500);
   }, []);
-
+  const { isOnline, pendingCount, syncing, guardarVentaPendiente, sincronizarPendientes } = useOfflineMode(token, showAlert);
   const updateTab = useCallback((id, updater) => {
     setTabs(prev => prev.map(t => {
       if (t.id !== id) return t;
@@ -1938,21 +1965,82 @@ const Sales = () => {
   };
 
   const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0];
+  const { darkMode, toggleDarkMode } = useTheme();
+  const [showCierreModal, setShowCierreModal] = useState(false);
+
+  // F10 → modal cierre de turno
+  // F7  → historial de ventas
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === 'F10') { e.preventDefault(); setShowCierreModal(true); }
+      if (e.key === 'F7')  { e.preventDefault(); navigate('/cajero/historial'); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [navigate]);
+
+  const ATAJOS = [
+    { key:'F1',  label:'Ayuda' },
+    { key:'F2',  label:'Precio' },
+    { key:'F3',  label:'Sin DIAN' },
+    { key:'F4',  label:'Descuento' },
+    { key:'F5',  label:'Suspender' },
+    { key:'F6',  label:'Recuperar' },
+    { key:'F7',  label:'Historial' },
+    { key:'F8',  label:'Devoluciones' },
+    { key:'F9',  label:'Cajón' },
+    { key:'F10', label:'Cierre', highlight: true },
+    { key:'F12', label:'Cobrar', highlight: true },
+    { key:'ESC', label:'Cancelar' },
+  ];
 
   return (
-    <div className="d-flex" style={{ minHeight:'100vh', background:'#f0f2f5' }}>
-      <Navbar />
-      <main className="flex-grow-1" style={{ marginLeft:240, padding:'16px 24px' }}>
+    <div style={{ minHeight:'100vh', background:'#f0f2f5', display:'flex', flexDirection:'column' }}>
 
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <div>
-            <h4 className="fw-bold mb-0">Punto de Venta</h4>
-            <span className="text-muted small">
-              Cajero: <strong>{user?.name}</strong> — {new Date().toLocaleDateString('es-CO', { weekday:'long', day:'numeric', month:'long' })}
-            </span>
+      {/* ── BARRA SUPERIOR ── */}
+      <div style={{
+        background:'#fff', borderBottom:'1px solid #dee2e6',
+        padding:'10px 20px', display:'flex', alignItems:'center',
+        justifyContent:'space-between', flexShrink:0,
+        boxShadow:'0 1px 4px rgba(0,0,0,.06)',
+      }}>
+        {/* Izquierda: título + fecha */}
+        <div>
+          <div style={{ fontWeight:800, fontSize:18, lineHeight:1.1 }}>Punto de Venta</div>
+          <div style={{ fontSize:12, color:'#64748b' }}>
+            Cajero: <strong>{user?.name}</strong> — {new Date().toLocaleDateString('es-CO', { weekday:'long', day:'numeric', month:'long' })}
           </div>
-     
         </div>
+
+        {/* Derecha: offline + luna + nombre + logout */}
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <OfflineIndicator
+            isOnline={isOnline}
+            pendingCount={pendingCount}
+            syncing={syncing}
+            onSync={sincronizarPendientes}
+          />
+          {/* 🌙 Luna */}
+          <button onClick={toggleDarkMode} title={darkMode ? 'Modo claro' : 'Modo oscuro'}
+            style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', padding:'2px 6px', borderRadius:8,
+              color:'#64748b', transition:'.2s' }}
+            onMouseEnter={e => e.currentTarget.style.background='#f1f5f9'}
+            onMouseLeave={e => e.currentTarget.style.background='none'}>
+            {darkMode ? '☀️' : '🌙'}
+          </button>
+          {/* Nombre cajero */}
+          <div style={{ fontSize:13, fontWeight:600, color:'#374151', display:'flex', alignItems:'center', gap:6 }}>
+            <div style={{ width:30, height:30, borderRadius:'50%', background:'linear-gradient(135deg,#3b82f6,#1d4ed8)',
+              display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:13 }}>
+              {user?.name?.charAt(0)?.toUpperCase()}
+            </div>
+            {user?.name}
+          </div>
+        </div>
+      </div>
+
+      {/* ── CONTENIDO PRINCIPAL ── */}
+      <main style={{ flex:1, padding:'14px 20px', overflow:'auto' }}>
 
         {alert && (
           <div className={'alert alert-' + alert.type + ' alert-dismissible py-2 mb-3 d-flex align-items-center justify-content-between'}>
@@ -1979,42 +2067,30 @@ const Sales = () => {
               <div key={t.id}
                 onClick={() => setActiveTabId(t.id)}
                 style={{
-                  cursor:       'pointer',
-                  padding:      '8px 14px',
-                  borderRadius: '8px 8px 0 0',
-                  background:   isActive ? '#fff' : (t.sinDian ? '#e2e8f0' : '#e9ecef'),
-                  border:       '1px solid #dee2e6',
+                  cursor:'pointer', padding:'8px 14px', borderRadius:'8px 8px 0 0',
+                  background: isActive ? '#fff' : (t.sinDian ? '#e2e8f0' : '#e9ecef'),
+                  border:'1px solid #dee2e6',
                   borderBottom: isActive ? '2px solid #fff' : '1px solid #dee2e6',
                   marginBottom: isActive ? '-2px' : 0,
-                  minWidth:     130,
-                  maxWidth:     200,
-                  transition:   '0.15s',
+                  minWidth:130, maxWidth:200, transition:'0.15s',
                 }}>
                 <div className="d-flex align-items-center gap-2">
                   <div>
                     <div className="fw-semibold" style={{ fontSize:13 }}>
                       Venta {t.id}
-                      {t.sinDian && (
-                        <span className="badge bg-secondary ms-1" style={{ fontSize:9 }}>Sin DIAN</span>
-                      )}
-                      {itemCount > 0 && (
-                        <span className="badge bg-success ms-1" style={{ fontSize:10 }}>{itemCount}</span>
-                      )}
+                      {t.sinDian && <span className="badge bg-secondary ms-1" style={{ fontSize:9 }}>Sin DIAN</span>}
+                      {itemCount > 0 && <span className="badge bg-success ms-1" style={{ fontSize:10 }}>{itemCount}</span>}
                     </div>
                     <div className={itemCount > 0 ? 'text-success fw-bold' : 'text-muted'} style={{ fontSize:11 }}>
                       {itemCount > 0 ? fmtMoney(tabTotal) : 'Carrito vacio'}
                     </div>
                   </div>
                   <button className="btn btn-link p-0 ms-auto text-muted" style={{ fontSize:14, lineHeight:1 }}
-                    onClick={e => { e.stopPropagation(); closeTab(t.id); }}
-                    title="Cerrar">
-                    x
-                  </button>
+                    onClick={e => { e.stopPropagation(); closeTab(t.id); }} title="Cerrar">x</button>
                 </div>
               </div>
             );
           })}
-
           {tabs.length < MAX_TABS && (
             <button className="btn btn-outline-primary btn-sm"
               style={{ borderRadius:'8px 8px 0 0', border:'1px solid #dee2e6', padding:'8px 14px', height:58, fontSize:13 }}
@@ -2025,7 +2101,7 @@ const Sales = () => {
         </div>
 
         {/* Panel activo */}
-        <div style={{ background:'#fff', border:'1px solid #dee2e6', borderTop:'none', borderRadius:'0 0 12px 12px', padding:16, marginBottom:16 }}>
+        <div style={{ background:'#fff', border:'1px solid #dee2e6', borderTop:'none', borderRadius:'0 0 12px 12px', padding:16, marginBottom:12 }}>
           {shiftOk === false && (
             <div className="d-flex flex-column align-items-center justify-content-center py-5 text-center">
               <div style={{ fontSize:'4rem' }}>🔒</div>
@@ -2034,21 +2110,19 @@ const Sales = () => {
                 No puedes realizar ventas sin un turno de caja abierto.<br/>
                 Pide al administrador que abra tu turno.
               </p>
-              <a href="/cajero/turno" className="btn btn-primary fw-bold px-4">
-                🔄 Ir a Mi Turno
-              </a>
+              <a href="/cajero/turno" className="btn btn-primary fw-bold px-4">🔄 Ir a Mi Turno</a>
             </div>
           )}
-
           {shiftOk === null && (
             <div className="d-flex align-items-center justify-content-center py-5">
               <div className="spinner-border text-secondary me-2" />
               <span className="text-muted">Verificando turno...</span>
             </div>
           )}
-
           {shiftOk === true && activeTab && (
             <SalePanel
+              isOnline={isOnline}
+              guardarVentaPendiente={guardarVentaPendiente}
               key={activeTab.id}
               tab={activeTab}
               products={products}
@@ -2064,7 +2138,7 @@ const Sales = () => {
               onSuspend={(tabId, cartData) => {
                 setSuspendedSales(prev => [...prev, { id: Date.now(), tabId, cart: cartData, ts: new Date().toLocaleTimeString('es-CO') }]);
                 updateTab(tabId, d => ({ ...d, cart: [] }));
-                showAlert('success', 'Venta suspendida — recupérala con F9');
+                showAlert('success', 'Venta suspendida — recupérala con F6');
               }}
               onRecover={(suspended) => {
                 setSuspendedSales(prev => prev.filter(s => s.id !== suspended.id));
@@ -2076,6 +2150,71 @@ const Sales = () => {
           )}
         </div>
       </main>
+
+      {/* ── BARRA DE ATAJOS INFERIOR ── */}
+      <div style={{
+        background:'#1e293b', borderTop:'1px solid #334155',
+        padding:'6px 16px', display:'flex', alignItems:'center',
+        gap:4, flexWrap:'wrap', flexShrink:0,
+      }}>
+        {ATAJOS.map(a => (
+          <div key={a.key} style={{
+            display:'flex', alignItems:'center', gap:4,
+            padding:'3px 8px', borderRadius:6,
+            background: a.highlight ? 'rgba(34,197,94,.15)' : 'rgba(255,255,255,.06)',
+            border: `1px solid ${a.highlight ? 'rgba(34,197,94,.3)' : 'rgba(255,255,255,.1)'}`,
+          }}>
+            <kbd style={{
+              background: a.highlight ? '#16a34a' : '#334155',
+              color:'#fff', borderRadius:4, padding:'1px 6px',
+              fontSize:10, fontWeight:700, fontFamily:'monospace',
+            }}>{a.key}</kbd>
+            <span style={{ fontSize:10, color: a.highlight ? '#4ade80' : '#94a3b8', whiteSpace:'nowrap' }}>
+              {a.label}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* ── MODAL CIERRE DE TURNO (F10) ── */}
+      {showCierreModal && (
+        <div className="modal d-block" style={{ background:'rgba(0,0,0,.7)', zIndex:9999 }}>
+          <div className="modal-dialog" style={{ marginTop:'12vh', maxWidth:420 }}>
+            <div className="modal-content border-0 shadow-lg">
+              <div className="modal-header py-3" style={{ background:'#1e3a5f', color:'#fff' }}>
+                <h5 className="modal-title fw-bold">🔒 Cierre de turno</h5>
+                <button className="btn-close btn-close-white" onClick={() => setShowCierreModal(false)} />
+              </div>
+              <div className="modal-body text-center py-4">
+                <div style={{ fontSize:'3rem', marginBottom:12 }}>🏁</div>
+                <h5 className="fw-bold mb-2">¿Listo para cerrar tu turno?</h5>
+                <p className="text-muted mb-4" style={{ fontSize:14 }}>
+                  Serás redirigido a la pantalla de cierre de caja donde podrás registrar el conteo de efectivo y cerrar el turno.
+                </p>
+                <div className="d-flex flex-column gap-2">
+                  <a href="/cajero/turno" className="btn btn-primary fw-bold py-2">
+                    🏁 Ir a cierre de caja
+                  </a>
+                  <a href="/cajero/historial" className="btn btn-outline-secondary py-2">
+                    📜 Ver historial de ventas
+                  </a>
+                  <hr className="my-1"/>
+                  <button
+                    className="btn btn-outline-danger py-2"
+                    onClick={() => { logout(); navigate('/login'); }}>
+                    🚪 Cerrar sesión
+                  </button>
+                </div>
+              </div>
+              <div className="modal-footer py-2 justify-content-center">
+                <button className="btn btn-secondary btn-sm" onClick={() => setShowCierreModal(false)}>
+                  Volver a ventas (ESC)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {lastSale && (
         <Invoice

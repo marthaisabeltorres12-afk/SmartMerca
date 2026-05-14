@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { apiFetch } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -13,69 +13,77 @@ const TIPO_CONFIG = {
   otro:              { color: '#1e3a5f', bg: '#eff6ff', border: '#93c5fd', icon: '🔔' },
 };
 
+const ADMIN_ROLES  = ['admin','admin_tecnico','supervisor','contador'];
+const AUTH_PAGES   = ['/login','/forgot-password','/reset-password','/planes'];
+const INTERVALO_MS = 120000; // 2 minutos
+
 const NotifBanner = () => {
   const { token, user } = useAuth();
-  const location = useLocation();
+  const location        = useLocation();
   const [notifs, setNotifs] = useState([]);
 
-  const isAdmin = ['admin','admin_tecnico','supervisor','contador'].includes(user?.role);
-  const isAuthPage = ['/login','/forgot-password','/reset-password'].includes(location.pathname);
+  // Refs para evitar que el intervalo se recree en cada render
+  const loadingRef  = useRef(false);
+  const tokenRef    = useRef(token);
+  const userRef     = useRef(user);
+  const pathRef     = useRef(location.pathname);
 
+  // Actualizar refs sin disparar efectos
+  tokenRef.current = token;
+  userRef.current  = user;
+  pathRef.current  = location.pathname;
+
+  // load no tiene dependencias — usa refs internamente
   const load = useCallback(async () => {
-    if (!token || !isAdmin || isAuthPage) return;
+    const t       = tokenRef.current;
+    const u       = userRef.current;
+    const path    = pathRef.current;
+    const isAdmin    = ADMIN_ROLES.includes(u?.role);
+    const isAuthPage = AUTH_PAGES.includes(path);
+
+    if (!t || !isAdmin || isAuthPage) return;
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     try {
-      await apiFetch('/notificaciones/generar-alertas', { method:'POST' }, token).catch(()=>{});
-      const data = await apiFetch('/notificaciones/?pendientes=true', {}, token);
+      await apiFetch('/notificaciones/generar-alertas', { method:'POST' }, t).catch(()=>{});
+      const data = await apiFetch('/notificaciones/?pendientes=true', {}, t);
       if (Array.isArray(data)) setNotifs(data);
     } catch {}
-  }, [token, isAdmin, isAuthPage]);
+    finally { loadingRef.current = false; }
+  }, []); // sin dependencias — un solo intervalo para siempre
 
   useEffect(() => {
-    load();
-    const iv = setInterval(load, 30000);
-    return () => clearInterval(iv);
-  }, [load]);
+    const timer = setTimeout(load, 500); // pequeño delay al montar
+    const iv    = setInterval(load, INTERVALO_MS);
+    return () => { clearTimeout(timer); clearInterval(iv); };
+  }, []); // solo al montar — nunca se recrea
 
   const resolver = async (id) => {
     try {
-      await apiFetch(`/notificaciones/${id}/resolver`, { method:'POST' }, token);
+      await apiFetch(`/notificaciones/${id}/resolver`, { method:'POST' }, tokenRef.current);
       setNotifs(prev => prev.filter(n => n.id !== id));
     } catch {}
   };
 
+  const isAdmin    = ADMIN_ROLES.includes(user?.role);
+  const isAuthPage = AUTH_PAGES.includes(location.pathname);
+
   if (!notifs.length || !isAdmin || isAuthPage || !token) return null;
 
-  // Usamos position:fixed pero con pointer-events none en el wrapper
-  // y el contenido de la página tiene margen automático via CSS variable
   const altura = Math.min(notifs.length, 4) * 37 + (notifs.length > 4 ? 24 : 0);
 
   return (
     <>
-      {/* Espaciador invisible que empuja el contenido hacia abajo */}
       <div style={{ height: altura, marginLeft: 240, flexShrink: 0 }} />
-
-      {/* Banner fijo en la parte superior */}
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 240,
-        right: 0,
-        zIndex: 1050,
-      }}>
+      <div style={{ position:'fixed', top:0, left:240, right:0, zIndex:1050 }}>
         {notifs.slice(0, 4).map(n => {
           const cfg = TIPO_CONFIG[n.tipo] || TIPO_CONFIG.otro;
           return (
             <div key={n.id} style={{
-              background: cfg.bg,
-              borderBottom: `1px solid ${cfg.border}`,
-              borderLeft: `4px solid ${cfg.color}`,
-              padding: '7px 14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              fontSize: 13,
-              color: '#1e293b',
-              height: 37,
+              background: cfg.bg, borderBottom:`1px solid ${cfg.border}`,
+              borderLeft:`4px solid ${cfg.color}`, padding:'7px 14px',
+              display:'flex', alignItems:'center', gap:10,
+              fontSize:13, color:'#1e293b', height:37,
             }}>
               <span style={{ fontSize:15, flexShrink:0 }}>{cfg.icon}</span>
               <div style={{ flex:1, overflow:'hidden' }}>
@@ -89,7 +97,7 @@ const NotifBanner = () => {
                 </span>
               )}
               <button onClick={() => resolver(n.id)} style={{
-                background: cfg.color, color:'#fff', border:'none',
+                background:cfg.color, color:'#fff', border:'none',
                 borderRadius:6, padding:'3px 10px', fontSize:11,
                 fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', flexShrink:0,
               }}>✓ Resolver</button>

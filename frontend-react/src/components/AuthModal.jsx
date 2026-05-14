@@ -58,8 +58,8 @@ const AuthModal = ({ tipo = 'eliminar_producto', onAuthorized, onCancel, targetE
       if (e.key === 'Enter') {
         if (buf.length > 4) {
           // Parece un escaneo completo
-          const code = buf.trim().toUpperCase();
-          if (code.startsWith('ADMIN-') || code.length >= 8) {
+          const code = buf.trim().toUpperCase().replace(/['’`´]/g, '-');
+          if (code.startsWith('ADMIN-') || code.startsWith('ADMIN\'') || code.length >= 8) {
             setTarjeta(code);
             setModoActivo('tarjeta');
             setEscaneando(true);
@@ -97,7 +97,8 @@ const AuthModal = ({ tipo = 'eliminar_producto', onAuthorized, onCancel, targetE
     setLoading(true);
     try {
       let endpoint = '/auth-admin/autorizar';
-      let body = { pin: p || null, codigo_tarjeta: t || null, tipo_operacion: tipo };
+      const tNorm = t ? t.replace(/['’`´]/g, '-').trim() : null;
+      let body = { pin: p || null, codigo_tarjeta: tNorm, tipo_operacion: tipo };
 
       if (esDobleFacto && targetEmail) {
         endpoint = '/auth-admin/reset-seguro';
@@ -182,10 +183,10 @@ const AuthModal = ({ tipo = 'eliminar_producto', onAuthorized, onCancel, targetE
             <div style={{ position:'relative' }}>
               <input
                 ref={tarjetaRef}
-                type="text"
+                type="password"
                 placeholder="📷 Escanear con lector o escribir ADMIN-XXXXXX"
                 value={tarjeta}
-                onChange={e => setTarjeta(e.target.value.toUpperCase())}
+                onChange={e => setTarjeta(e.target.value.toUpperCase().replace(/['’`´]/g, '-'))}
                 onFocus={() => setModoActivo('tarjeta')}
                 style={{
                   ...inp(modoActivo === 'tarjeta'),
@@ -205,13 +206,13 @@ const AuthModal = ({ tipo = 'eliminar_producto', onAuthorized, onCancel, targetE
             {escaneando && (
               <div style={{ background:'#052e16', border:'1px solid #16a34a', borderRadius:6,
                 padding:'4px 10px', color:'#4ade80', fontSize:12, marginTop:6, textAlign:'center' }}>
-                ✅ Tarjeta detectada: {tarjeta}
+                ✅ Tarjeta detectada
               </div>
             )}
 
             {tarjeta && !escaneando && (
               <div style={{ color:'#4ade80', fontSize:11, marginTop:4 }}>
-                ✅ {tarjeta}
+                ✅ Tarjeta ingresada
               </div>
             )}
 

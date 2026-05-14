@@ -599,7 +599,18 @@ const Inventory = () => {
   };
 
   /* Eliminar fila */
-  const deleteRow = (id) => setRows(prev => prev.filter(r => r._id !== id));
+  const deleteRow = async (id) => {
+    const row = rows.find(r => r._id === id);
+    if (!row?.product_id) { setRows(prev => prev.filter(r => r._id !== id)); return; }
+    if (!window.confirm('¿Eliminar ' + (row.name || 'este producto') + '? Esta acción no se puede deshacer.')) return;
+    try {
+      await apiFetch('/products/' + row.product_id, { method: 'DELETE' });
+      setRows(prev => prev.filter(r => r._id !== id));
+      showAlert('success', 'Producto eliminado correctamente');
+    } catch (e) {
+      showAlert('danger', 'No se pudo eliminar: ' + e.message);
+    }
+  };
 
   /* Confirmar pedido completo */
   const confirmOrder = async () => {
@@ -611,6 +622,7 @@ const Inventory = () => {
         name:             r.name || null,
         category:         r.category || null,
         barcode:          r.barcode || null,
+// eslint-disable-next-line no-dupe-keys
         iva_type:         r.iva_type ?? 19,
         min_stock:        r.min_stock ?? 5,
         gramaje_cantidad: r.gramaje_cantidad || null,

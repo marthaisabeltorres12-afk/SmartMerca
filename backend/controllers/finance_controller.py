@@ -15,7 +15,6 @@ def get_finance():
     if not _admin(claims):
         return jsonify({'message': 'Solo admins'}), 403
 
-    IVA_RATE = 0.19
 
     products = Product.query.filter_by(is_active=True).all()
 
@@ -50,8 +49,9 @@ def get_finance():
         uds         = venta_map.get(p.id, {}).get('qty', 0)
         ingresos    = venta_map.get(p.id, {}).get('ingresos', 0)
 
-        # IVA DIAN por unidad
-        sin_iva     = precio / (1 + IVA_RATE)
+        # IVA DIAN por unidad — usar iva_type real del producto (0, 5 o 19)
+        iva_rate    = (p.iva_type or 0) / 100.0
+        sin_iva     = precio / (1 + iva_rate) if iva_rate > 0 else precio
         iva_unit    = precio - sin_iva
 
         # Ganancia bruta y margen
@@ -91,6 +91,7 @@ def get_finance():
             'costo_promedio':   round(costo, 2) if has_cost else 0,
             'has_cost':         has_cost,
             'iva_dian_unit':    round(iva_unit, 2),
+            'iva_type':         p.iva_type if p.iva_type is not None else 0,
             'ganancia_bruta':   round(ganancia, 2),
             'margen_pct':       round(margen, 2),
             'uds_vendidas':     uds,

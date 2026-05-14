@@ -68,4 +68,5 @@ class SaleItem(db.Model):
             'price':         float(self.price),
             'subtotal':      float(self.price * self.quantity),
             'units_per_pack': units_per_pack,
+            'iva_type':      self.product.iva_type if self.product else 19,
         }

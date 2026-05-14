@@ -1,4 +1,4 @@
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from flask import request, jsonify, current_app
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from flask_mail import Message
@@ -75,7 +75,7 @@ def forgot_password():
 
     # Enviar correo
     try:
-        reset_url = f"http://localhost:3000/reset-password?token={token}"
+        reset_url = f"http://localhost:3002/reset-password?token={token}"
         msg = Message(
             subject='SmartMerca — Recuperación de contraseña',
             recipients=[user.email],

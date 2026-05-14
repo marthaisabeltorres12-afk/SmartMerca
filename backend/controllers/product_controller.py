@@ -156,13 +156,30 @@ def delete_product(id):
 
     nombre = product.name 
 
-    db.session.delete(product)
-    db.session.commit()
-
-    # ✅ LOG
-    log_action("eliminar", f"{_nombre_usuario()} eliminó el producto {nombre}")
-
-    return jsonify({'message': 'Producto eliminado'}), 200
+    try:
+        from sqlalchemy import text
+        pid = product.id
+        # Eliminar registros relacionados en orden correcto (hijos primero)
+        db.session.execute(text("DELETE FROM shrinkage_records      WHERE product_id = :pid"), {"pid": pid})
+        db.session.execute(text("DELETE FROM inventory_batches      WHERE product_id = :pid"), {"pid": pid})
+        db.session.execute(text("DELETE FROM location_stock         WHERE product_id = :pid"), {"pid": pid})
+        db.session.execute(text("DELETE FROM stock_transfers        WHERE product_id = :pid"), {"pid": pid})
+        db.session.execute(text("DELETE FROM price_list_items       WHERE product_id = :pid"), {"pid": pid})
+        db.session.execute(text("DELETE FROM inventory_count_items  WHERE product_id = :pid"), {"pid": pid})
+        db.session.execute(text("DELETE FROM return_items           WHERE product_id = :pid"), {"pid": pid})
+        db.session.execute(text("DELETE FROM purchase_order_items   WHERE product_id = :pid"), {"pid": pid})
+        db.session.execute(text("DELETE FROM price_history          WHERE product_id = :pid"), {"pid": pid})
+        db.session.execute(text("DELETE FROM promotions             WHERE product_id = :pid OR free_product_id = :pid"), {"pid": pid})
+        db.session.execute(text("DELETE FROM inventory_movements    WHERE product_id = :pid"), {"pid": pid})
+        db.session.execute(text("DELETE FROM sale_items             WHERE product_id = :pid"), {"pid": pid})
+        db.session.execute(text("DELETE FROM product_presentations  WHERE base_product_id = :pid"), {"pid": pid})
+        db.session.delete(product)
+        db.session.commit()
+        log_action("eliminar", f"{_nombre_usuario()} eliminó el producto {nombre} y todos sus registros")
+        return jsonify({'message': 'Producto eliminado correctamente'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Error al eliminar: {str(e)}'}), 500
 
 @jwt_required()
 def get_price_history(id):
