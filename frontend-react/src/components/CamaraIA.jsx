@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { apiFetch } from '../services/api';
 
 const fmt = n => Number(n || 0).toLocaleString('es-CO', {
   style: 'currency', currency: 'COP', minimumFractionDigits: 0,
@@ -90,10 +89,12 @@ const CamaraIA = ({ products = [], onAddToCart, onClose, token }) => {
       canvas.getContext('2d').drawImage(videoRef.current, 0, 0, 640, 480);
       const dataURL = canvas.toDataURL('image/jpeg', 0.85);
       setCapturada(dataURL);
-      const res = await apiFetch('/ia/identificar', {
+      const raw = await fetch('http://localhost:5000/api/ia/identificar', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ imagen: dataURL.split(',')[1], productos: products.map(p => p.name).filter(Boolean) }),
-      }, token);
+      });
+      const res = await raw.json();
       const nombre = res.nombre?.trim() || '';
       setResultado({ nombre, encontrado: res.encontrado || !!findInProducts(nombre, products), producto: findInProducts(nombre, products) });
     } catch (e) {
