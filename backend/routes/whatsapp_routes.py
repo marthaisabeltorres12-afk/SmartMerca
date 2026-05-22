@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from controllers.whatsapp_bot_controller import webhook_verificar, webhook_recibir
 from flask_jwt_extended import jwt_required, get_jwt
 from services.whatsapp_service import enviar_alerta_stock, _limpiar_telefono
 import os
@@ -89,3 +90,12 @@ def alerta_stock_manual():
     if ok:
         return jsonify({'message': 'Alerta enviada correctamente'}), 200
     return jsonify({'message': 'Error enviando alerta — verifica configuración'}), 400
+
+# ── BOT WHATSAPP ────────────────────────────────────────────────────────────
+@whatsapp_bp.route('/webhook', methods=['GET'])
+def bot_verificar():
+    return webhook_verificar()
+
+@whatsapp_bp.route('/webhook', methods=['POST'])
+def bot_recibir():
+    return webhook_recibir()

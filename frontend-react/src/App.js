@@ -59,6 +59,8 @@ import TechSuppliers         from './pages/TechAdmin/TechSuppliers';
 import TechUsers             from './pages/TechAdmin/TechUsers';
 import TechConfig            from './pages/TechAdmin/TechConfig';
 
+import DomiciliosAdmin from './pages/Admin/DomiciliosAdmin';
+import MiPlan          from './pages/Admin/MiPlan';
 import './App.css';
 
 const PrivateRoute = ({ children, roles }) => {
@@ -131,6 +133,9 @@ function App() {
             <Route path="/admin/conteo"            element={<PrivateRoute roles={['admin','admin_tecnico','bodeguero']}><ConteoInventario /></PrivateRoute>} />
             <Route path="/admin/bodegas"           element={<PrivateRoute roles={['admin','admin_tecnico','bodeguero']}><Bodegas /></PrivateRoute>} />
             <Route path="/admin/sucursales"        element={<PrivateRoute roles={['admin','admin_tecnico']}><Sucursales /></PrivateRoute>} />
+            <Route path="/admin/mi-plan" element={<PrivateRoute roles={['admin','admin_tecnico']}><MiPlan /></PrivateRoute>} />
+           
+            <Route path="/admin/domicilios" element={<PrivateRoute roles={['admin','admin_tecnico','supervisor','cajero']}><DomiciliosAdmin /></PrivateRoute>} />
             <Route path="/admin/nomina"            element={<PrivateRoute roles={['admin','admin_tecnico']}><Nomina /></PrivateRoute>} />
             <Route path="/admin/politicas"         element={<PrivateRoute roles={['admin','admin_tecnico']}><BusinessPolicy /></PrivateRoute>} />
             <Route path="/admin/importar" element={<PrivateRoute roles={['admin','admin_tecnico']}><ImportarProductos /></PrivateRoute>} />

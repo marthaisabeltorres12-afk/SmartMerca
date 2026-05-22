@@ -276,7 +276,7 @@ const SalePanel = ({
   onAddTab, showAlert, token, handleSaleRef,
   suspendedSales = [], onSuspend, onRecover, onOpenCamera,
   onAddTabSinDian,  isOnline,
-  guardarVentaPendiente,
+  guardarVentaPendiente, tabs = [],
 }) => {
   const queryRef  = useRef();
   const weightRef = useRef();
@@ -385,14 +385,16 @@ const SalePanel = ({
     const prod = (prods || products).find(p => p.id === productId);
     if (!prod) return 0;
     const stockTotal = prod.stock || 0;
-    const unidadesDirectas = cart
+    // Sumar comprometido en TODAS las pestañas, no solo la activa
+    const allCarts = tabs ? tabs.map(t => t.cart).flat() : cart;
+    const unidadesDirectas = allCarts
       .filter(c => c.product_id === productId && !c.is_presentation)
       .reduce((a, c) => a + (parseFloat(c.quantity) || 0), 0);
-    const unidadesPacks = cart
+    const unidadesPacks = allCarts
       .filter(c => c.product_id === productId && c.is_presentation)
       .reduce((a, c) => a + (parseFloat(c.quantity) || 0) * (parseFloat(c.factor) || 1), 0);
     return Math.max(0, stockTotal - unidadesDirectas - unidadesPacks);
-  }, [products]);
+  }, [products, tabs]);
 
   const addToCart = useCallback((item) => {
     if (item._type === 'presentation') {
@@ -2123,6 +2125,7 @@ const Sales = () => {
             <SalePanel
               isOnline={isOnline}
               guardarVentaPendiente={guardarVentaPendiente}
+              tabs={tabs}
               key={activeTab.id}
               tab={activeTab}
               products={products}

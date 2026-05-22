@@ -8,6 +8,7 @@ class SystemConfig(db.Model):
     session_hours = db.Column(db.Integer, default=8)       # duración de sesión en horas
     jwt_active    = db.Column(db.Boolean, default=True)    # JWT activo
     cors_active   = db.Column(db.Boolean, default=True)    # CORS habilitado
+    plan_actual   = db.Column(db.String(50), default='basico')  # basico, estandar, premium
     updated_at    = db.Column(db.DateTime, onupdate=db.func.now())
 
     def to_dict(self):
@@ -17,4 +18,5 @@ class SystemConfig(db.Model):
             'session_hours': self.session_hours,
             'jwt_active':    self.jwt_active,
             'cors_active':   self.cors_active,
+            'plan_actual':   self.plan_actual or 'basico',
         }

@@ -268,7 +268,15 @@ let allProds=[], cart=[], bizPhone='', activeCat='Todos', envioType='tienda';
 let curProd=null, curQty=1, curUnit='kg', curFactor=1, curW=1, isPeso=false;
 
 function isPesoProduct(p){
-  return CATS_PESO.some(c=>(p.category||'').toLowerCase().includes(c));
+  // Por peso solo si gramaje_unidad es kg o g
+  const u = (p.gramaje_unidad||'').toLowerCase();
+  if (u === 'kg' || u === 'g') return true;
+  // Sin gramaje: solo frutas, verduras, tubérculos, carnes y pescados son a granel
+  if (!p.gramaje_unidad) {
+    const GRANEL = ['frutas','verduras','tuberculos','carnes','pescados'];
+    return GRANEL.some(c=>(p.category||'').toLowerCase().includes(c));
+  }
+  return false;
 }
 function getEmoji(p){
   return EMOJI_MAP[(p.category||'').toLowerCase()]||'🛒';

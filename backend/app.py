@@ -3,6 +3,7 @@ from extensions import db, jwt, mail
 from config import Config
 from routes.audit_routes        import audit_bp
 from routes.ia_routes           import ia_bp
+from routes.domicilio_routes    import domicilios_bp
 from routes.auth                import auth_bp
 from routes.products            import products_bp
 from routes.suppliers           import suppliers_bp
@@ -100,6 +101,7 @@ def create_app():
     app.register_blueprint(catalogo_bp,       url_prefix='/api/catalogo')
     app.register_blueprint(audit_bp,          url_prefix='/api/audit')
     app.register_blueprint(ia_bp,             url_prefix='/api/ia')
+    app.register_blueprint(domicilios_bp,     url_prefix='/api/domicilios')
 
     from flask_cors import CORS
     CORS(app, resources={r"/api/catalogo/*": {"origins": "*"}})

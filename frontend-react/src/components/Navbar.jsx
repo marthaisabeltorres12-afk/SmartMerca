@@ -9,7 +9,8 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 const adminLinks = [
   { path: "/admin", icon: "bi-speedometer2", label: "Dashboard" },
-
+  { path: "/admin/domicilios", icon: "bi-bicycle", label: "🛵 Domicilios", badge: "pendientes" },
+  
   // 📦 INVENTARIO
   {
     group: true, label: "Inventario", icon: "bi-archive", key: "inventario",
@@ -26,6 +27,8 @@ const adminLinks = [
       { path: "/admin/ordenes-compra", icon: "bi-cart-plus",    label: "Órdenes de Compra" },
     ]
   },
+
+  
 
   // 👥 CLIENTES
   {
@@ -73,6 +76,7 @@ const adminLinks = [
       { path: "/admin/alertas",         icon: "bi-bell",            label: "Alertas" },
     ]
   },
+  { path: "/admin/mi-plan", icon: "bi-gem", label: "💎 Mi Plan" },
 ];
 
 const cajeroLinks = [
@@ -154,6 +158,7 @@ const Navbar = () => {
   const [bellOpen,     setBellOpen]     = useState(false);
   const [openGroups,   setOpenGroups]   = useState({});
   const [closedByUser, setClosedByUser] = useState({});
+  const [pedidosPendientes, setPedidosPendientes] = useState(0);
 
   const toggleGroup = (key) => {
     const isCurrentlyOpen = openGroups[key] || (activeGroupKey === key && !closedByUser[key]);
@@ -171,6 +176,19 @@ const Navbar = () => {
   const bellRef = useRef();
   const canSeeBell = ['admin','admin_tecnico','supervisor','contador','auditor'].includes(user?.role);
   const { notifications, unread, toasts, markAllRead, dismissToast, resolverNotif, resolverTodas } = useNotifications(token, canSeeBell);
+
+  // Pedidos domicilio pendientes — consultar cada 30s
+  useEffect(() => {
+    if (!token || !['admin','admin_tecnico','supervisor','cajero'].includes(user?.role)) return;
+    const cargar = () => {
+      fetch('http://localhost:5000/api/domicilios/stats', {
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+      }).then(r => r.json()).then(d => setPedidosPendientes(d.pendientes || 0)).catch(() => {});
+    };
+    cargar();
+    const interval = setInterval(cargar, 30000);
+    return () => clearInterval(interval);
+  }, [token, user?.role]);
 
   useEffect(() => {
     const handler = (e) => { if (bellRef.current && !bellRef.current.contains(e.target)) setBellOpen(false); };
@@ -379,9 +397,22 @@ const Navbar = () => {
               )
             ) : (
               <Link key={link.path} to={link.path}
-                className={`nav-link-sm ${location.pathname===link.path?"active":""}`}>
-                <div className="icon-box"><i className={`bi ${link.icon}`}></i></div>
-                {!collapsed && link.label}
+                className={`nav-link-sm ${location.pathname===link.path?"active":""}`}
+                style={link.badge && pedidosPendientes > 0 ? { background:'rgba(239,68,68,0.12)', border:'1px solid rgba(239,68,68,0.3)', borderRadius:8 } : {}}>
+                <div className="icon-box" style={{position:'relative'}}>
+                  <i className={`bi ${link.icon}`}></i>
+                  {link.badge && pedidosPendientes > 0 && collapsed && (
+                    <span style={{position:'absolute',top:-4,right:-4,background:'#ef4444',color:'#fff',borderRadius:'50%',fontSize:9,width:16,height:16,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'bold'}}>{pedidosPendientes}</span>
+                  )}
+                </div>
+                {!collapsed && (
+                  <span className="d-flex align-items-center gap-2 w-100">
+                    {link.label}
+                    {link.badge && pedidosPendientes > 0 && (
+                      <span className="badge ms-auto" style={{background:'#ef4444',fontSize:10,padding:'2px 7px',borderRadius:10}}>{pedidosPendientes}</span>
+                    )}
+                  </span>
+                )}
               </Link>
             )
           )}

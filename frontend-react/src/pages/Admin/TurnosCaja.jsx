@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { shiftService } from '../../services/shiftService';
 import { userService } from '../../services/userService';
 import { cashCloseService } from '../../services/cashCloseService';
+// eslint-disable-next-line no-unused-vars
 import { exportCierresPDF, exportCierresExcel } from '../../services/exportService';
 import { cashAdjustmentService } from '../../services/cashAdjustmentService';
 import { apiFetch } from '../../services/api';
@@ -426,6 +427,7 @@ const AdminView = ({ token }) => {
   const [shifts,      setShifts]      = useState([]);
   const [closes,      setCloses]      = useState([]);
   const [users,       setUsers]       = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [branches,    setBranches]    = useState([]);
   const [cajas,       setCajas]       = useState([]);
   const [alert,       setAlert]       = useState(null);
@@ -441,6 +443,7 @@ const AdminView = ({ token }) => {
   const [closeModal,  setCloseModal]  = useState(null);
   const [selected,    setSelected]    = useState(null);
   const [comment,     setComment]     = useState('');
+  // eslint-disable-next-line no-unused-vars
   const [filterClose, setFilterClose] = useState('todos');
   const [adjModal,    setAdjModal]    = useState(null);
   const [adjTipo,     setAdjTipo]     = useState('ingreso');
@@ -505,6 +508,7 @@ const AdminView = ({ token }) => {
   const openShifts = shifts.filter(s => s.status === 'abierto');
   const pendientes = closes.filter(c => c.status === 'pendiente').length;
 
+  // eslint-disable-next-line no-unused-vars
   const handleOpen = async (e) => {
     e.preventDefault();
     try {
@@ -618,6 +622,7 @@ const AdminView = ({ token }) => {
 
   const cajeros   = [...new Set(shifts.map(s=>s.cashier).filter(Boolean))].sort();
   const filteredH = shifts.filter(s => (!filterCaj || s.cashier===filterCaj) && (!filterDate || s.opened_at?.slice(0,10)===filterDate));
+  // eslint-disable-next-line no-unused-vars
   const filteredC = filterClose==='todos' ? closes : closes.filter(c=>c.status===filterClose);
 
   return (
@@ -783,11 +788,14 @@ const AdminView = ({ token }) => {
                   {!filteredH.length
                     ? <tr><td colSpan="11" className="text-center text-muted py-4">Sin turnos</td></tr>
                     : filteredH.map(s => {
-                      const diff   = parseFloat(s.difference ?? 0);
+                      const diff         = parseFloat(s.difference ?? 0);
+                      const ajustesIngreso = parseFloat(s.ajustes_ingreso ?? 0);
+                      const diffReal       = diff + ajustesIngreso; // faltante real tras ajustes
                       const isOpen = s.status === 'abierto';
+                      const saldado = diff < 0 && diffReal >= 0;
                       return (
                         <React.Fragment key={s.id}>
-                          <tr style={{background: isOpen?'#f0fdf4': diff<0?'#fff5f5':''}}>
+                          <tr style={{background: isOpen?'#f0fdf4': diff<0&&saldado?'#fefce8': diff<0?'#fff5f5':''}}>
                             <td className="text-muted">{s.id}</td>
                             <td className="fw-semibold">👤 {s.cashier}</td>
                             <td className="text-muted">{s.cash_register ? `🖥️ ${s.cash_register}` : '—'}</td>
@@ -798,10 +806,10 @@ const AdminView = ({ token }) => {
                             <td className="text-end">{s.cash_counted!=null ? fmt(s.cash_counted) : '—'}</td>
                             <td className="text-end fw-bold">
                               {s.difference!=null
-                                ? <span className={diff>=0?'text-success':'text-danger'}>{diff>=0?'+':''}{fmt(diff)}</span>
+                                ? <span className={diff>=0?'text-success':saldado?'text-success':'text-danger'}>{diff>=0?'+':''}{fmt(diff)}{saldado?' ✓':''}</span>
                                 : '—'}
                             </td>
-                            <td><span className={`badge ${isOpen?'bg-success':diff<0?'bg-danger':'bg-secondary'}`}>{isOpen?'Abierto':diff<0?'Faltante':'Cerrado'}</span></td>
+                            <td><span className={`badge ${isOpen?'bg-success':diff<0&&!saldado?'bg-danger':diff<0&&saldado?'bg-warning text-dark':'bg-secondary'}`}>{isOpen?'Abierto':diff<0&&saldado?'✓ Saldado':diff<0?'Faltante':'Cerrado'}</span></td>
                             <td>
                               <div className="d-flex gap-1">
                                 <button className="btn btn-sm btn-outline-primary py-0 px-2" onClick={()=>loadDetail(s.id)}>{expanded===s.id?'▲':'▼'}</button>

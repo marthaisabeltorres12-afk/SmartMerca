@@ -207,17 +207,45 @@ def verificar(referencia):
 
 
 # ── SUSCRIPCIONES (admin) ─────────────────────────────────────────────────
+@wompi_bp.route('/planes/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_plan(id):
+    claims = get_jwt()
+    if not _admin(claims): return jsonify({'message':'Sin permiso'}), 403
+    import json
+    plan = Plan.query.get_or_404(id)
+    data = request.get_json() or {}
+    if 'nombre'      in data: plan.nombre      = data['nombre']
+    if 'descripcion' in data: plan.descripcion = data['descripcion']
+    if 'precio_cop'  in data: plan.precio_cop  = int(data['precio_cop'])
+    if 'features'    in data: plan.features    = json.dumps(data['features'])
+    db.session.commit()
+    return jsonify(plan.to_dict()), 200
+
+
 @wompi_bp.route('/suscripciones', methods=['GET'])
 @jwt_required()
 def get_suscripciones():
     claims = get_jwt()
-    if not _admin(claims):
-        return jsonify({'message': 'Sin permiso'}), 403
+    if not _admin(claims): return jsonify({'message':'Sin permiso'}), 403
     sus = Suscripcion.query.order_by(Suscripcion.created_at.desc()).all()
     return jsonify([s.to_dict() for s in sus]), 200
 
-# ── CATÁLOGO PÚBLICO ──────────────────────────────────────────────────────
-from controllers.wompi_catalogo_controller import pago_catalogo, get_pedidos_catalogo
 
-wompi_bp.route('/pago-catalogo',    methods=['POST'])(pago_catalogo)
-wompi_bp.route('/pedidos-catalogo', methods=['GET'])(get_pedidos_catalogo)
+@wompi_bp.route('/suscripciones/<int:id>/estado', methods=['PUT'])
+@jwt_required()
+def update_estado_suscripcion(id):
+    claims = get_jwt()
+    if not _admin(claims): return jsonify({'message':'Sin permiso'}), 403
+    sus   = Suscripcion.query.get_or_404(id)
+    data  = request.get_json() or {}
+    estado = data.get('estado')
+    if estado not in ['pendiente','activa','vencida','cancelada']:
+        return jsonify({'message':'Estado inválido'}), 400
+    sus.estado = estado
+    if estado == 'activa' and not sus.fecha_inicio:
+        from datetime import timedelta
+        sus.fecha_inicio = datetime.now()
+        sus.fecha_vence  = datetime.now() + timedelta(days=30)
+    db.session.commit()
+    return jsonify(sus.to_dict()), 200

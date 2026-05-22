@@ -56,7 +56,20 @@ class Shift(db.Model):
             'branch_name':  self.branch.nombre if self.branch else None,
             'points_earned':self.points_earned or 0,
             'withdrawals':  [w.to_dict() for w in self.withdrawals],
+            'ajustes_ingreso': self._ajustes_ingreso(),
         }
+
+    def _ajustes_ingreso(self):
+        """Total de ajustes de ingreso vinculados a este turno."""
+        try:
+            from models.cash_adjustment import CashAdjustment
+            total = sum(
+                float(a.monto) for a in CashAdjustment.query
+                .filter_by(relacionado_a_turno_id=self.id, tipo='ingreso').all()
+            )
+            return total
+        except Exception:
+            return 0
 
 
 class ShiftWithdrawal(db.Model):
