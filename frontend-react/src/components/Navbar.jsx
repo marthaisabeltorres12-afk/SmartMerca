@@ -8,6 +8,8 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 const adminLinks = [
   { path: "/admin", icon: "bi-speedometer2", label: "Dashboard" },
+   { path: "/admin/domicilios", icon: "bi-bicycle", label: "🛵 Domicilios", badge: "pendientes" },
+  
 
   // 📦 INVENTARIO
   {
@@ -26,9 +28,7 @@ const adminLinks = [
     ]
   },
 
-  // 🛵 DOMICILIOS — destacado
-  { path: "/admin/domicilios", icon: "bi-bicycle", label: "🛵 Domicilios", badge: "pendientes" },
-  { path: "/admin/mi-plan", icon: "bi-gem", label: "💎 Mi Plan" },
+ 
 
   // 👥 CLIENTES
   {
@@ -45,7 +45,7 @@ const adminLinks = [
     group: true, label: "Finanzas", icon: "bi-cash-stack", key: "finanzas",
     children: [
       { path: "/admin/cuentas-pagar", icon: "bi-receipt",      label: "Cuentas x Pagar" },
-      { path: "/admin/nomina",        icon: "bi-person-badge", label: "Nómina" },
+      
     ]
   },
 
@@ -69,13 +69,13 @@ const adminLinks = [
     group: true, label: "Reportes", icon: "bi-bar-chart", key: "reportes",
     children: [
       { path: "/admin/reportes",        icon: "bi-bar-chart",       label: "Reportes" },
-      { path: "/admin/predicciones", icon: "bi-robot", label: "IA Predictiva" },
       { path: "/admin/analisis-ventas", icon: "bi-graph-up-arrow",  label: "Análisis Ventas" },
       { path: "/admin/finanzas",        icon: "bi-currency-dollar", label: "Finanzas" },
       { path: "/admin/auditoria",       icon: "bi-clipboard-data",  label: "Auditoría" },
       { path: "/admin/alertas",         icon: "bi-bell",            label: "Alertas" },
     ]
   },
+  { path: "/admin/mi-plan", icon: "bi-gem", label: "💎 Mi Plan" }, 
 ];
 
 const cajeroLinks = [
