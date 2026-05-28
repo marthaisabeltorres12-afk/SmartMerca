@@ -37,7 +37,7 @@ from routes.import_export_routes    import import_export_bp
 from routes.multicaja_routes import multicaja_bp
 from routes.reservas_routes import reservas_bp
 from routes.whatsapp_routes import whatsapp_bp
-from routes.predictive_routes import predictive_bp
+
 from routes.dian_routes import dian_bp
 from routes.datafono_routes import datafono_bp
 from routes.wompi_routes import wompi_bp
@@ -60,7 +60,7 @@ def create_app():
     jwt.init_app(app)
     mail.init_app(app)
     app.register_blueprint(wompi_bp, url_prefix='/api/wompi')
-    app.register_blueprint(predictive_bp, url_prefix='/api/dashboard')
+   
     app.register_blueprint(whatsapp_bp, url_prefix='/api/whatsapp')
     app.register_blueprint(reservas_bp, url_prefix='/api/reservas')
     app.register_blueprint(multicaja_bp, url_prefix='/api/cajas')

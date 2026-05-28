@@ -153,8 +153,25 @@ def delete_product(id):
         return jsonify({'message': 'Acceso denegado'}), 403
 
     product = Product.query.get_or_404(id)
+    nombre  = product.name
 
-    nombre = product.name 
+    # Verificar si tiene ventas registradas
+    from sqlalchemy import text
+    pid = product.id
+    ventas = db.session.execute(
+        text("SELECT COUNT(*) FROM sale_items WHERE product_id = :pid"), {"pid": pid}
+    ).scalar() or 0
+
+    if ventas > 0:
+        # Desactivar en vez de eliminar
+        product.is_active = False
+        db.session.commit()
+        return jsonify({
+            'action':  'deactivated',
+            'message': f'"{nombre}" tiene {ventas} venta(s) registrada(s) y no puede eliminarse.',
+            'detail':  'El producto fue desactivado y no aparecerá en búsquedas, pero se conserva su historial.',
+            'ventas':  ventas,
+        }), 200
 
     try:
         from sqlalchemy import text

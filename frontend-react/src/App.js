@@ -14,7 +14,7 @@ import ContadorDashboard   from './pages/Roles/ContadorDashboard';
 import AuditorDashboard    from './pages/Roles/AuditorDashboard';
 
 // ── Admin ──
-import DashboardPredictivo from './pages/Admin/DashboardPredictivo';
+
 import AdminDashboard        from './pages/Admin/AdminDashboard';
 import CuentasPagar          from './pages/Admin/CuentasPagar';
 import Merma                 from './pages/Admin/Merma';
@@ -22,7 +22,6 @@ import OrdenesCompra         from './pages/Admin/OrdenesCompra';
 import ConteoInventario      from './pages/Admin/ConteoInventario';
 import Bodegas               from './pages/Admin/Bodegas';
 import Sucursales            from './pages/Admin/Sucursales';
-import Nomina                from './pages/Admin/Nomina';
 import ManageProducts        from './pages/Admin/ManageProducts';
 import Inventory             from './pages/Admin/Inventory';
 import ManageSuppliers       from './pages/Admin/ManageSuppliers';
@@ -95,7 +94,7 @@ function App() {
             <Route path="/contador"             element={<PrivateRoute roles={['contador']}><ContadorDashboard /></PrivateRoute>} />
             <Route path="/contador/finanzas"    element={<PrivateRoute roles={['contador']}><ContadorDashboard /></PrivateRoute>} />
             <Route path="/contador/ventas"      element={<PrivateRoute roles={['contador']}><ContadorDashboard /></PrivateRoute>} />
-            <Route path="/contador/nomina"      element={<PrivateRoute roles={['contador']}><ContadorDashboard /></PrivateRoute>} />
+           
             <Route path="/contador/cuentas"     element={<PrivateRoute roles={['contador']}><ContadorDashboard /></PrivateRoute>} />
             <Route path="/contador/auditoria"   element={<PrivateRoute roles={['contador']}><ContadorDashboard /></PrivateRoute>} />
 
@@ -136,10 +135,10 @@ function App() {
             <Route path="/admin/mi-plan" element={<PrivateRoute roles={['admin','admin_tecnico']}><MiPlan /></PrivateRoute>} />
            
             <Route path="/admin/domicilios" element={<PrivateRoute roles={['admin','admin_tecnico','supervisor','cajero']}><DomiciliosAdmin /></PrivateRoute>} />
-            <Route path="/admin/nomina"            element={<PrivateRoute roles={['admin','admin_tecnico']}><Nomina /></PrivateRoute>} />
+            
             <Route path="/admin/politicas"         element={<PrivateRoute roles={['admin','admin_tecnico']}><BusinessPolicy /></PrivateRoute>} />
             <Route path="/admin/importar" element={<PrivateRoute roles={['admin','admin_tecnico']}><ImportarProductos /></PrivateRoute>} />
-            <Route path="/admin/predicciones" element={<PrivateRoute roles={['admin','admin_tecnico']}><DashboardPredictivo /></PrivateRoute>} />
+            
             {/* ── Cajero ── */}
             <Route path="/cajero/ventas"       element={<PrivateRoute roles={['cajero']}><Sales /></PrivateRoute>} />
             <Route path="/cajero/historial"    element={<PrivateRoute roles={['cajero']}><SalesHistory /></PrivateRoute>} />

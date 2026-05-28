@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#1e3a5f"/>
   <link rel="manifest" href="/bodeguero-manifest.json"/>
   <title>SmartMerca Bodeguero</title>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://rawgit.com/schmich/instascan/master/instascan.min.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f172a;color:#fff;min-height:100vh;max-width:480px;margin:0 auto}
@@ -109,9 +109,18 @@
 <!-- APP PRINCIPAL -->
 <div id="app" style="display:none">
   <div class="hdr">
-    <div>
-      <div style="font-size:17px;font-weight:800">📦 Bodeguero</div>
-      <div class="hdr-sub" id="user-name">Cargando...</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <!-- Avatar con click para cambiar foto -->
+      <div id="avatar-circle" onclick="abrirModalAvatar()"
+        style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#1d4ed8);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;cursor:pointer;overflow:hidden;flex-shrink:0;border:2px solid rgba(255,255,255,0.3);position:relative">
+        <span id="avatar-initial" style="color:#fff">?</span>
+        <img id="avatar-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0" alt="foto"/>
+      </div>
+      <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="subirAvatar(this)"/>
+      <div>
+        <div style="font-size:15px;font-weight:800">📦 Bodeguero</div>
+        <div class="hdr-sub" id="user-name">Cargando...</div>
+      </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
       <div class="online-dot" id="online-dot"></div>
@@ -287,7 +296,7 @@
 
 <script>
 // ── Config ─────────────────────────────────────────────────────────────────
-let API      = localStorage.getItem('b_api') || 'http://localhost:5000/api';
+let API      = localStorage.getItem('b_api') || (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'http://' + window.location.hostname + ':5000/api');
 let token    = localStorage.getItem('b_token') || '';
 let userName = localStorage.getItem('b_user')  || '';
 let products = [];
@@ -370,6 +379,64 @@ async function doLogin() {
   } catch(e) { alrt.innerHTML = `<div class="alert alert-danger">❌ ${e.message}</div>`; }
 }
 
+
+// ── AVATAR ──────────────────────────────────────────────────────────────
+function _actualizarAvatarUI(base64) {
+  var img = document.getElementById('avatar-img');
+  var ini = document.getElementById('avatar-initial');
+  if (base64) {
+    img.src = base64; img.style.display = 'block'; ini.style.display = 'none';
+  } else {
+    img.style.display = 'none'; ini.style.display = 'flex';
+    ini.textContent = (userName||'?').charAt(0).toUpperCase();
+  }
+  var mImg = document.getElementById('m-av-img');
+  var mIni = document.getElementById('m-av-initial');
+  if (mImg && mIni) {
+    if (base64) { mImg.src = base64; mImg.style.display = 'block'; mIni.style.display = 'none'; }
+    else { mImg.style.display = 'none'; mIni.style.display = 'flex'; mIni.textContent = (userName||'?').charAt(0).toUpperCase(); }
+  }
+  var btnQ = document.getElementById('btn-quitar-foto');
+  if (btnQ) btnQ.style.display = base64 ? 'block' : 'none';
+}
+function abrirModalAvatar() {
+  var modal = document.getElementById('modal-avatar');
+  if (!modal) return;
+  var nm = document.getElementById('m-av-name');
+  if (nm) nm.textContent = userName || 'Bodeguero';
+  _actualizarAvatarUI(localStorage.getItem('b_avatar') || null);
+  modal.style.display = 'flex';
+}
+function cerrarModalAvatar() {
+  var modal = document.getElementById('modal-avatar');
+  if (modal) modal.style.display = 'none';
+}
+async function subirAvatar(input) {
+  var file = input.files[0];
+  if (!file) return;
+  if (file.size > 2000000) { toast('⚠️ Imagen menor a 2MB'); return; }
+  var reader = new FileReader();
+  reader.onload = async function(e) {
+    var base64 = e.target.result;
+    try {
+      await api('/users/me/avatar', { method:'PUT', body: JSON.stringify({ avatar: base64 }) });
+      localStorage.setItem('b_avatar', base64);
+      _actualizarAvatarUI(base64);
+      cerrarModalAvatar();
+      toast('✅ Foto actualizada');
+    } catch(err) { toast('❌ Error subiendo la foto'); }
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+async function quitarAvatar() {
+  localStorage.removeItem('b_avatar');
+  _actualizarAvatarUI(null);
+  cerrarModalAvatar();
+  toast('✅ Foto eliminada');
+  api('/users/me/avatar', { method:'PUT', body: JSON.stringify({ avatar: null }) }).catch(function(){});
+}
+
 function doLogout() {
   localStorage.removeItem('b_token'); localStorage.removeItem('b_user');
   token = ''; userName = '';
@@ -382,6 +449,7 @@ async function initApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('user-name').textContent = userName;
+  _actualizarAvatarUI(localStorage.getItem('b_avatar') || null);
   updateOnline();
   await loadProducts();
   await loadBodegas();
@@ -696,23 +764,64 @@ async function confirmarTraslado() {
 // ── ESCÁNER ────────────────────────────────────────────────────────────────
 let html5QrCode=null, scannerTarget='recibir';
 async function openScanner(target) {
-  scannerTarget=target;
-  const modal=document.getElementById('scanner-modal'); modal.style.display='flex';
+  scannerTarget = target;
+
+  // ── 1. Verificar HTTPS ──────────────────────────────────────────────
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+    toast('❌ La cámara requiere conexión HTTPS', 4000);
+    return;
+  }
+
+  // ── 2. Verificar soporte de cámara ──────────────────────────────────
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    toast('❌ Tu navegador no soporta cámara', 4000);
+    return;
+  }
+
+  const modal = document.getElementById('scanner-modal');
+  modal.style.display = 'flex';
+
   try {
-    document.getElementById('scanner-container').innerHTML='<div id="qr-reader" style="width:100%;height:100%"></div>';
-    if (typeof Html5Qrcode==='undefined') { toast('❌ Librería no cargó.',3000); modal.style.display='none'; return; }
-    html5QrCode=new Html5Qrcode('qr-reader');
-    await html5QrCode.start({ facingMode:'environment' }, { fps:10, qrbox:{width:250,height:150}, aspectRatio:1.5 },
+    // Pedir permiso explícitamente primero
+    await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+
+    document.getElementById('scanner-container').innerHTML =
+      '<div id="qr-reader" style="width:100%;height:100%"></div>';
+
+    if (typeof Html5Qrcode === 'undefined') {
+      toast('❌ Librería QR no cargó. Verifica internet.', 3500);
+      modal.style.display = 'none';
+      return;
+    }
+
+    html5QrCode = new Html5Qrcode('qr-reader');
+    await html5QrCode.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.5 },
       (decodedText) => {
         closeScanner();
-        if (scannerTarget==='recibir')  { document.getElementById('r-query').value=decodedText; buscarProducto(true); }
-        else if (scannerTarget==='traslado') { document.getElementById('t-query').value=decodedText; buscarProdTraslado(); }
-        else if (scannerTarget==='conteo')   { document.getElementById('c-search').value=decodedText; renderConteo(); }
-        else if (scannerTarget==='stock')    { document.getElementById('s-search').value=decodedText; renderStock(); }
+        if (scannerTarget === 'recibir')       { document.getElementById('r-query').value = decodedText;  buscarProducto(true); }
+        else if (scannerTarget === 'traslado') { document.getElementById('t-query').value = decodedText;  buscarProdTraslado(); }
+        else if (scannerTarget === 'conteo')   { document.getElementById('c-search').value = decodedText; renderConteo(); }
+        else if (scannerTarget === 'stock')    { document.getElementById('s-search').value = decodedText; renderStock(); }
         toast(`✅ Código: ${decodedText}`);
-      }, ()=>{}
+      },
+      () => {} // error de frame (normal, ignorar)
     );
-  } catch(e) { toast(`❌ Error cámara: ${e.message}`,3000); modal.style.display='none'; }
+  } catch (e) {
+    modal.style.display = 'none';
+    // Detectar tipo de error
+    const msg = e?.message || e?.name || String(e) || '';
+    if (msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('notallowed') || e?.name === 'NotAllowedError') {
+      toast('❌ Permiso de cámara denegado. Actívalo en ajustes del navegador.', 5000);
+    } else if (e?.name === 'NotFoundError' || msg.toLowerCase().includes('notfound')) {
+      toast('❌ No se encontró cámara en este dispositivo.', 4000);
+    } else if (e?.name === 'NotReadableError') {
+      toast('❌ Cámara ocupada por otra app.', 4000);
+    } else {
+      toast(`❌ Error cámara: ${msg || 'Permiso denegado o cámara no disponible'}`, 4000);
+    }
+  }
 }
 async function closeScanner() {
   try { if(html5QrCode){await html5QrCode.stop();html5QrCode.clear();html5QrCode=null;} } catch{}
@@ -754,5 +863,33 @@ if (token) initApp();
 else { document.getElementById('login-screen').style.display='flex'; document.getElementById('app').style.display='none'; }
 document.addEventListener('keydown', e => { if(e.key==='Enter'&&document.getElementById('login-screen').style.display!=='none') doLogin(); });
 </script>
+
+<!-- ── MODAL AVATAR ────────────────────────────────────── -->
+<div id="modal-avatar" onclick="cerrarModalAvatar()"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;">
+  <div onclick="event.stopPropagation()"
+    style="background:#1e293b;border-radius:20px;padding:28px 20px;width:88%;max-width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+    <!-- Foto grande -->
+    <div style="width:110px;height:110px;border-radius:50%;margin:0 auto 14px;overflow:hidden;border:3px solid #3b82f6;background:linear-gradient(135deg,#3b82f6,#1d4ed8);display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:800;position:relative">
+      <span id="m-av-initial" style="color:#fff">?</span>
+      <img id="m-av-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0" alt="foto"/>
+    </div>
+    <div id="m-av-name" style="font-size:17px;font-weight:700;color:#fff;margin-bottom:2px"></div>
+    <div style="font-size:11px;color:#64748b;margin-bottom:20px">📦 Módulo Bodeguero</div>
+    <!-- Botones -->
+    <button onclick="document.getElementById('avatar-input').click()"
+      style="width:100%;padding:13px;background:#3b82f6;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px">
+      📷 Cambiar foto de perfil
+    </button>
+    <button id="btn-quitar-foto" onclick="quitarAvatar()"
+      style="width:100%;padding:13px;background:#374151;color:#94a3b8;border:none;border-radius:12px;font-size:14px;cursor:pointer;margin-bottom:10px">
+      🗑️ Quitar foto
+    </button>
+    <button onclick="cerrarModalAvatar()"
+      style="width:100%;padding:13px;background:none;color:#64748b;border:1px solid #374151;border-radius:12px;font-size:14px;cursor:pointer">
+      Cerrar
+    </button>
+  </div>
+</div>
 </body>
 </html>

@@ -165,7 +165,7 @@ const AdminPinSetup = () => {
                   <div className="mb-3">
                     <label className="form-label fw-semibold small">Nuevo PIN</label>
                     <div className="input-group">
-                      <input type={show?'text':'password'} className="form-control form-control-lg text-center"
+                      <input type={show?'text':'password'} className="form-control form-control-lg text-center" autoComplete="new-password" name="pin-setup"
                         placeholder="• • • •" maxLength={6} value={pin}
                         onChange={e=>{ setPin(e.target.value.replace(/\D/g,'')); setMsg(null); }}
                         style={{ letterSpacing:10, fontSize:24 }}/>

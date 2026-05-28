@@ -163,43 +163,52 @@
 <!-- Modal envío -->
 <div class="envio-bg" id="envio-bg">
   <div class="envio-modal">
-    <h3 style="font-weight:800;font-size:18px;margin-bottom:16px">¿Cómo quieres recibir tu pedido?</h3>
-    <div class="envio-opt" id="opt-tienda" onclick="selEnvio('tienda')">
-      <div class="envio-icon">🏪</div>
-      <div>
-        <div class="envio-lbl">Recoger en tienda</div>
-        <div class="envio-sub">Sin costo adicional</div>
+    <h3 style="font-weight:800;font-size:18px;margin-bottom:6px">📦 Finalizar pedido</h3>
+    <p style="font-size:13px;color:#64748b;margin-bottom:16px">El pago se coordina contra entrega o Nequi directo con el negocio</p>
+
+    <!-- Datos del cliente -->
+    <div style="margin-bottom:10px">
+      <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px">👤 Tu nombre *</label>
+      <input type="text" id="cli-nombre" placeholder="Ej: Juan Pérez"
+        style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box"/>
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px">📱 Tu teléfono *</label>
+      <input type="tel" id="cli-tel" placeholder="Ej: 3001234567"
+        style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box"/>
+    </div>
+
+    <!-- Tipo de entrega -->
+    <div style="margin-bottom:10px">
+      <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:6px">🚚 ¿Cómo recibes tu pedido? *</label>
+      <div style="display:flex;gap:8px">
+        <div id="opt-tienda" onclick="selEnvio('tienda')"
+          style="flex:1;padding:10px;border:2px solid #e2e8f0;border-radius:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:600">
+          🏪 Recoger en tienda
+        </div>
+        <div id="opt-domicilio" onclick="selEnvio('domicilio')"
+          style="flex:1;padding:10px;border:2px solid #e2e8f0;border-radius:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:600">
+          🛵 Domicilio
+        </div>
       </div>
     </div>
-    <div class="envio-opt" id="opt-domicilio" onclick="selEnvio('domicilio')">
-      <div class="envio-icon">🛵</div>
-      <div>
-        <div class="envio-lbl">Domicilio</div>
-        <div class="envio-sub">Ingresa tu dirección</div>
-      </div>
+    <input type="text" class="addr-input" id="addr-input" placeholder="📍 Dirección de entrega (Ej: Calle 10 #5-23)"/>
+
+    <!-- Nota -->
+    <div style="margin-bottom:14px">
+      <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px">📝 Nota adicional (opcional)</label>
+      <input type="text" id="cli-nota" placeholder="Ej: Dejar en portería, color azul, etc."
+        style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box"/>
     </div>
-    <input type="text" class="addr-input" id="addr-input" placeholder="Ej: Calle 10 #5-23, Barrio Centro"/>
-    <button class="wa-send" onclick="sendWhatsApp()">
+
+    <!-- Botón WhatsApp -->
+    <button class="wa-send" onclick="sendWhatsApp()" style="margin-bottom:10px">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/></svg>
       Enviar pedido por WhatsApp
     </button>
-    <!-- Separador -->
-    <div style="display:flex;align-items:center;gap:10px;margin:10px 0">
-      <div style="flex:1;height:1px;background:#e2e8f0"></div>
-      <span style="font-size:11px;color:#94a3b8;font-weight:600">O PAGAR EN LÍNEA</span>
-      <div style="flex:1;height:1px;background:#e2e8f0"></div>
-    </div>
-
-    <!-- Botón Wompi -->
-    <button id="btn-wompi" onclick="pagarConWompi()"
-      style="width:100%;background:#f0f4ff;border:2px solid #4f46e5;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;color:#4f46e5;display:flex;align-items:center;justify-content:center;gap:8px">
-      💳 Pagar con tarjeta / PSE / Nequi
-    </button>
-    <div id="wompi-loading" style="display:none;text-align:center;padding:10px;color:#64748b;font-size:13px">⏳ Preparando pago seguro...</div>
-    <div id="wompi-error" style="display:none;background:#fee2e2;border-radius:10px;padding:10px;font-size:13px;color:#dc2626;margin-top:6px"></div>
 
     <button onclick="document.getElementById('envio-bg').classList.remove('show')"
-      style="width:100%;margin-top:10px;background:none;border:none;color:#64748b;font-size:14px;cursor:pointer;padding:8px">
+      style="width:100%;margin-top:2px;background:none;border:none;color:#94a3b8;font-size:13px;cursor:pointer;padding:8px">
       ← Volver al pedido
     </button>
   </div>
@@ -211,7 +220,7 @@
 // ══════════════════════════════════════════════════════════════════
 const BACKEND = window.location.hostname === 'localhost'
   ? 'http://localhost:5000/api'
-  : 'https://TU-BACKEND.railway.app/api'; // ← CAMBIAR en producción
+  : 'http://' + window.location.hostname + ':5000/api';
 // ══════════════════════════════════════════════════════════════════
 
 const API = BACKEND + '/catalogo/productos';
@@ -501,19 +510,61 @@ function selEnvio(tipo){
   addr.classList.toggle('show',tipo==='domicilio');
 }
 
-function sendWhatsApp(){
-  if(envioType==='domicilio'){
-    const addr=document.getElementById('addr-input').value.trim();
-    if(!addr){alert('Ingresa tu dirección de domicilio');document.getElementById('addr-input').focus();return;}
-  }
-  const lines=cart.map(i=>`• ${i.label} = ${fmt(i.total)}`);
-  const total=cart.reduce((a,i)=>a+i.total,0);
-  const entrega=envioType==='tienda'
-    ? '🏪 *Recojo en tienda*'
-    : `🛵 *Domicilio a:* ${document.getElementById('addr-input').value}`;
-  const msg=`🛒 *Pedido SmartMerca*\n\n${lines.join('\n')}\n\n*Total estimado: ${fmt(total)}*\n\n${entrega}\n\n_Enviado desde el catálogo en línea_`;
-  const phone=bizPhone||'573000000000';
+async function sendWhatsApp(){
+  // Validar campos
+  const nombre = (document.getElementById('cli-nombre')?.value||'').trim();
+  const tel    = (document.getElementById('cli-tel')?.value||'').trim();
+  const nota   = (document.getElementById('cli-nota')?.value||'').trim();
+  const addr   = (document.getElementById('addr-input')?.value||'').trim();
+
+  if (!nombre){ alert('Ingresa tu nombre'); document.getElementById('cli-nombre').focus(); return; }
+  if (!tel)   { alert('Ingresa tu teléfono'); document.getElementById('cli-tel').focus(); return; }
+  if (!envioType){ alert('Selecciona cómo recibes el pedido'); return; }
+  if (envioType==='domicilio' && !addr){ alert('Ingresa tu dirección'); document.getElementById('addr-input').focus(); return; }
+
+  const lines = cart.map(i=>`• ${i.label} = ${fmt(i.total)}`);
+  const total = cart.reduce((a,i)=>a+i.total,0);
+  const entrega = envioType==='tienda' ? '🏪 Recojo en tienda' : `🛵 Domicilio a: ${addr}`;
+
+  var notaLine = nota ? ('Nota: ' + nota + '\n') : '';
+  const msg = 'Nuevo pedido - SmartMerca\n\n' +
+    'Cliente: ' + nombre + '\n' +
+    'Telefono: ' + tel + '\n' +
+    entrega + '\n' +
+    notaLine + '\n' +
+    'Productos:\n' + lines.join('\n') + '\n\n' +
+    'Total: ' + fmt(total) + '\n\n' +
+    'Pago: efectivo contra entrega o Nequi';
+
+  // Crear pedido en la BD automáticamente
+  try {
+    const items = cart.map(i=>({ product_id: i.id, product_name: i.label.split(' x')[0], quantity: i.qty||1, price: i.price||i.total, subtotal: i.total }));
+    await fetch(`${BACKEND}/domicilios/desde-catalogo`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        cliente_nombre:    nombre,
+        cliente_telefono:  tel,
+        cliente_direccion: envioType==='domicilio' ? addr : 'Recoge en tienda',
+        metodo_pago:       'por_definir',
+        notas:             nota || 'Pedido desde catálogo online',
+        total:             total,
+        valor_domicilio:   envioType==='domicilio' ? 3000 : 0,
+        tipo_entrega:      envioType,
+        items
+      })
+    });
+  } catch(e){ console.log('BD pedido error:', e); }
+
+  // Abrir WhatsApp con mensaje listo
+  const phone = bizPhone||'573203308547';
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank');
+
+  // Limpiar carrito
+  cart=[];
+  renderCart();
+  document.getElementById('envio-bg').classList.remove('show');
+  showToast('✅ Pedido enviado por WhatsApp');
 }
 
 function showToast(msg){

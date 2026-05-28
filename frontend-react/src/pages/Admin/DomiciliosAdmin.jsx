@@ -209,6 +209,13 @@ export default function DomiciliosAdmin() {
                         <div className="small text-muted">Pago: {p.metodo_pago} · Domicilio: {fmt(p.valor_domicilio)}</div>
                       </div>
 
+                      {/* Cajero asignado */}
+                      {p.cajero && (
+                        <div className="small p-2 rounded mb-2" style={{background:'#eff6ff'}}>
+                          👤 <strong>Cajero:</strong> {p.cajero.nombre}
+                        </div>
+                      )}
+
                       {/* Domiciliario */}
                       {p.domiciliario && (
                         <div className="small p-2 rounded mb-2" style={{background:'#eff6ff'}}>

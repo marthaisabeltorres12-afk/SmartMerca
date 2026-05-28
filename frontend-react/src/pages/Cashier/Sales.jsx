@@ -8,6 +8,7 @@ import { productService } from '../../services/productService';
 import { saleService } from '../../services/saleService';
 import { customerService } from '../../services/customerService';
 import { presentationService } from '../../services/presentationService';
+import { apiFetch } from '../../services/api';
 import AuthModal from '../../components/AuthModal';
 import useOfflineMode from '../../hooks/useOfflineMode';
 import OfflineIndicator from '../../components/OfflineIndicator';
@@ -277,6 +278,7 @@ const SalePanel = ({
   suspendedSales = [], onSuspend, onRecover, onOpenCamera,
   onAddTabSinDian,  isOnline,
   guardarVentaPendiente, tabs = [],
+  camaraProductoPeso, onClearCamaraProductoPeso,
 }) => {
   const queryRef  = useRef();
   const weightRef = useRef();
@@ -311,6 +313,15 @@ const SalePanel = ({
 
   useEffect(() => { queryRef.current?.focus(); }, []);
   useEffect(() => { if (weightModal) setTimeout(() => weightRef.current?.focus(), 100); }, [weightModal]);
+
+  // Abrir modal de peso cuando la cámara IA detecta un producto por peso
+  useEffect(() => {
+    if (camaraProductoPeso) {
+      setWeightInput('');
+      setWeightModal(camaraProductoPeso);
+      if (typeof onClearCamaraProductoPeso === 'function') onClearCamaraProductoPeso();
+    }
+  }, [camaraProductoPeso]);
   useEffect(() => { if (pinModal)    setTimeout(() => pinRef.current?.focus(),    100); }, [pinModal]);
   useEffect(() => { if (calcModal)   setTimeout(() => calcRef.current?.focus(),   100); }, [calcModal]);
   useEffect(() => { if (priceModal)  setTimeout(() => priceRef.current?.focus(),  100); }, [priceModal]);
@@ -348,8 +359,17 @@ const SalePanel = ({
       ...p,
       _type:           'presentation',
       product_id:      p.product_id ?? p.base_product_id,
-      stock_available: typeof p.stock_packs === 'number' ? p.stock_packs
-                       : (p.base_stock && p.units_per_pack ? Math.floor(p.base_stock / p.units_per_pack) : 0),
+      stock_available: (() => {
+        const base = p.base_stock || 0;
+        const factor = p.units_per_pack || 1;
+        const pid = p.product_id ?? p.base_product_id;
+        // Descontar unidades directas y packs de TODAS las pestañas
+        const allCarts = tabs ? tabs.map(t => t.cart).flat() : [];
+        const directas = allCarts.filter(c => c.product_id === pid && !c.is_presentation).reduce((a,c) => a+(parseFloat(c.quantity)||0),0);
+        const enPacks  = allCarts.filter(c => c.product_id === pid && c.is_presentation).reduce((a,c) => a+(parseFloat(c.quantity)||0)*(parseFloat(c.factor)||1),0);
+        const libre = Math.max(0, base - directas - enPacks);
+        return Math.floor(libre / factor);
+      })(),
     }));
 
     const combined = [...foundPres, ...foundProds].slice(0, 12);
@@ -870,9 +890,20 @@ setDianModal(true);
   const cambio = parseFloat(tab.cashReceived || 0) - total;
 
   const stockBadge = (item) => {
-    const maxStock = item.is_presentation
-      ? (item.stock || 0)
-      : stockDisponible(item.product_id, tab.cart, products) + item.quantity;
+    let maxStock;
+    if (item.is_presentation) {
+      // Recalcular packs disponibles en tiempo real
+      const factor = item.factor || item.units_per_pack || 1;
+      const prod   = products.find(p => p.id === item.product_id);
+      const base   = prod?.stock || 0;
+      const allCarts = tabs ? tabs.map(t => t.cart).flat() : tab.cart;
+      const directas = allCarts.filter(c => c.product_id === item.product_id && !c.is_presentation).reduce((a,c) => a+(parseFloat(c.quantity)||0), 0);
+      const enPacks  = allCarts.filter(c => c.product_id === item.product_id && c.is_presentation).reduce((a,c) => a+(parseFloat(c.quantity)||0)*(parseFloat(c.factor)||1), 0);
+      const libre    = Math.max(0, base - directas - enPacks) + (parseFloat(item.quantity)||0) * factor;
+      maxStock = Math.floor(libre / factor);
+    } else {
+      maxStock = stockDisponible(item.product_id, tab.cart, products) + item.quantity;
+    }
     const left = maxStock - item.quantity;
     if (left <= 0) return 'bg-danger';
     if (left <= 3) return 'bg-warning text-dark';
@@ -947,7 +978,20 @@ setDianModal(true);
                           )}
                           {!c.porPeso && (
                             <div style={{ fontSize:'0.7rem' }}>
-                              <span className={'badge ' + stockBadge(c)}>Disp: {maxQty - c.quantity}</span>
+                              {c.is_presentation ? (() => {
+                                const factor = c.factor || c.units_per_pack || 1;
+                                const prod   = products.find(p => p.id === c.product_id);
+                                const base   = prod?.stock || 0;
+                                const allCarts = tabs ? tabs.map(t => t.cart).flat() : tab.cart;
+                                const directas = allCarts.filter(x => x.product_id === c.product_id && !x.is_presentation).reduce((a,x) => a+(parseFloat(x.quantity)||0), 0);
+                                const enPacks  = allCarts.filter(x => x.product_id === c.product_id && x.is_presentation).reduce((a,x) => a+(parseFloat(x.quantity)||0)*(parseFloat(x.factor)||1), 0);
+                                const libre    = Math.max(0, base - directas - enPacks) + (parseFloat(c.quantity)||0) * factor;
+                                const dispPacks = Math.floor(libre / factor);
+                                const left = dispPacks - c.quantity;
+                                return <span className={'badge ' + (left<=0?'bg-danger':left<=3?'bg-warning text-dark':'bg-success')}>Disp: {left} pack{left!==1?'s':''}</span>;
+                              })() : (
+                                <span className={'badge ' + stockBadge(c)}>Disp: {maxQty - c.quantity}</span>
+                              )}
                             </div>
                           )}
                         </td>
@@ -1880,19 +1924,42 @@ const Sales = () => {
   const { token, user, logout } = useAuth();
   const navigate = useNavigate();
   const [shiftOk,        setShiftOk]        = React.useState(null);
+  const [shiftData,      setShiftData]      = React.useState(null);
+  const [showAbrirTurno, setShowAbrirTurno] = React.useState(false);
+  const [showCerrarTurno,setShowCerrarTurno]= React.useState(false);
+  const [efectivoInicial,setEfectivoInicial]= React.useState('');
+  const [efectivoContado,setEfectivoContado]= React.useState('');
+  const [cierreLoading,  setCierreLoading]  = React.useState(false);
   const [products,       setProducts]       = useState([]);
   const [presentations,  setPresentations]  = useState([]);
   const [tabs,           setTabs]           = useState(() => [newTab()]);
   const [activeTabId,    setActiveTabId]    = useState(tabs[0].id);
   const [alert,          setAlert]          = useState(null);
   const [confirmCancelVenta, setConfirmCancelVenta] = useState(null);
-  const [showCamaraIA,   setShowCamaraIA]   = useState(false);
+  const [showCamaraIA,       setShowCamaraIA]       = useState(false);
+  const [camaraProductoPeso, setCamaraProductoPeso] = useState(null);
   const [lastSale,       setLastSale]       = useState(null);
   const [suspendedSales, setSuspendedSales] = useState([]);
   const handleSaleRef = React.useRef(null);
   // eslint-disable-next-line no-unused-vars
   const reservaciones = useCartReservations(token);
   const MAX_TABS = 5;
+  const [pedidosCatalogo, setPedidosCatalogo] = useState([]);
+  const [showPedidos,     setShowPedidos]     = useState(false);
+
+  // Consultar pedidos del catálogo asignados a este cajero cada 30s
+  useEffect(() => {
+    if (!token || !user?.id) return;
+    const cargar = () => {
+      apiFetch(`/domicilios?cajero_id=${user.id}&estado=asignado`, {}, token)
+        .then(data => setPedidosCatalogo(Array.isArray(data) ? data.filter(d => d.numero_pedido?.startsWith('CAT-')) : []))
+        .catch(() => {});
+    };
+    cargar();
+    const interval = setInterval(cargar, 30000);
+    return () => clearInterval(interval);
+  }, [token, user?.id]);
+
 
   useEffect(() => {
     productService.getAll(token).then(setProducts).catch(console.error);
@@ -1901,8 +1968,16 @@ const Sales = () => {
       headers: { 'Authorization': 'Bearer ' + token }
     })
       .then(r => r.json())
-      .then(data => setShiftOk(!!(data && data.id && data.status === 'abierto')))
-      .catch(() => setShiftOk(false));
+      .then(data => {
+        if (data && data.id && data.status === 'abierto') {
+          setShiftOk(true);
+          setShiftData(data);
+        } else {
+          setShiftOk(false);
+          setShowAbrirTurno(true); // Mostrar modal automáticamente
+        }
+      })
+      .catch(() => { setShiftOk(false); setShowAbrirTurno(true); });
   }, [token]);
 
   const showAlert = useCallback((type, msg, retryable = false) => {
@@ -1910,6 +1985,49 @@ const Sales = () => {
     if (!retryable) setTimeout(() => setAlert(null), 4500);
   }, []);
   const { isOnline, pendingCount, syncing, guardarVentaPendiente, sincronizarPendientes } = useOfflineMode(token, showAlert);
+
+  const abrirTurno = async () => {
+    const monto = parseFloat(efectivoInicial) || 0;
+    try {
+      const res = await fetch('http://localhost:5000/api/shifts/open', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initial_cash: monto })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setShiftData(data.shift || data);
+        setShiftOk(true);
+        setShowAbrirTurno(false);
+        setEfectivoInicial('');
+      } else {
+        showAlert('danger', 'Error al abrir el turno. Intenta de nuevo.');
+      }
+    } catch(e) { showAlert('danger', 'Error de conexión: ' + e.message); }
+  };
+
+  const solicitarCierreTurno = () => {
+    setEfectivoContado('');
+    setShowCerrarTurno(true);
+  };
+
+  const cerrarTurnoYSesion = async () => {
+    setCierreLoading(true);
+    try {
+      const contado = parseFloat(efectivoContado) || 0;
+      if (shiftData?.id) {
+        await fetch('http://localhost:5000/api/shifts/' + shiftData.id + '/request-close', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cash_counted: contado })
+        });
+      }
+      setShowCerrarTurno(false);
+      logout();
+    } catch(e) {
+      logout();
+    } finally { setCierreLoading(false); }
+  };
   const updateTab = useCallback((id, updater) => {
     setTabs(prev => prev.map(t => {
       if (t.id !== id) return t;
@@ -2109,10 +2227,11 @@ const Sales = () => {
               <div style={{ fontSize:'4rem' }}>🔒</div>
               <h4 className="fw-bold mt-3 text-danger">Sin turno activo</h4>
               <p className="text-muted mb-4" style={{ maxWidth:400 }}>
-                No puedes realizar ventas sin un turno de caja abierto.<br/>
-                Pide al administrador que abra tu turno.
+                Para comenzar a vender debes abrir tu turno de caja.
               </p>
-              <a href="/cajero/turno" className="btn btn-primary fw-bold px-4">🔄 Ir a Mi Turno</a>
+              <button className="btn btn-primary fw-bold px-4" onClick={()=>setShowAbrirTurno(true)}>
+                🟢 Abrir turno de caja
+              </button>
             </div>
           )}
           {shiftOk === null && (
@@ -2149,6 +2268,8 @@ const Sales = () => {
                 showAlert('success', 'Venta recuperada');
               }}
               onOpenCamera={() => setShowCamaraIA(true)}
+              camaraProductoPeso={camaraProductoPeso}
+              onClearCamaraProductoPeso={() => setCamaraProductoPeso(null)}
             />
           )}
         </div>
@@ -2204,7 +2325,7 @@ const Sales = () => {
                   <hr className="my-1"/>
                   <button
                     className="btn btn-outline-danger py-2"
-                    onClick={() => { logout(); navigate('/login'); }}>
+                    onClick={() => { if (shiftOk) solicitarCierreTurno(); else { logout(); navigate('/login'); } }}>
                     🚪 Cerrar sesión
                   </button>
                 </div>
@@ -2228,21 +2349,192 @@ const Sales = () => {
         />
       )}
 
+      {/* ── Botón pedidos catálogo ── */}
+      {pedidosCatalogo.length > 0 && (
+        <div style={{position:'fixed',bottom:24,right:24,zIndex:8888}}>
+          <button className="btn btn-warning fw-bold shadow-lg"
+            style={{borderRadius:50,padding:'12px 20px',fontSize:15,position:'relative'}}
+            onClick={()=>setShowPedidos(true)}>
+            🛵 Pedidos
+            <span className="badge bg-danger ms-2" style={{fontSize:12}}>{pedidosCatalogo.length}</span>
+          </button>
+        </div>
+      )}
+
+      {/* ── Modal pedidos catálogo ── */}
+      {showPedidos && (
+        <div className="modal d-block" style={{background:'rgba(0,0,0,0.6)',zIndex:9990}}>
+          <div className="modal-dialog modal-lg modal-dialog-scrollable">
+            <div className="modal-content">
+              <div className="modal-header" style={{background:'#1e3a5f',color:'#fff'}}>
+                <h5 className="modal-title fw-bold">🛵 Pedidos del catálogo asignados a ti</h5>
+                <button className="btn-close btn-close-white" onClick={()=>setShowPedidos(false)}/>
+              </div>
+              <div className="modal-body p-3">
+                {pedidosCatalogo.map(p => (
+                  <div key={p.id} className="card mb-3 border-warning border-2">
+                    <div className="card-body p-3">
+                      <div className="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                          <div className="fw-bold">{p.numero_pedido}</div>
+                          <div className="small text-muted">{new Date(p.created_at).toLocaleString('es-CO')}</div>
+                        </div>
+                        <span className="badge bg-warning text-dark">⏳ Pendiente</span>
+                      </div>
+                      <div className="mb-2 p-2 rounded" style={{background:'#f8fafc'}}>
+                        <div className="fw-semibold">👤 {p.cliente_nombre}</div>
+                        <div className="small">📱 {p.cliente_telefono}</div>
+                        <div className="small">📍 {p.cliente_direccion}</div>
+                        {p.notas && <div className="small text-muted">📝 {p.notas}</div>}
+                      </div>
+                      <div className="mb-2">
+                        {p.items?.map((item,i) => (
+                          <div key={i} className="d-flex justify-content-between small">
+                            <span>{item.quantity} × {item.product_name}</span>
+                            <span className="fw-semibold">${Number(item.subtotal).toLocaleString('es-CO')}</span>
+                          </div>
+                        ))}
+                        <div className="d-flex justify-content-between fw-bold border-top pt-1 mt-1">
+                          <span>Total</span>
+                          <span className="text-success">${Number(p.total).toLocaleString('es-CO')}</span>
+                        </div>
+                      </div>
+                      <div className="small text-muted mb-2">💳 Pago: {p.metodo_pago === 'por_definir' ? 'Por definir con cliente' : p.metodo_pago}</div>
+                      <div className="d-flex gap-2 flex-wrap">
+                        <a href={`https://wa.me/${(() => {
+                            const t = (p.cliente_telefono||'').replace(/\D/g,'');
+                            return t.startsWith('57') ? t : '57' + t;
+                          })()}`}
+                          target="_blank" rel="noreferrer" className="btn btn-success btn-sm">
+                          💬 Contactar cliente
+                        </a>
+                        <button className="btn btn-primary btn-sm"
+                          onClick={()=>{ apiFetch(`/domicilios/${p.id}/estado`,{method:'PUT',body:JSON.stringify({estado:'en_camino'})},token).then(()=>{ setPedidosCatalogo(prev=>prev.filter(x=>x.id!==p.id)); if(pedidosCatalogo.length<=1)setShowPedidos(false); }); }}>
+                          🛵 En camino
+                        </button>
+                        <button className="btn btn-success btn-sm fw-bold"
+                          onClick={()=>{ apiFetch(`/domicilios/${p.id}/estado`,{method:'PUT',body:JSON.stringify({estado:'entregado'})},token).then(()=>{ setPedidosCatalogo(prev=>prev.filter(x=>x.id!==p.id)); if(pedidosCatalogo.length<=1)setShowPedidos(false); }); }}>
+                          ✅ Entregado
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showCamaraIA && (
         <CamaraIA
           products={products}
           onAddToCart={(prod) => {
-            const activeTab = tabs.find(t => t.id === activeTabId);
-            if (activeTab) {
-              setTabs(prev => prev.map(t => t.id === activeTabId
-                ? { ...t, cart: [...t.cart, { ...prod, qty: prod.quantity || 1, id: prod.id }] }
-                : t
-              ));
-            }
             setShowCamaraIA(false);
+            // Si es por peso → abrir weightModal en el SalePanel activo
+            const PESO_CATS = ['🥦 Frutas y Verduras', '🥩 Carnes y Embutidos'];
+            if (PESO_CATS.includes(prod.category)) {
+              // Disparar evento para que SalePanel abra el modal de peso
+              setCamaraProductoPeso(prod);
+              return;
+            }
+            // Producto normal → agregar directo al carrito
+            setTabs(prev => prev.map(t => {
+              if (t.id !== activeTabId) return t;
+              const key    = 'prod_' + prod.id;
+              const existe = t.cart.find(c => c.cart_key === key);
+              const newCart = existe
+                ? t.cart.map(c => c.cart_key === key ? { ...c, quantity: c.quantity + 1 } : c)
+                : [...t.cart, {
+                    cart_key:       key,
+                    product_id:     prod.id,
+                    name:           prod.name,
+                    price:          parseFloat(prod.sale_price || prod.price || 0),
+                    original_price: parseFloat(prod.sale_price || prod.price || 0),
+                    discount_pct:   0,
+                    quantity:       1,
+                    _type:          'product',
+                    iva_type:       prod.iva_type || 'no_iva',
+                    iva_pct:        parseFloat(prod.iva_pct || 0),
+                  }];
+              return { ...t, cart: newCart };
+            }));
           }}
           onClose={() => setShowCamaraIA(false)}
         />
+      )}
+
+      {/* ── Modal Abrir Turno ── */}
+      {showAbrirTurno && (
+        <div className="modal d-block" style={{background:'rgba(0,0,0,0.7)',zIndex:9999,position:'fixed',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div className="modal-dialog modal-dialog-centered" style={{maxWidth:420,width:'90%',margin:'auto'}}>
+            <div className="modal-content border-0 shadow-lg">
+              <div className="modal-header" style={{background:'#1e3a5f',color:'#fff',borderRadius:'8px 8px 0 0'}}>
+                <h5 className="modal-title fw-bold">🟢 Abrir Turno de Caja</h5>
+              </div>
+              <div className="modal-body p-4 text-center">
+                <div style={{fontSize:52,marginBottom:12}}>💰</div>
+                <p className="text-muted mb-4">Bienvenido/a <strong>{user?.name}</strong>.<br/>Ingresa el efectivo inicial en tu caja para comenzar.</p>
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">Efectivo inicial en caja</label>
+                  <div className="input-group input-group-lg">
+                    <span className="input-group-text fw-bold">$</span>
+                    <input type="number" className="form-control form-control-lg text-end fw-bold"
+                      placeholder="0" value={efectivoInicial}
+                      onChange={e=>setEfectivoInicial(e.target.value)}
+                      onKeyDown={e=>{ if(e.key==='Enter') abrirTurno(); }}
+                      autoFocus/>
+                  </div>
+                  <small className="text-muted">Si la caja arranca vacía ingresa 0</small>
+                </div>
+              </div>
+              <div className="modal-footer justify-content-center border-0 pb-4">
+                <button className="btn btn-success btn-lg fw-bold px-5" onClick={abrirTurno}>
+                  🟢 Abrir turno y comenzar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Cerrar Turno ── */}
+      {showCerrarTurno && (
+        <div className="modal d-block" style={{background:'rgba(0,0,0,0.7)',zIndex:9999,position:'fixed',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div className="modal-dialog modal-dialog-centered" style={{maxWidth:420,width:'90%',margin:'auto'}}>
+            <div className="modal-content border-0 shadow-lg">
+              <div className="modal-header" style={{background:'#dc2626',color:'#fff',borderRadius:'8px 8px 0 0'}}>
+                <h5 className="modal-title fw-bold">🔒 Cerrar Turno y Sesión</h5>
+              </div>
+              <div className="modal-body p-4 text-center">
+                <div style={{fontSize:52,marginBottom:12}}>🧮</div>
+                <p className="text-muted mb-4">Cuenta el dinero en tu caja e ingresa el total.</p>
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">Total contado en caja</label>
+                  <div className="input-group input-group-lg">
+                    <span className="input-group-text fw-bold">$</span>
+                    <input type="number" className="form-control form-control-lg text-end fw-bold"
+                      placeholder="0" value={efectivoContado}
+                      onChange={e=>setEfectivoContado(e.target.value)}
+                      onKeyDown={e=>{ if(e.key==='Enter') cerrarTurnoYSesion(); }}
+                      autoFocus/>
+                  </div>
+                </div>
+                <div className="alert alert-warning small mb-0">
+                  ⚠️ Después de cerrar el turno quedará pendiente de aprobación por el administrador.
+                </div>
+              </div>
+              <div className="modal-footer justify-content-between border-0 pb-4">
+                <button className="btn btn-outline-secondary" onClick={()=>setShowCerrarTurno(false)}>
+                  Cancelar
+                </button>
+                <button className="btn btn-danger fw-bold px-4" disabled={cierreLoading} onClick={cerrarTurnoYSesion}>
+                  {cierreLoading ? '⏳ Cerrando...' : '🔒 Cerrar turno y salir'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       <ConfirmModal

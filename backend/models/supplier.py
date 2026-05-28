@@ -11,6 +11,7 @@ class Supplier(db.Model):
     phone        = db.Column(db.String(20))
     address      = db.Column(db.Text)
     nit          = db.Column(db.String(20), nullable=True)
+    is_active    = db.Column(db.Boolean, default=True, nullable=False)
     created_at   = db.Column(db.DateTime, server_default=db.func.now())
 
     def to_dict(self):
@@ -23,5 +24,6 @@ class Supplier(db.Model):
             'email':        self.email,
             'phone':        self.phone,
             'address':      self.address,
-            'nit':          self.nit
+            'nit':          self.nit,
+            'is_active':    self.is_active if self.is_active is not None else True,
         }

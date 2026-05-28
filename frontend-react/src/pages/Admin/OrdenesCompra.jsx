@@ -34,6 +34,9 @@ const OrdenesCompra = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [editedQty,   setEditedQty]   = useState({});
   const [creatingAuto, setCreatingAuto] = useState(null);
+  const [sugIA,        setSugIA]        = useState(null);
+  const [loadingIA,    setLoadingIA]    = useState(false);
+  // eslint-disable-next-line no-unused-vars
   const [confirmApprove, setConfirmApprove] = useState(null);
   const [confirmCancel,  setConfirmCancel]  = useState(null);
 
@@ -88,6 +91,7 @@ const OrdenesCompra = () => {
     finally { setLoading(false); }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleApprove = async (id) => {
     try {
       await apiFetch(`/purchase-orders/${id}/approve`, { method:'PATCH' }, token);
@@ -195,7 +199,7 @@ const OrdenesCompra = () => {
 
         {/* Tabs */}
         <ul className="nav nav-tabs mb-4">
-          {[['lista','📋 Órdenes'],['sugeridos','⚠️ Stock bajo'],['sugerencias','🔄 Sugerencias auto']].map(([k,l])=>(
+          {[['lista','📋 Órdenes'],['sugeridos','⚠️ Stock bajo'],['sugerencias','🔄 Sugerencias auto'],['ia','🤖 IA Predictiva →']].map(([k,l])=>(
             <li key={k} className="nav-item">
               <button className={`nav-link ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}
                 {k==='sugeridos' && suggested.length > 0 && <span className="badge bg-danger ms-1">{suggested.length}</span>}
@@ -342,7 +346,19 @@ const OrdenesCompra = () => {
         )}
 
         {/* Tab sugerencias automáticas */}
-        {tab === 'sugerencias' && (
+        {/* Tab IA Predictiva */}
+        {tab === 'ia' && (
+          <div className="text-center py-5">
+            <div style={{fontSize:64}}>🤖</div>
+            <div className="fw-bold fs-5 mb-2">IA Predictiva</div>
+            <div className="text-muted mb-4">El análisis predictivo completo está en el Dashboard Predictivo IA</div>
+            <a href="/admin/dashboard-predictivo" className="btn btn-primary btn-lg fw-bold">
+              🤖 Ir al Dashboard Predictivo IA →
+            </a>
+          </div>
+        )}
+
+                {tab === 'sugerencias' && (
           <div>
             {!suggestions.length ? (
               <div className="text-center text-muted py-5">

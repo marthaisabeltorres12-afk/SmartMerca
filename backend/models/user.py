@@ -17,6 +17,7 @@ class User(db.Model):
     branch_id           = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     created_at          = db.Column(db.DateTime, server_default=db.func.now())
     pin                 = db.Column(db.String(10), nullable=True)
+    avatar              = db.Column(db.Text, nullable=True)  # base64 o URL
     branch = db.relationship('Branch', foreign_keys=[branch_id])
 
     def set_password(self, password):
@@ -54,6 +55,7 @@ class User(db.Model):
             'has_pin':    self.admin_pin is not None,
             'branch_id':  self.branch_id,
             'branch_name': self.branch.nombre if self.branch else None,
+            'avatar':      self.avatar or None,
             'estado':     'Activo' if self.is_active else 'Desactivado',
             'created_at': str(self.created_at)
         }

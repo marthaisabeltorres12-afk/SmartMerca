@@ -5,10 +5,15 @@ from models.sale import Sale
 from models.sale_payment import SalePayment
 from models.user import User
 from extensions import db
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 def _admin(claims):
     return claims.get('role') in ('admin', 'admin_tecnico')
+
+def _now_colombia():
+    """Hora actual en Colombia (UTC-5)"""
+    from datetime import datetime, timezone, timedelta
+    return datetime.now(timezone(timedelta(hours=-5))).replace(tzinfo=None)
 
 def _calc_totals(shift):
     q = Sale.query.filter(
@@ -133,11 +138,32 @@ def get_all_shifts():
 # ── Abrir turno manual (admin — por si acaso) ─────────────────────────────
 @jwt_required()
 def open_shift():
-    claims = get_jwt()
-    if not _admin(claims):
-        return jsonify({'message': 'Solo admins pueden abrir turnos manualmente'}), 403
+    claims  = get_jwt()
+    data    = request.get_json() or {}
 
-    data       = request.get_json()
+    # Cajero abre su propio turno
+    if not _admin(claims):
+        user_id  = int(get_jwt_identity())
+        existing = Shift.query.filter_by(cashier_id=user_id, status='abierto').first()
+        if existing:
+            return jsonify({'shift': _shift_dict(existing), 'message': 'Turno ya abierto'}), 200
+        # Buscar primera caja disponible sin depender del modelo
+        try:
+            from models.cash_register import CashRegister
+            caja = CashRegister.query.filter_by(is_active=True).first()
+            register_id = caja.id if caja else 1
+        except Exception:
+            register_id = 1
+        shift = Shift(
+            cashier_id       = user_id,
+            cash_register_id = register_id,
+            base_amount      = float(data.get('initial_cash', 0)),
+            status           = 'abierto',
+        )
+        db.session.add(shift)
+        db.session.commit()
+        return jsonify({'shift': _shift_dict(shift), 'message': 'Turno abierto'}), 201
+
     cashier_id = data.get('cashier_id')
     if not cashier_id:
         return jsonify({'message': 'Selecciona un cajero'}), 400
@@ -198,7 +224,7 @@ def close_shift():
     cashier_count = float(shift.cash_counted_by_cashier or 0)
     difference    = cashier_count - cash_expected
 
-    shift.closed_at         = datetime.utcnow()
+    shift.closed_at         = _now_colombia()
     shift.cash_counted      = cashier_count
     shift.total_sales       = t['total_sales']
     shift.total_cash        = t['total_cash']
@@ -218,6 +244,34 @@ def close_shift():
         pass
 
     db.session.commit()
+
+    # Enviar resumen de ventas al admin por WhatsApp
+    try:
+        import os, threading
+        admin_tel = os.environ.get('ADMIN_TELEFONO', '')
+        if admin_tel:
+            from services.whatsapp_service import enviar_resumen_ventas
+            from models.sale import Sale
+            ventas_turno = Sale.query.filter_by(shift_id=shift.id).all()
+            total_v = sum(float(v.total or 0) for v in ventas_turno)
+            num_v   = len(ventas_turno)
+            efectivo = sum(float(v.total or 0) for v in ventas_turno if (v.payment_method or '') == 'efectivo')
+            digital  = total_v - efectivo
+            # Top producto
+            from collections import Counter
+            from models.sale_item import SaleItem
+            items = SaleItem.query.join(Sale).filter(Sale.shift_id==shift.id).all()
+            top = Counter()
+            for it in items: top[it.product_name] += float(it.quantity or 1)
+            top_prod = top.most_common(1)[0][0] if top else 'N/A'
+            threading.Thread(
+                target=enviar_resumen_ventas,
+                args=(admin_tel, total_v, num_v, top_prod, efectivo, digital),
+                daemon=True
+            ).start()
+    except Exception as e:
+        print(f'[WhatsApp resumen] Error: {e}')
+
     return jsonify({'shift': _shift_dict(shift), 'cash_expected': cash_expected}), 200
 
 # ── Cajero solicita cerrar turno ──────────────────────────────────────────
@@ -238,14 +292,17 @@ def cashier_request_close(shift_id):
 
     shift.cash_counted_by_cashier = cash_counted
     shift.cashier_count_requested = True
-    shift.status                  = 'pendiente_cierre'
+    shift.cash_counted            = cash_counted
+    shift.difference              = difference
+    shift.closed_at               = _now_colombia()
+    shift.status                  = 'cerrado'
     db.session.commit()
 
     return jsonify({
-        'shift':        _shift_dict(shift),
-        'cash_expected':cash_expected,
-        'difference':   difference,
-        'message':      'Solicitud de cierre enviada. El administrador aprobará el cierre.',
+        'shift':         _shift_dict(shift),
+        'cash_expected': cash_expected,
+        'difference':    difference,
+        'message':       'Turno cerrado correctamente.',
     }), 200
 
 # ── Admin aprueba cierre ──────────────────────────────────────────────────
@@ -266,7 +323,7 @@ def approve_close(shift_id):
     cashier_count = float(shift.cash_counted_by_cashier or 0)
     difference    = cashier_count - cash_expected
 
-    shift.closed_at         = datetime.utcnow()
+    shift.closed_at         = _now_colombia()
     shift.cash_counted      = cashier_count
     shift.total_sales       = t['total_sales']
     shift.total_cash        = t['total_cash']
@@ -286,6 +343,24 @@ def approve_close(shift_id):
         pass
 
     db.session.commit()
+
+    # ── WhatsApp resumen de turno al admin ──────────────────────────────────
+    try:
+        import os, threading
+        admin_tel = os.environ.get('ADMIN_TELEFONO', '')
+        if admin_tel:
+            from services.whatsapp_service import enviar_resumen_ventas
+            from models.user import User
+            cajero = User.query.get(shift.user_id)
+            cajero_nombre = cajero.name if cajero else 'Cajero'
+            threading.Thread(
+                target=enviar_resumen_ventas,
+                args=(admin_tel, float(t['total_sales']), len(shift.sales or []), cajero_nombre, difference),
+                daemon=True
+            ).start()
+    except Exception as ex:
+        print(f'[WhatsApp turno] {ex}')
+
     return jsonify({'shift': _shift_dict(shift), 'cash_expected': cash_expected, 'difference': difference}), 200
 
 # ── Admin rechaza cierre ──────────────────────────────────────────────────
@@ -336,3 +411,33 @@ def add_withdrawal():
 def get_shift(id):
     shift = Shift.query.get_or_404(id)
     return jsonify(_shift_dict(shift)), 200
+
+@jwt_required()
+def cajero_open_shift():
+    """Permite al cajero abrir su propio turno al iniciar sesion."""
+    user_id = int(get_jwt_identity())
+    data    = request.get_json() or {}
+    
+    # Verificar si ya tiene turno abierto
+    existing = Shift.query.filter_by(cashier_id=user_id, status='abierto').first()
+    if existing:
+        return jsonify({'shift': _shift_dict(existing), 'message': 'Turno ya abierto'}), 200
+    
+    # Buscar caja disponible
+    from models.cash_register import CashRegister
+    caja = CashRegister.query.filter_by(is_active=True).first()
+    if not caja:
+        return jsonify({'message': 'No hay cajas disponibles'}), 400
+    
+    initial_cash = float(data.get('initial_cash', 0))
+    
+    shift = Shift(
+        cashier_id    = user_id,
+        register_id   = caja.id,
+        initial_cash  = initial_cash,
+        status        = 'abierto',
+    )
+    db.session.add(shift)
+    db.session.commit()
+    
+    return jsonify({'shift': _shift_dict(shift), 'message': 'Turno abierto'}), 201

@@ -5,26 +5,28 @@ import { supplierService } from '../../services/supplierService';
 import ConfirmModal from '../../components/ConfirmModal';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-const EMPTY = { company_name:'', name:'', contact_name:'', email:'', phone:'', address:'', nit:'' };
+const EMPTY = { company_name:'', name:'', contact_name:'', email:'', phone:'', address:'', nit:'', is_active: true };
 
 const ManageSuppliers = () => {
   const { token } = useAuth();
-  const [suppliers, setSuppliers]         = useState([]);
-  const [search, setSearch]               = useState('');
-  const [showModal, setShowModal]         = useState(false);
-  const [editing, setEditing]             = useState(null);
-  const [form, setForm]                   = useState(EMPTY);
-  const [alert, setAlert]                 = useState(null);
-  const [loading, setLoading]             = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [suppliers,        setSuppliers]        = useState([]);
+  const [search,           setSearch]           = useState('');
+  const [showModal,        setShowModal]        = useState(false);
+  const [editing,          setEditing]          = useState(null);
+  const [form,             setForm]             = useState(EMPTY);
+  const [alert,            setAlert]            = useState(null);
+  const [loading,          setLoading]          = useState(false);
+  const [confirmDelete,    setConfirmDelete]    = useState(null);
+  const [deactivatedModal, setDeactivatedModal] = useState(null);
 
   const load = async () => {
     try { setSuppliers(await supplierService.getAll(token)); }
-    catch (e) { showAlert('danger', e.message); }
+    catch (e) { showAlertMsg('danger', e.message); }
   };
   useEffect(() => { load(); }, [token]);
 
-  const showAlert = (type, msg) => { setAlert({type,msg}); setTimeout(() => setAlert(null), 3500); };
+  const showAlertMsg = (type, msg) => { setAlert({type,msg}); setTimeout(() => setAlert(null), 3500); };
+
   const openAdd  = () => { setEditing(null); setForm(EMPTY); setShowModal(true); };
   const openEdit = (s) => {
     setEditing(s);
@@ -35,7 +37,8 @@ const ManageSuppliers = () => {
       email:        s.email||'',
       phone:        s.phone||'',
       address:      s.address||'',
-      nit:          s.nit||''
+      nit:          s.nit||'',
+      is_active:    s.is_active !== false,
     });
     setShowModal(true);
   };
@@ -43,16 +46,36 @@ const ManageSuppliers = () => {
   const handleSave = async (e) => {
     e.preventDefault(); setLoading(true);
     try {
-      if (editing) { await supplierService.update(editing.id, form, token); showAlert('success','Proveedor actualizado'); }
-      else         { await supplierService.create(form, token);             showAlert('success','Proveedor creado'); }
+      if (editing) { await supplierService.update(editing.id, form, token); showAlertMsg('success','Proveedor actualizado'); }
+      else         { await supplierService.create(form, token);             showAlertMsg('success','Proveedor creado'); }
       setShowModal(false); load();
-    } catch (e) { showAlert('danger', e.message); }
+    } catch (e) { showAlertMsg('danger', e.message); }
     finally { setLoading(false); }
   };
 
   const handleDelete = async (id) => {
-    try { await supplierService.delete(id, token); showAlert('success','Proveedor eliminado'); setConfirmDelete(null); load(); }
-    catch (e) { showAlert('danger', e.message); }
+    try {
+      const res = await supplierService.delete(id, token);
+      setConfirmDelete(null);
+      if (res?.action === 'deactivated') {
+        setDeactivatedModal({
+          titulo:  'Proveedor con historial de compras',
+          mensaje: res.message,
+          detalle: res.detail,
+        });
+      } else {
+        showAlertMsg('success','Proveedor eliminado');
+      }
+      load();
+    } catch (e) { showAlertMsg('danger', e.message); }
+  };
+
+  const handleToggle = async (s) => {
+    try {
+      const updated = await supplierService.update(s.id, { ...s, is_active: !s.is_active }, token);
+      setSuppliers(prev => prev.map(x => x.id === (updated?.id || s.id)
+        ? { ...x, is_active: !s.is_active } : x));
+    } catch(e) { showAlertMsg('danger', e.message); }
   };
 
   const filtered = suppliers.filter(s =>
@@ -73,31 +96,30 @@ const ManageSuppliers = () => {
 
         <div className="d-flex gap-2 mb-3">
           <input className="form-control" style={{ maxWidth: 320 }}
-            placeholder="🔍 Buscar proveedor..." value={search} onChange={e => setSearch(e.target.value)} />
-          <button className="btn btn-success" onClick={openAdd}>+ Nuevo Proveedor</button>
+            placeholder="🔍 Buscar proveedor..." value={search}
+            onChange={e => setSearch(e.target.value)} />
+          <button className="btn btn-success ms-auto" onClick={openAdd}>+ Nuevo Proveedor</button>
         </div>
+
+        <p className="text-muted small mb-2">
+          Mostrando <strong>{filtered.length}</strong> de <strong>{suppliers.length}</strong> proveedores
+        </p>
 
         <div className="card">
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0">
               <thead className="table-light">
                 <tr>
-                  <th>#</th>
-                  <th>Empresa</th>
-                  <th>NIT</th>
-                  <th>Nombre proveedor</th>
-                  <th>Número de Contacto</th>
-                  <th>Email</th>
-                  <th>Teléfono</th>
-                  <th>Dirección</th>
-                  <th>Acciones</th>
+                  <th>#</th><th>Empresa</th><th>NIT</th><th>Nombre proveedor</th>
+                  <th>Contacto</th><th>Email</th><th>Teléfono</th><th>Dirección</th>
+                  <th>Estado</th><th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan="8" className="text-center text-muted py-4">No hay proveedores</td></tr>
+                  <tr><td colSpan="10" className="text-center text-muted py-4">No hay proveedores</td></tr>
                 ) : filtered.map((s, i) => (
-                  <tr key={s.id}>
+                  <tr key={s.id} style={{opacity: s.is_active !== false ? 1 : 0.5}}>
                     <td>{i+1}</td>
                     <td className="fw-semibold">{s.company_name || '—'}</td>
                     <td style={{fontFamily:'monospace',fontSize:12}}>{s.nit || <span className="text-muted">—</span>}</td>
@@ -107,12 +129,21 @@ const ManageSuppliers = () => {
                     <td>{s.phone || '—'}</td>
                     <td className="text-muted small">{s.address || '—'}</td>
                     <td>
-                     <div className="d-flex align-items-center gap-1">
-                   <button className="btn btn-warning btn-sm" onClick={() => openEdit(s)}>
-                   ✏️</button>
-                  <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(s)}>
-               🗑️</button>
-</div>
+                      <span className={`badge ${s.is_active !== false ? 'bg-success' : 'bg-secondary'}`}>
+                        {s.is_active !== false ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td className="text-nowrap">
+                      <div className="d-flex align-items-center gap-1">
+                        <button
+                          className={`btn btn-sm ${s.is_active !== false ? 'btn-outline-secondary' : 'btn-outline-success'}`}
+                          onClick={() => handleToggle(s)}
+                          title={s.is_active !== false ? 'Desactivar' : 'Activar'}>
+                          {s.is_active !== false ? '❌' : '✅'}
+                        </button>
+                        <button className="btn btn-warning btn-sm" onClick={() => openEdit(s)}>✏️</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(s)}>🗑️</button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -193,11 +224,31 @@ const ManageSuppliers = () => {
         <ConfirmModal
           show={!!confirmDelete}
           titulo="¿Eliminar proveedor?"
-          mensaje={<>Se eliminará <strong>{confirmDelete?.company_name || confirmDelete?.name}</strong>. Esta acción no se puede deshacer.</>}
+          mensaje={<>Se eliminará <strong>{confirmDelete?.company_name || confirmDelete?.name}</strong>. Si tiene órdenes de compra será desactivado.</>}
           txtConfirmar="Sí, eliminar"
           onConfirmar={() => handleDelete(confirmDelete.id)}
           onCancelar={() => setConfirmDelete(null)}
         />
+
+        {/* Modal proveedor con historial */}
+        {deactivatedModal && (
+          <div className="modal d-block" style={{background:'rgba(0,0,0,0.5)',position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <div style={{maxWidth:440,width:'90%',margin:'auto',background:'#fff',borderRadius:14,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}>
+              <div style={{background:'#fef3c7',padding:'16px 20px'}}>
+                <h5 style={{margin:0,fontWeight:700,color:'#92400e'}}>⚠️ {deactivatedModal.titulo}</h5>
+              </div>
+              <div style={{padding:'20px'}}>
+                <p style={{fontWeight:600}}>{deactivatedModal.mensaje}</p>
+                <p style={{color:'#6b7280',fontSize:14,margin:0}}>{deactivatedModal.detalle}</p>
+              </div>
+              <div style={{padding:'0 20px 20px',textAlign:'center'}}>
+                <button style={{background:'#f59e0b',color:'#fff',border:'none',borderRadius:8,padding:'10px 40px',fontWeight:700,cursor:'pointer'}}
+                  onClick={() => setDeactivatedModal(null)}>Entendido</button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </main>
     </div>
   );

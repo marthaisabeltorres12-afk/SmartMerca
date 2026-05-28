@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt
+from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
 from models.user import User
 from extensions import db
 
@@ -98,15 +98,61 @@ def update_user(id):
     if 'role'      in data: user.role      = data['role']
     if 'is_active' in data: user.is_active = bool(data['is_active'])
     if 'approved'  in data: user.approved  = bool(data['approved'])
+    if 'avatar'     in data: user.avatar     = data['avatar']
     db.session.commit()
     return jsonify(user.to_dict()), 200
 
 @jwt_required()
+def _solo_admin_tecnico_puede_gestionar_admins(claims, role_objetivo):
+    """Solo admin_tecnico puede crear/editar usuarios con rol admin_tecnico."""
+    if role_objetivo in ('admin_tecnico', 'admin_tech'):
+        return claims.get('role') in ('admin_tecnico', 'admin_tech')
+    return True
+
 def delete_user(id):
     claims = get_jwt()
     if not _is_admin(claims):
         return jsonify({'message': 'Acceso denegado'}), 403
     user = User.query.get_or_404(id)
+
+    # Verificar si tiene turnos o ventas
+    from sqlalchemy import text
+    uid = user.id
+    turnos = db.session.execute(
+        text("SELECT COUNT(*) FROM shifts WHERE cashier_id = :uid"), {"uid": uid}
+    ).scalar() or 0
+    ventas = db.session.execute(
+        text("SELECT COUNT(*) FROM sales WHERE cashier_id = :uid"), {"uid": uid}
+    ).scalar() or 0
+
+    if turnos > 0 or ventas > 0:
+        # Desactivar en vez de eliminar
+        user.is_active = False
+        db.session.commit()
+        return jsonify({
+            'action':  'deactivated',
+            'message': f'"{user.name}" tiene {turnos} turno(s) y {ventas} venta(s) registradas y no puede eliminarse.',
+            'detail':  'El usuario fue desactivado y no podrá iniciar sesión, pero se conserva su historial.',
+            'turnos':  turnos,
+            'ventas':  ventas,
+        }), 200
+
     db.session.delete(user)
     db.session.commit()
     return jsonify({'message': 'Usuario eliminado'}), 200
+
+@jwt_required()
+def update_my_avatar():
+    """Permite a cualquier usuario actualizar su propia foto de perfil."""
+    user_id = int(get_jwt_identity())
+    user    = User.query.get_or_404(user_id)
+    data    = request.get_json() or {}
+    avatar  = data.get('avatar', '')
+    if not avatar:
+        return jsonify({'message': 'Avatar requerido'}), 400
+    # Validar tamaño (max 2MB en base64 ~= 2.7MB string)
+    if len(avatar) > 3_000_000:
+        return jsonify({'message': 'La imagen es demasiado grande. Máximo 2MB'}), 400
+    user.avatar = avatar
+    db.session.commit()
+    return jsonify({'message': 'Avatar actualizado', 'avatar': user.avatar}), 200

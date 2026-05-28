@@ -9,8 +9,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 const adminLinks = [
   { path: "/admin", icon: "bi-speedometer2", label: "Dashboard" },
-  { path: "/admin/domicilios", icon: "bi-bicycle", label: "🛵 Domicilios", badge: "pendientes" },
-  
+{ path: "/admin/domicilios", icon: "bi-bicycle", label: "🛵 Domicilios", badge: "pendientes" },
   // 📦 INVENTARIO
   {
     group: true, label: "Inventario", icon: "bi-archive", key: "inventario",
@@ -28,7 +27,9 @@ const adminLinks = [
     ]
   },
 
+  // 🛵 DOMICILIOS — destacado
   
+ 
 
   // 👥 CLIENTES
   {
@@ -45,7 +46,7 @@ const adminLinks = [
     group: true, label: "Finanzas", icon: "bi-cash-stack", key: "finanzas",
     children: [
       { path: "/admin/cuentas-pagar", icon: "bi-receipt",      label: "Cuentas x Pagar" },
-      { path: "/admin/nomina",        icon: "bi-person-badge", label: "Nómina" },
+      
     ]
   },
 
@@ -69,14 +70,14 @@ const adminLinks = [
     group: true, label: "Reportes", icon: "bi-bar-chart", key: "reportes",
     children: [
       { path: "/admin/reportes",        icon: "bi-bar-chart",       label: "Reportes" },
-      { path: "/admin/predicciones", icon: "bi-robot", label: "IA Predictiva" },
+      
       { path: "/admin/analisis-ventas", icon: "bi-graph-up-arrow",  label: "Análisis Ventas" },
       { path: "/admin/finanzas",        icon: "bi-currency-dollar", label: "Finanzas" },
       { path: "/admin/auditoria",       icon: "bi-clipboard-data",  label: "Auditoría" },
       { path: "/admin/alertas",         icon: "bi-bell",            label: "Alertas" },
     ]
   },
-  { path: "/admin/mi-plan", icon: "bi-gem", label: "💎 Mi Plan" },
+   { path: "/admin/mi-plan", icon: "bi-gem", label: "💎 Mi Plan" },
 ];
 
 const cajeroLinks = [
@@ -134,8 +135,7 @@ const contadorLinks = [
   { path: "/contador/finanzas",    icon: "bi-cash-stack",      label: "Finanzas" },
   { path: "/contador/ventas",      icon: "bi-receipt",         label: "Ventas" },
   { path: "/contador/cuentas",     icon: "bi-credit-card",     label: "Cuentas por pagar" },
-  { separator: true, label: "NÓMINA" },
-  { path: "/contador/nomina",      icon: "bi-person-badge",    label: "Nómina" },
+  
   { separator: true, label: "AUDITORÍA" },
   { path: "/contador/auditoria",   icon: "bi-shield-check",    label: "Auditoría" },
 ];
@@ -159,6 +159,8 @@ const Navbar = () => {
   const [openGroups,   setOpenGroups]   = useState({});
   const [closedByUser, setClosedByUser] = useState({});
   const [pedidosPendientes, setPedidosPendientes] = useState(0);
+  const [myAvatar,         setMyAvatar]         = useState(user?.avatar || null);
+  const avatarInputRef = useRef(null);
 
   const toggleGroup = (key) => {
     const isCurrentlyOpen = openGroups[key] || (activeGroupKey === key && !closedByUser[key]);
@@ -176,6 +178,26 @@ const Navbar = () => {
   const bellRef = useRef();
   const canSeeBell = ['admin','admin_tecnico','supervisor','contador','auditor'].includes(user?.role);
   const { notifications, unread, toasts, markAllRead, dismissToast, resolverNotif, resolverTodas } = useNotifications(token, canSeeBell);
+
+  // Subir foto de perfil
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2_000_000) { alert('La imagen debe ser menor a 2MB'); return; }
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const base64 = ev.target.result;
+      try {
+        await fetch('http://localhost:5000/api/users/me/avatar', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ avatar: base64 })
+        });
+        setMyAvatar(base64);
+      } catch(e) { alert('Error subiendo la foto'); }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Pedidos domicilio pendientes — consultar cada 30s
   useEffect(() => {
@@ -249,8 +271,9 @@ const Navbar = () => {
         .footer { padding:15px; border-top:1px solid rgba(255,255,255,0.05); position:sticky; bottom:0; background:#0f172a; }
         .avatar {
           width:35px; height:35px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-          background:linear-gradient(135deg,#3b82f6,#1d4ed8); font-weight:700; flex-shrink:0;
+          background:linear-gradient(135deg,#3b82f6,#1d4ed8); font-weight:700; flex-shrink:0; cursor:pointer;
         }
+        .avatar:hover { opacity:0.85; }
         .logout-btn { width:100%; margin-top:10px; }
         .toggle {
           position:absolute; top:15px; right:-12px; background:#1e293b; border:none;
@@ -420,7 +443,15 @@ const Navbar = () => {
 
         <div className="footer">
           <div className="d-flex align-items-center gap-2">
-            <div className="avatar">{initial}</div>
+            <div className="avatar" style={{cursor:'pointer', overflow:'hidden', position:'relative'}}
+              onClick={()=>avatarInputRef.current?.click()}
+              title="Click para cambiar foto">
+              {myAvatar
+                ? <img src={myAvatar} alt="avatar" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/>
+                : initial
+              }
+              <input ref={avatarInputRef} type="file" accept="image/*" style={{display:'none'}} onChange={handleAvatarChange}/>
+            </div>
             {!collapsed && (
               <div>
                 <div style={{ fontSize:"14px", fontWeight:600 }}>{user?.name||"Usuario"}</div>

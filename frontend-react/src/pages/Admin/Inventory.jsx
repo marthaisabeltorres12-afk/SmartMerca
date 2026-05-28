@@ -492,7 +492,8 @@ const Inventory = () => {
   const [batches,   setBatches]   = useState([]);
   const [tab,       setTab]       = useState('historial');
   const [alert,     setAlert]     = useState(null);
-  const [loading,   setLoading]   = useState(false);
+  const [loading,         setLoading]         = useState(false);
+  const [deactivatedModal, setDeactivatedModal] = useState(null);
 
   /* Encabezado del pedido */
   const [header, setHeader] = useState({
@@ -602,11 +603,24 @@ const Inventory = () => {
   const deleteRow = async (id) => {
     const row = rows.find(r => r._id === id);
     if (!row?.product_id) { setRows(prev => prev.filter(r => r._id !== id)); return; }
-    if (!window.confirm('¿Eliminar ' + (row.name || 'este producto') + '? Esta acción no se puede deshacer.')) return;
+    if (!window.confirm('¿Eliminar ' + (row.name || 'este producto') + '?')) return;
     try {
-      await apiFetch('/products/' + row.product_id, { method: 'DELETE' });
-      setRows(prev => prev.filter(r => r._id !== id));
-      showAlert('success', 'Producto eliminado correctamente');
+      const res = await apiFetch('/products/' + row.product_id, { method: 'DELETE' });
+      if (res?.action === 'deactivated') {
+        // Mostrar modal estilo cliente con historial
+        setDeactivatedModal({
+          titulo:  row.name + ' con historial de ventas',
+          mensaje: res.message,
+          detalle: res.detail,
+          label:   'Desactivar producto',
+          onConfirm: null, // ya fue desactivado por el backend
+        });
+        // Quitar de la lista visible
+        setRows(prev => prev.filter(r => r._id !== id));
+      } else {
+        setRows(prev => prev.filter(r => r._id !== id));
+        showAlert('success', 'Producto eliminado correctamente');
+      }
     } catch (e) {
       showAlert('danger', 'No se pudo eliminar: ' + e.message);
     }
@@ -622,8 +636,6 @@ const Inventory = () => {
         name:             r.name || null,
         category:         r.category || null,
         barcode:          r.barcode || null,
-// eslint-disable-next-line no-dupe-keys
-        iva_type:         r.iva_type ?? 19,
         min_stock:        r.min_stock ?? 5,
         gramaje_cantidad: r.gramaje_cantidad || null,
         gramaje_unidad:   r.gramaje_unidad || null,
@@ -1196,6 +1208,26 @@ const Inventory = () => {
             onClose={() => setComprobante(null)}
           />
         )}
+
+
+      {/* ── Modal con historial ── */}
+      {deactivatedModal && (
+        <div className="modal d-block" style={{background:'rgba(0,0,0,0.5)',position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{maxWidth:440,width:'90%',margin:'auto',background:'#fff',borderRadius:14,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}>
+            <div style={{background:'#fef3c7',padding:'16px 20px'}}>
+              <h5 style={{margin:0,fontWeight:700,color:'#92400e'}}>⚠️ {deactivatedModal.titulo}</h5>
+            </div>
+            <div style={{padding:'20px'}}>
+              <p style={{fontWeight:600}}>{deactivatedModal.mensaje}</p>
+              <p style={{color:'#6b7280',fontSize:14,margin:0}}>{deactivatedModal.detalle}</p>
+            </div>
+            <div style={{padding:'0 20px 20px',textAlign:'center'}}>
+              <button style={{background:'#f59e0b',color:'#fff',border:'none',borderRadius:8,padding:'10px 40px',fontWeight:700,cursor:'pointer'}}
+                onClick={() => setDeactivatedModal(null)}>Entendido</button>
+            </div>
+          </div>
+        </div>
+      )}
       </main>
     </div>
   );

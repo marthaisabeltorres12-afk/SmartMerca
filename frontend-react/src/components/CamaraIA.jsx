@@ -1,284 +1,358 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import * as tmImage from '@teachablemachine/image';
 
-const fmt = n => Number(n || 0).toLocaleString('es-CO', {
-  style: 'currency', currency: 'COP', minimumFractionDigits: 0,
-});
+const MODEL_URL     = '/modelo-frutas/model.json';
+const METADATA_URL  = '/modelo-frutas/metadata.json';
+const CONFIANZA_MIN = 0.78;
+const FRAMES_CONF   = 6;
 
-const getEmoji = (nombre = '') => {
-  const n = nombre.toLowerCase();
-  if (n.includes('banano') || n.includes('banana'))     return '🍌';
-  if (n.includes('plátano') || n.includes('platano'))   return '🍌';
-  if (n.includes('manzana verde'))                      return '🍏';
-  if (n.includes('manzana'))                            return '🍎';
-  if (n.includes('naranja') || n.includes('mandarina')) return '🍊';
-  if (n.includes('limón') || n.includes('limon'))       return '🍋';
-  if (n.includes('piña') || n.includes('pina'))         return '🍍';
-  if (n.includes('fresa'))                              return '🍓';
-  if (n.includes('mora'))                               return '🫐';
-  if (n.includes('mango'))                              return '🥭';
-  if (n.includes('sandía') || n.includes('sandia'))     return '🍉';
-  if (n.includes('papaya'))                             return '🥭';
-  if (n.includes('uva'))                                return '🍇';
-  if (n.includes('aguacate'))                           return '🥑';
-  if (n.includes('tomate'))                             return '🍅';
-  if (n.includes('zanahoria'))                          return '🥕';
-  if (n.includes('brócoli') || n.includes('brocoli'))   return '🥦';
-  if (n.includes('pepino'))                             return '🥒';
-  if (n.includes('cebolla'))                            return '🧅';
-  if (n.includes('ajo'))                                return '🧄';
-  if (n.includes('papa') || n.includes('patata'))       return '🥔';
-  if (n.includes('yuca'))                               return '🥔';
-  if (n.includes('arroz'))                              return '🍚';
-  if (n.includes('leche'))                              return '🥛';
-  if (n.includes('huevo'))                              return '🥚';
-  if (n.includes('pan'))                                return '🍞';
-  return '📦';
-};
+// ── Pon aquí tu API Key de Google Cloud Vision ──────────────────────────
+const GOOGLE_VISION_API_KEY = 'TU_API_KEY_AQUI';
 
-const findInProducts = (nombre, products) => {
-  if (!nombre || !products?.length) return null;
-  const q = nombre.toLowerCase().trim();
-  return products.find(p => p.name?.toLowerCase() === q)
-    || products.find(p => p.name?.toLowerCase().includes(q) || q.includes(p.name?.toLowerCase()))
-    || null;
-};
+const CamaraIA = ({ onAddToCart, onClose, products }) => {
+  const videoRef    = useRef(null);
+  const canvasRef   = useRef(null);
+  const streamRef   = useRef(null);
+  const modelRef    = useRef(null);
+  const animRef     = useRef(null);
+  const contadorRef = useRef({});
+  const pausadoRef  = useRef(false);
 
-const CamaraIA = ({ products = [], onAddToCart, onClose, token }) => {
-  const videoRef  = useRef(null);
-  const streamRef = useRef(null);
+  const [estado,     setEstado]     = useState('cargando'); // cargando | buscando | confirmado | google | error
+  const [deteccion,  setDeteccion]  = useState(null);
+  const [mensaje,    setMensaje]    = useState('Cargando modelo IA...');
+  const [buscandoG,  setBuscandoG]  = useState(false);
+  const [resultadoG, setResultadoG] = useState(null); // resultado de Google Vision
 
-  const [camError,   setCamError]   = useState(false);
-  const [analizando, setAnalizando] = useState(false);
-  const [resultado,  setResultado]  = useState(null);
-  const [peso,       setPeso]       = useState('');
-  const [error,      setError]      = useState(null);
-  const [estadoIA,   setEstadoIA]   = useState(null);
-  const [capturada,  setCapturada]  = useState(null);
-
-  useEffect(() => {
-    // Usar fetch directo para no disparar logout si hay error
-    fetch('http://localhost:5000/api/ia/estado')
-      .then(r => r.json())
-      .then(res => setEstadoIA(res))
-      .catch(() => setEstadoIA({ ollama: false, modelo_disponible: false }));
-  }, []);
-
-  useEffect(() => {
-    const start = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-        });
-        streamRef.current = stream;
-        if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play(); }
-      } catch {
-        setCamError(true);
-        setError('No se pudo acceder a la cámara. En Chrome: chrome://flags → "Insecure origins treated as secure" → agrega tu IP.');
-      }
-    };
-    start();
-    return () => streamRef.current?.getTracks().forEach(t => t.stop());
-  }, []);
-
-  const analizar = useCallback(async () => {
-    if (analizando || !videoRef.current) return;
-    setAnalizando(true); setError(null); setResultado(null); setCapturada(null);
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = 640; canvas.height = 480;
-      canvas.getContext('2d').drawImage(videoRef.current, 0, 0, 640, 480);
-      const dataURL = canvas.toDataURL('image/jpeg', 0.85);
-      setCapturada(dataURL);
-      const raw = await fetch('http://localhost:5000/api/ia/identificar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ imagen: dataURL.split(',')[1], productos: products.map(p => p.name).filter(Boolean) }),
-      });
-      const res = await raw.json();
-      const nombre = res.nombre?.trim() || '';
-      setResultado({ nombre, encontrado: res.encontrado || !!findInProducts(nombre, products), producto: findInProducts(nombre, products) });
-    } catch (e) {
-      setError(e.message || 'Error al analizar');
-    } finally {
-      setAnalizando(false);
-    }
-  }, [analizando, products, token]);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // ── Enter agrega al carrito ────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key !== 'Enter') return;
-      if (!resultado && !analizando && !camError) { analizar(); return; }
-      if (resultado?.producto && peso && parseFloat(peso) > 0) handleAdd();
+      if (e.key === 'Enter' && pausadoRef.current && deteccion) confirmarProducto();
+      if (e.key === 'Escape') cerrar();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  });
+  }, [deteccion]);
 
-  const handleAdd = () => {
-    if (!resultado?.producto) return;
-    const p = parseFloat(peso);
-    if (!p || p <= 0) { alert('Ingresa el peso'); return; }
-    onAddToCart({ ...resultado.producto, quantity: p, _peso: p, _precio_total: resultado.producto.price * p });
-    setResultado(null); setPeso(''); setCapturada(null);
+  // ── Cargar modelo ──────────────────────────────────────────────────────
+  useEffect(() => {
+    let cancelado = false;
+    const cargar = async () => {
+      try {
+        const modelo = await tmImage.load(MODEL_URL, METADATA_URL);
+        if (cancelado) return;
+        modelRef.current = modelo;
+        await iniciarCamara();
+      } catch {
+        if (!cancelado) { setEstado('error'); setMensaje('Error cargando el modelo IA'); }
+      }
+    };
+    cargar();
+    return () => { cancelado = true; detenerCamara(); };
+  }, []);
+
+  // ── Cámara ─────────────────────────────────────────────────────────────
+  const iniciarCamara = useCallback(async () => {
+    detenerLoop();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
+      });
+      streamRef.current = stream;
+      if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play(); }
+      setEstado('buscando');
+      setMensaje('Apunta al producto');
+      iniciarLoop();
+    } catch {
+      try {
+        const s2 = await navigator.mediaDevices.getUserMedia({ video: true });
+        streamRef.current = s2;
+        if (videoRef.current) { videoRef.current.srcObject = s2; await videoRef.current.play(); }
+        setEstado('buscando');
+        setMensaje('Apunta al producto');
+        iniciarLoop();
+      } catch {
+        setEstado('error');
+        setMensaje('No se pudo acceder a la cámara');
+      }
+    }
+  }, []);
+
+  const detenerLoop   = () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+  const detenerCamara = () => {
+    detenerLoop();
+    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+  };
+  const cerrar = () => { detenerCamara(); if (typeof onClose === 'function') onClose(); };
+
+  // ── Loop Teachable Machine ─────────────────────────────────────────────
+  const iniciarLoop = useCallback(() => {
+    const loop = async () => {
+      if (pausadoRef.current) { animRef.current = requestAnimationFrame(loop); return; }
+      if (!modelRef.current || !videoRef.current || videoRef.current.readyState < 2) {
+        animRef.current = requestAnimationFrame(loop); return;
+      }
+      try {
+        const res    = await modelRef.current.predict(videoRef.current);
+        const sorted = [...res].sort((a, b) => b.probability - a.probability);
+        const top    = sorted[0];
+        const second = sorted[1];
+        const diff   = top && second ? top.probability - second.probability : 0;
+        const contadores = contadorRef.current;
+
+        if (top && top.probability >= CONFIANZA_MIN && diff >= 0.20) {
+          contadores[top.className] = (contadores[top.className] || 0) + 1;
+          sorted.forEach(r => { if (r.className !== top.className) contadores[r.className] = 0; });
+
+          if (contadores[top.className] >= FRAMES_CONF) {
+            pausadoRef.current = true;
+            setDeteccion({ clase: top.className, confianza: top.probability });
+            setEstado('confirmado');
+            setMensaje('¡Detectado!');
+          }
+        } else {
+          contadorRef.current = {};
+        }
+      } catch (e) { console.error(e); }
+      animRef.current = requestAnimationFrame(loop);
+    };
+    animRef.current = requestAnimationFrame(loop);
+  }, []);
+
+  // ── Confirmar producto Teachable Machine ───────────────────────────────
+  const confirmarProducto = useCallback(() => {
+    if (!deteccion) return;
+    const nombre = deteccion.clase.toLowerCase();
+    const prod   = products?.find(p =>
+      p.name?.toLowerCase().includes(nombre) || nombre.includes(p.name?.toLowerCase())
+    );
+    if (prod && typeof onAddToCart === 'function') {
+      onAddToCart(prod);  // agrega al carrito
+    } else {
+      alert(`"${deteccion.clase}" no encontrado en inventario`);
+    }
+    detenerCamara();
+    if (typeof onClose === 'function') onClose(); // cierra la cámara siempre
+  }, [deteccion, products, onAddToCart, onClose]);
+
+  // ── Google Cloud Vision ────────────────────────────────────────────────
+  const buscarConGoogle = useCallback(async () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    setBuscandoG(true);
+    setResultadoG(null);
+
+    // Capturar frame del video
+    const canvas  = canvasRef.current;
+    canvas.width  = videoRef.current.videoWidth  || 640;
+    canvas.height = videoRef.current.videoHeight || 480;
+    canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
+    const base64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+
+    try {
+      const res = await fetch(
+        `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_VISION_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requests: [{
+              image: { content: base64 },
+              features: [
+                { type: 'LABEL_DETECTION',   maxResults: 5 },
+                { type: 'OBJECT_LOCALIZATION', maxResults: 3 },
+              ]
+            }]
+          })
+        }
+      );
+      const data = await res.json();
+      const labels   = data.responses?.[0]?.labelAnnotations   || [];
+      const objects  = data.responses?.[0]?.localizedObjectAnnotations || [];
+      const topLabel  = labels[0]?.description  || '';
+      const topObject = objects[0]?.name        || '';
+      const nombreDetectado = topObject || topLabel;
+
+      if (nombreDetectado) {
+        setResultadoG(nombreDetectado);
+        setEstado('google');
+        // Buscar en inventario
+        const nombre = nombreDetectado.toLowerCase();
+        const prod = products?.find(p =>
+          p.name?.toLowerCase().includes(nombre) || nombre.includes(p.name?.toLowerCase())
+        );
+        if (prod) {
+          setDeteccion({ clase: prod.name, confianza: 1, porGoogle: true });
+        } else {
+          setDeteccion({ clase: nombreDetectado, confianza: 1, porGoogle: true, noEnInventario: true });
+        }
+      } else {
+        setMensaje('Google no reconoció el producto');
+      }
+    } catch (e) {
+      console.error('Google Vision error:', e);
+      setMensaje('Error conectando con Google Vision');
+    } finally {
+      setBuscandoG(false);
+    }
+  }, [products]);
+
+  // ── Seguir buscando ────────────────────────────────────────────────────
+  const seguirBuscando = () => {
+    pausadoRef.current = false;
+    contadorRef.current = {};
+    setDeteccion(null);
+    setResultadoG(null);
+    setEstado('buscando');
+    setMensaje('Apunta al producto');
   };
 
-  const reiniciar = () => { setResultado(null); setPeso(''); setCapturada(null); setError(null); };
+  // ── Confirmar Google ───────────────────────────────────────────────────
+  const confirmarGoogle = useCallback(() => {
+    if (!deteccion || deteccion.noEnInventario) return;
+    const nombre = deteccion.clase.toLowerCase();
+    const prod   = products?.find(p =>
+      p.name?.toLowerCase().includes(nombre) || nombre.includes(p.name?.toLowerCase())
+    );
+    if (prod && typeof onAddToCart === 'function') onAddToCart(prod);
+    detenerCamara();
+    if (typeof onClose === 'function') onClose(); // siempre cierra
+  }, [deteccion, products, onAddToCart, onClose]);
 
-  const iaLista = estadoIA?.ollama && estadoIA?.modelo_disponible;
+  // ── UI ─────────────────────────────────────────────────────────────────
+  const confirmado = estado === 'confirmado' || (estado === 'google' && deteccion && !deteccion.noEnInventario);
 
   return (
-    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.92)', zIndex: 99999 }}>
-      <div className="modal-dialog modal-lg modal-dialog-centered">
-        <div className="modal-content border-0" style={{ background: '#0f172a', color: '#fff', borderRadius: 16 }}>
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      background: 'rgba(0,0,0,0.88)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16
+    }}>
+      <div style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', width: '100%', maxWidth: 480, boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}>
 
-          <div className="d-flex align-items-center justify-content-between px-4 py-3"
-            style={{ borderBottom: '1px solid #1e3a5f' }}>
+        {/* Header */}
+        <div style={{ background: '#1e3a5f', color: '#fff', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 22 }}>🤖</span>
             <div>
-              <h5 className="fw-bold mb-0">📷 Cámara IA — Identificar producto</h5>
-              <small className="text-muted">
-                {estadoIA === null && '⏳ Verificando Ollama...'}
-                {iaLista && '✅ Ollama + Qwen2.5-VL listo'}
-                {estadoIA?.ollama && !estadoIA?.modelo_disponible && '⚠️ Falta el modelo — ejecuta: ollama pull qwen2.5vl:7b'}
-                {estadoIA !== null && !estadoIA?.ollama && '❌ Ollama no está corriendo — ejecuta: ollama serve'}
-              </small>
+              <div style={{ fontWeight: 700, fontSize: 16 }}>Cámara IA</div>
+              <div style={{ fontSize: 12, opacity: 0.75 }}>Teachable Machine · Google Vision</div>
             </div>
-            <button className="btn btn-sm btn-outline-light" onClick={onClose}>✕</button>
           </div>
+          <button onClick={cerrar} style={{ background: 'rgba(220,38,38,0.8)', border: 'none', color: '#fff', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+            ✕ Cerrar
+          </button>
+        </div>
 
-          <div className="modal-body p-4">
-            {estadoIA !== null && (
-              <div className={`alert py-2 mb-3 ${iaLista ? 'alert-success' : 'alert-warning'}`} style={{ fontSize: 12 }}>
-                {iaLista
-                  ? <span>✅ <strong>Qwen2.5-VL</strong> listo — IA local, sin internet ni API key</span>
-                  : !estadoIA?.ollama
-                    ? <span>❌ Inicia Ollama: <code style={{ background: '#0f172a', padding: '2px 6px', borderRadius: 4 }}>ollama serve</code></span>
-                    : <span>⚠️ Descarga el modelo: <code style={{ background: '#0f172a', padding: '2px 6px', borderRadius: 4 }}>ollama pull qwen2.5vl:7b</code> (~4GB, una sola vez)</span>
-                }
-              </div>
-            )}
+        {/* Video */}
+        <div style={{ position: 'relative', background: '#000', aspectRatio: '4/3' }}>
+          <video ref={videoRef} autoPlay playsInline muted
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+              filter: confirmado ? 'brightness(0.55)' : 'none', transition: 'filter 0.3s' }}/>
+          <canvas ref={canvasRef} style={{ display: 'none' }}/>
 
-            {error && <div className="alert alert-danger py-2 small mb-3">{error}</div>}
+          {/* Marco */}
+          <div style={{
+            position: 'absolute', inset: '12%',
+            border: `3px solid ${confirmado ? '#22c55e' : 'rgba(255,255,255,0.55)'}`,
+            borderRadius: 14,
+            boxShadow: confirmado ? '0 0 30px rgba(34,197,94,0.5)' : 'none',
+            transition: 'all 0.3s', pointerEvents: 'none'
+          }}/>
 
-            <div className="row g-4">
-              <div className="col-md-7">
-                <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', background: '#1e293b', minHeight: 260 }}>
-                  {capturada
-                    ? <img src={capturada} alt="captura" style={{ width: '100%', borderRadius: 12, display: 'block' }} />
-                    : <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', borderRadius: 12, display: 'block' }} />
-                  }
-                  {analizando && (
-                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 12 }}>
-                      <div className="spinner-border text-primary mb-2" style={{ width: 48, height: 48 }} />
-                      <span className="fw-bold">Analizando con Qwen2.5-VL...</span>
-                      <small className="text-muted mt-1">Puede tardar unos segundos</small>
-                    </div>
-                  )}
-                </div>
-                <div className="mt-3 d-flex gap-2">
-                  <button className="btn btn-primary btn-lg fw-bold flex-grow-1"
-                    disabled={analizando || camError || !iaLista}
-                    onClick={analizar}>
-                    {analizando
-                      ? <><span className="spinner-border spinner-border-sm me-2" />Analizando...</>
-                      : '📷 Capturar y analizar (Enter)'}
-                  </button>
-                  {capturada && <button className="btn btn-outline-secondary btn-lg" onClick={reiniciar} title="Volver al video">🔄</button>}
-                </div>
-                {camError && (
-                  <div className="alert alert-warning small mt-2 py-2">
-                    📱 Chrome → <code>chrome://flags</code> → "Insecure origins" → agrega tu IP
+          {/* Overlay confirmado */}
+          {confirmado && deteccion && (
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+              <div style={{ fontSize: 52 }}>✅</div>
+              <div style={{ background: 'rgba(21,128,61,0.95)', color: '#fff', borderRadius: 12, padding: '12px 28px', textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontWeight: 800 }}>{deteccion.clase}</div>
+                {!deteccion.porGoogle && (
+                  <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
+                    {(deteccion.confianza * 100).toFixed(0)}% confianza
                   </div>
                 )}
+                {deteccion.porGoogle && (
+                  <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>Identificado por Google Vision</div>
+                )}
               </div>
-
-              <div className="col-md-5">
-                <div style={{ background: '#1e293b', borderRadius: 12, padding: 20, minHeight: 300 }}>
-                  {!resultado && !analizando && (
-                    <div className="text-center text-muted py-4">
-                      <div style={{ fontSize: 52 }}>🤖</div>
-                      <div className="mt-2 small">Apunta la cámara al producto<br />y presiona <strong>Capturar</strong></div>
-                      <div className="mt-3 p-2 rounded text-start" style={{ background: '#0f172a', fontSize: 11 }}>
-                        <div className="text-muted mb-1">✨ Powered by Ollama + Qwen2.5-VL</div>
-                        <div>• IA local, sin internet</div>
-                        <div>• Sin API key ni costos</div>
-                        <div>• Identifica cualquier producto</div>
-                      </div>
-                    </div>
-                  )}
-
-                  {analizando && (
-                    <div className="text-center py-4 text-muted">
-                      <div style={{ fontSize: 52 }}>🔍</div>
-                      <div className="mt-2">Preguntando a Qwen2.5-VL...</div>
-                    </div>
-                  )}
-
-                  {resultado && !resultado.nombre && (
-                    <div className="text-center py-4">
-                      <div style={{ fontSize: 52 }}>🤔</div>
-                      <div className="fw-bold text-warning mt-2">No reconocido</div>
-                      <div className="text-muted small mt-2">Intenta con mejor iluminación o más cerca.</div>
-                      <button className="btn btn-outline-light btn-sm mt-3" onClick={reiniciar}>🔄 Intentar de nuevo</button>
-                    </div>
-                  )}
-
-                  {resultado?.nombre && !resultado.producto && (
-                    <div className="text-center py-3">
-                      <div style={{ fontSize: 48 }}>{getEmoji(resultado.nombre)}</div>
-                      <div className="fw-bold text-warning mt-2" style={{ fontSize: 18 }}>{resultado.nombre}</div>
-                      <div className="alert alert-warning py-2 small mt-3 text-start">
-                        ⚠️ <strong>{resultado.nombre}</strong> identificado pero no está en el inventario.<br />
-                        Regístralo en Productos con ese nombre exacto.
-                      </div>
-                      <button className="btn btn-outline-light btn-sm mt-2" onClick={reiniciar}>🔄 Capturar otro</button>
-                    </div>
-                  )}
-
-                  {resultado?.producto && (
-                    <>
-                      <div className="text-center mb-3">
-                        <div style={{ fontSize: 52 }}>{getEmoji(resultado.nombre)}</div>
-                        <div className="fw-bold text-white mt-1" style={{ fontSize: 18 }}>{resultado.nombre}</div>
-                        <span className="badge bg-success mt-1">✅ En inventario</span>
-                      </div>
-                      <div className="mb-3 p-2 rounded" style={{ background: '#0f2740' }}>
-                        <div className="small text-muted">Producto en sistema:</div>
-                        <div className="fw-semibold text-white">{resultado.producto.name}</div>
-                        <div className="text-success fw-bold">{fmt(resultado.producto.price)} / kg</div>
-                        <div className="text-muted small">Stock: {resultado.producto.stock} unidades</div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label fw-semibold text-white">⚖️ Peso (kg)</label>
-                        <div className="input-group">
-                          <input type="number" className="form-control form-control-lg text-center fw-bold"
-                            min="0.001" step="0.001" placeholder="0.000"
-                            value={peso} onChange={e => setPeso(e.target.value)}
-                            style={{ fontSize: 22, background: '#0f172a', color: '#fff', border: '2px solid #3b82f6' }}
-                            autoFocus />
-                          <span className="input-group-text" style={{ background: '#1e3a5f', color: '#fff', border: '2px solid #3b82f6' }}>kg</span>
-                        </div>
-                        {peso && parseFloat(peso) > 0 && (
-                          <div className="text-center mt-2 fw-bold text-success" style={{ fontSize: 20 }}>
-                            = {fmt(resultado.producto.price * parseFloat(peso))}
-                          </div>
-                        )}
-                      </div>
-                      <button className="btn btn-success btn-lg w-100 fw-bold"
-                        onClick={handleAdd} disabled={!peso || parseFloat(peso) <= 0}>
-                        🛒 Agregar al carrito (Enter)
-                      </button>
-                      <button className="btn btn-outline-secondary w-100 mt-2" onClick={reiniciar}>
-                        🔄 Capturar otro producto
-                      </button>
-                    </>
-                  )}
-                </div>
+              <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13 }}>
+                Presiona <strong style={{ color: '#fff' }}>ENTER</strong> o el botón verde
               </div>
             </div>
-          </div>
+          )}
+
+          {/* No en inventario */}
+          {estado === 'google' && deteccion?.noEnInventario && (
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+              <div style={{ fontSize: 48 }}>⚠️</div>
+              <div style={{ background: 'rgba(180,83,9,0.95)', color: '#fff', borderRadius: 12, padding: '12px 24px', textAlign: 'center' }}>
+                <div style={{ fontSize: 18, fontWeight: 700 }}>"{resultadoG}"</div>
+                <div style={{ fontSize: 13, marginTop: 4 }}>No está en el inventario</div>
+              </div>
+            </div>
+          )}
+
+          {/* Mensaje buscando */}
+          {!confirmado && estado !== 'google' && (
+            <div style={{ position: 'absolute', bottom: 10, left: 10, right: 10, background: 'rgba(0,0,0,0.65)', borderRadius: 8, padding: '8px 14px', color: '#fff', fontSize: 13, fontWeight: 600, textAlign: 'center' }}>
+              {estado === 'cargando' && '⏳ Cargando modelo...'}
+              {estado === 'buscando' && '🎯 ' + mensaje}
+              {estado === 'error'    && '❌ ' + mensaje}
+            </div>
+          )}
+
+          {/* Spinner Google */}
+          {buscandoG && (
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+              <div style={{ width: 40, height: 40, border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}/>
+              <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>Analizando con Google...</div>
+            </div>
+          )}
         </div>
+
+        {/* Botones */}
+        <div style={{ padding: 14 }}>
+          {confirmado && deteccion && !deteccion.noEnInventario ? (
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={seguirBuscando} style={{ flex: 1, padding: '11px 0', background: '#f3f4f6', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: 'pointer', color: '#374151' }}>
+                🔄 Otro
+              </button>
+              <button onClick={deteccion.porGoogle ? confirmarGoogle : confirmarProducto} style={{ flex: 2, padding: '11px 0', background: '#16a34a', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                🛒 Agregar al carrito <span style={{ opacity: 0.65, fontSize: 12 }}>(Enter)</span>
+              </button>
+            </div>
+          ) : estado === 'google' && deteccion?.noEnInventario ? (
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={seguirBuscando} style={{ flex: 1, padding: '11px 0', background: '#f3f4f6', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: 'pointer', color: '#374151' }}>
+                🔄 Buscar otro
+              </button>
+              <button onClick={cerrar} style={{ flex: 1, padding: '11px 0', background: '#dc2626', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: 'pointer', color: '#fff' }}>
+                Cerrar
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 10 }}>
+              {estado === 'error' ? (
+                <button onClick={iniciarCamara} style={{ flex: 1, padding: '11px 0', background: '#fef2f2', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+                  🔄 Reintentar
+                </button>
+              ) : (
+                <div style={{ flex: 1, textAlign: 'center', color: '#9ca3af', fontSize: 13, padding: '10px 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  Mantén el producto quieto en el marco
+                </div>
+              )}
+              {GOOGLE_VISION_API_KEY !== 'TU_API_KEY_AQUI' && (
+                <button onClick={buscarConGoogle} disabled={buscandoG || estado === 'cargando'} style={{ padding: '11px 14px', background: '#1a73e8', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', gap: 6, opacity: buscandoG ? 0.7 : 1 }}>
+                  <img src="https://www.google.com/favicon.ico" alt="" width={14} height={14}/>
+                  Google Vision
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
       </div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 };

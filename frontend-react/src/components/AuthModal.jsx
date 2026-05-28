@@ -188,6 +188,8 @@ const AuthModal = ({ tipo = 'eliminar_producto', onAuthorized, onCancel, targetE
                 value={tarjeta}
                 onChange={e => setTarjeta(e.target.value.toUpperCase().replace(/['’`´]/g, '-'))}
                 onFocus={() => setModoActivo('tarjeta')}
+                autoComplete="off"
+                name="tarjeta-admin"
                 style={{
                   ...inp(modoActivo === 'tarjeta'),
                   fontFamily: 'monospace',
@@ -243,6 +245,8 @@ const AuthModal = ({ tipo = 'eliminar_producto', onAuthorized, onCancel, targetE
               maxLength={6}
               onFocus={() => setModoActivo('pin')}
               onKeyDown={e => e.key === 'Enter' && handleSubmit(e)}
+              autoComplete="off"
+              name="pin-admin"
               style={{
                 ...inp(modoActivo === 'pin'),
                 letterSpacing: 6,

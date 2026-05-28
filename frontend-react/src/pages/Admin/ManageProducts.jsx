@@ -29,7 +29,8 @@ const ManageProducts = () => {
   const [form, setForm]                   = useState(EMPTY);
   const [alert, setAlert]                 = useState(null);
   const [loading, setLoading]             = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmDelete,    setConfirmDelete]    = useState(null);
+  const [deactivatedModal, setDeactivatedModal] = useState(null);
   const [priceHistoryModal, setPriceHistoryModal] = useState(null);
   const [priceHistory, setPriceHistory]   = useState([]);
 
@@ -51,6 +52,7 @@ const ManageProducts = () => {
       setPriceHistory(Array.isArray(h) ? h : []);
     } catch(e) { setPriceHistory([]); }
   };
+  // eslint-disable-next-line no-unused-vars
   const openAdd  = () => { setEditing(null); setForm(EMPTY); setShowModal(true); };
   const openEdit = (p) => {
     setEditing(p);
@@ -89,8 +91,20 @@ const ManageProducts = () => {
   };
 
   const handleDelete = async (id) => {
-    try { await productService.delete(id, token); showAlert('success','Producto eliminado'); setConfirmDelete(null); load(); }
-    catch (e) { showAlert('danger', e.message); }
+    try {
+      const res = await productService.delete(id, token);
+      setConfirmDelete(null);
+      if (res?.action === 'deactivated') {
+        setDeactivatedModal({
+          titulo:  'Producto con historial de ventas',
+          mensaje: res.message,
+          detalle: res.detail,
+        });
+      } else {
+        showAlert('success','Producto eliminado');
+      }
+      load();
+    } catch(e) { showAlert('danger', e.message); }
   };
 
   const handleToggle = async (p) => {
@@ -473,6 +487,24 @@ const ManageProducts = () => {
           </div>
         )}
 
+      {/* ── Modal historial ── */}
+      {deactivatedModal && (
+        <div className="modal d-block" style={{background:'rgba(0,0,0,0.5)',position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{maxWidth:440,width:'90%',margin:'auto',background:'#fff',borderRadius:14,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}>
+            <div style={{background:'#fef3c7',padding:'16px 20px'}}>
+              <h5 style={{margin:0,fontWeight:700,color:'#92400e'}}>⚠️ {deactivatedModal.titulo}</h5>
+            </div>
+            <div style={{padding:'20px'}}>
+              <p style={{fontWeight:600}}>{deactivatedModal.mensaje}</p>
+              <p style={{color:'#6b7280',fontSize:14,margin:0}}>{deactivatedModal.detalle}</p>
+            </div>
+            <div style={{padding:'0 20px 20px',textAlign:'center'}}>
+              <button style={{background:'#f59e0b',color:'#fff',border:'none',borderRadius:8,padding:'10px 40px',fontWeight:700,cursor:'pointer'}}
+                onClick={() => setDeactivatedModal(null)}>Entendido</button>
+            </div>
+          </div>
+        </div>
+      )}
       </main>
     </div>
   );

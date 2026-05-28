@@ -145,13 +145,16 @@ const Login = () => {
           )}
 
           <form onSubmit={handleSubmit}>
+            {/* Campos trampa para evitar autocompletado del navegador */}
+            <input type="text" style={{display:'none'}} name="fake_user" readOnly/>
+            <input type="password" style={{display:'none'}} name="fake_pass" readOnly/>
             <div style={{ marginBottom:16 }}>
               <label style={{ color:"#94a3b8", fontSize:12, fontWeight:600, display:"block",
                 marginBottom:6, textTransform:"uppercase", letterSpacing:"0.05em" }}>
                 Correo electrónico
               </label>
               <input type="email" placeholder="correo@ejemplo.com" value={email}
-                onChange={e => setEmail(e.target.value)} required autoComplete="email" style={inp} />
+                onChange={e => setEmail(e.target.value)} required autoComplete="off" style={inp} />
             </div>
             <div style={{ marginBottom:8 }}>
               <label style={{ color:"#94a3b8", fontSize:12, fontWeight:600, display:"block",
@@ -160,7 +163,7 @@ const Login = () => {
               </label>
               <div style={{ position:"relative" }}>
                 <input type={showPass?"text":"password"} placeholder="••••••••" value={password}
-                  onChange={e => setPassword(e.target.value)} required autoComplete="current-password"
+                  onChange={e => setPassword(e.target.value)} required autoComplete="new-password"
                   style={{ ...inp, paddingRight:44 }} />
                 <button type="button" onClick={() => setShowPass(!showPass)}
                   style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)",

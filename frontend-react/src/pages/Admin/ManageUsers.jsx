@@ -8,6 +8,7 @@ const EMPTY = { name:'', email:'', password:'', role:'cajero', is_active:true };
 
 const ManageUsers = () => {
   const { token, user: me } = useAuth();
+  const esAdminTecnico = me?.role === 'admin_tecnico' || me?.role === 'admin_tech';
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -15,7 +16,8 @@ const ManageUsers = () => {
   const [form, setForm] = useState(EMPTY);
   const [alert, setAlert] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmDelete,    setConfirmDelete]    = useState(null);
+  const [deactivatedModal, setDeactivatedModal] = useState(null);
 
   const load = async () => {
     try { setUsers(await userService.getAll(token)); }
@@ -93,9 +95,17 @@ const ManageUsers = () => {
 
   const handleDelete = async (id) => {
     try {
-      await userService.delete(id, token);
-      showAlert('success','Usuario eliminado');
+      const res = await userService.delete(id, token);
       setConfirmDelete(null);
+      if (res?.action === 'deactivated') {
+        setDeactivatedModal({
+          titulo:  'Usuario con historial',
+          mensaje: res.message,
+          detalle: res.detail,
+        });
+      } else {
+        showAlert('success','Usuario eliminado');
+      }
       load();
     } catch(e) {
       showAlert('danger', e.message);
@@ -120,7 +130,10 @@ const ManageUsers = () => {
     role === 'auditor'       ? '🔍 Auditor' :
     '🧾 Cajero';
 
-  const filtered = users.filter(u =>
+  const filtered = users.filter(u => {
+    if (!esAdminTecnico && u.role === 'admin_tecnico') return false;
+    return true;
+  }).filter(u =>
     u.name?.toLowerCase().includes(search.toLowerCase()) ||
     u.email?.toLowerCase().includes(search.toLowerCase())
   );
@@ -212,21 +225,21 @@ const ManageUsers = () => {
                           className={`btn btn-sm ${u.is_active ? 'btn-outline-secondary' : 'btn-outline-success'}`}
                           onClick={() => handleToggleActive(u)}
                         >
-                          {u.is_active ? 'Desactivar' : 'Activar'}
+                          {u.is_active ? '❌' : '✅'}
                         </button>
 
                         <button
                           className="btn btn-primary btn-sm"
                           onClick={() => openEdit(u)}
                         >
-                          Editar
+                          ✏️
                         </button>
 
                         <button
                           className="btn btn-danger btn-sm"
                           onClick={() => setConfirmDelete(u)}
                         >
-                          Eliminar
+                          🗑️
                         </button>
                       </div>
                     </td>
@@ -242,7 +255,7 @@ const ManageUsers = () => {
           <div className="modal d-block" style={{ background:'rgba(0,0,0,0.5)' }}>
             <div className="modal-dialog">
               <div className="modal-content">
-                <form onSubmit={handleSave}>
+                <form onSubmit={handleSave} autoComplete="off">
                   <div className="modal-header">
                     <h5 className="modal-title">
                       {editing ? 'Editar Usuario' : 'Nuevo Usuario'}
@@ -251,6 +264,9 @@ const ManageUsers = () => {
                   </div>
 
                   <div className="modal-body">
+                    {/* Campos trampa para evitar autocompletado del navegador */}
+                    <input type="text"     name="fake_user" style={{display:'none'}} readOnly />
+                    <input type="password" name="fake_pass" style={{display:'none'}} readOnly />
                     <input className="form-control mb-2" placeholder="Nombre"
                       value={form.name}
                       onChange={e=>setForm({...form,name:e.target.value})}
@@ -264,6 +280,8 @@ const ManageUsers = () => {
                     <input type="password" className="form-control mb-2" placeholder="Contraseña"
                       value={form.password}
                       onChange={e=>setForm({...form,password:e.target.value})}
+                      autoComplete="new-password"
+                      name="new-password"
                     />
 
                     <div className="mb-3">
@@ -277,7 +295,9 @@ const ManageUsers = () => {
                         <option value="contador">📊 Contador — Acceso a finanzas, nómina y reportes</option>
                         <option value="auditor">🔍 Auditor externo — Solo lectura, auditoría y reportes</option>
                         <option value="admin">⚙️ Administrador de tienda — Gestión completa</option>
-                        <option value="admin_tecnico">🛠️ Administrador técnico — Acceso total al sistema</option>
+                        {esAdminTecnico && (
+                          <option value="admin_tecnico">🛠️ Administrador técnico — Acceso total al sistema</option>
+                        )}
                       </select>
                       <div className="form-text small text-muted">
                         {form.role === 'bodeguero'   && '📦 Puede recibir pedidos, trasladar stock y hacer conteo físico. No ve finanzas ni ventas.'}
@@ -336,6 +356,24 @@ const ManageUsers = () => {
           </div>
         )}
 
+      {/* ── Modal historial ── */}
+      {deactivatedModal && (
+        <div className="modal d-block" style={{background:'rgba(0,0,0,0.5)',position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{maxWidth:440,width:'90%',margin:'auto',background:'#fff',borderRadius:14,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}>
+            <div style={{background:'#fef3c7',padding:'16px 20px'}}>
+              <h5 style={{margin:0,fontWeight:700,color:'#92400e'}}>⚠️ {deactivatedModal.titulo}</h5>
+            </div>
+            <div style={{padding:'20px'}}>
+              <p style={{fontWeight:600}}>{deactivatedModal.mensaje}</p>
+              <p style={{color:'#6b7280',fontSize:14,margin:0}}>{deactivatedModal.detalle}</p>
+            </div>
+            <div style={{padding:'0 20px 20px',textAlign:'center'}}>
+              <button style={{background:'#f59e0b',color:'#fff',border:'none',borderRadius:8,padding:'10px 40px',fontWeight:700,cursor:'pointer'}}
+                onClick={() => setDeactivatedModal(null)}>Entendido</button>
+            </div>
+          </div>
+        </div>
+      )}
       </main>
     </div>
   );

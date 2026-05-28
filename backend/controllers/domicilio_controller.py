@@ -38,7 +38,7 @@ class Domicilio(db.Model):
     cliente_direccion  = db.Column(db.Text, nullable=False)
     cliente_referencia = db.Column(db.Text, nullable=True)
     domiciliario_id    = db.Column(db.Integer, db.ForeignKey('domiciliarios.id', ondelete='SET NULL'), nullable=True)
-    cashier_id         = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    cashier_id         = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     sale_id            = db.Column(db.Integer, db.ForeignKey('sales.id',  ondelete='SET NULL'), nullable=True)
     estado             = db.Column(db.String(20), default='pendiente')
     metodo_pago        = db.Column(db.String(30), default='efectivo')
@@ -76,7 +76,17 @@ class Domicilio(db.Model):
             'created_at':         self.created_at.isoformat() if self.created_at else None,
             'assigned_at':        self.assigned_at.isoformat() if self.assigned_at else None,
             'delivered_at':       self.delivered_at.isoformat() if self.delivered_at else None,
+            'cashier_id':         self.cashier_id,
+            'cajero':             {'id': self.cashier_id, 'nombre': self._get_cajero_nombre()} if self.cashier_id else None,
         }
+
+    def _get_cajero_nombre(self):
+        try:
+            from models.user import User
+            u = User.query.get(self.cashier_id)
+            return u.name if u else 'Sin asignar'
+        except:
+            return 'Sin asignar'
 
 
 class DomicilioItem(db.Model):
@@ -156,6 +166,10 @@ def get_domicilios():
     estado = request.args.get('estado')
     if estado:
         query = query.filter_by(estado=estado)
+
+    cajero_id = request.args.get('cajero_id')
+    if cajero_id:
+        query = query.filter_by(cashier_id=int(cajero_id))
 
     domicilios = query.order_by(Domicilio.created_at.desc()).limit(100).all()
     return jsonify([d.to_dict() for d in domicilios]), 200
@@ -321,3 +335,88 @@ def get_stats_domicilios():
         'pendientes':     pendientes,
         'ingresos_hoy':   float(ingresos),
     }), 200
+
+# ── Índice para asignación circular ─────────────────────────────────────────
+_cajero_idx = 0
+
+@jwt_required(optional=True)
+def crear_desde_catalogo():
+    """Crea un pedido desde el catálogo público y lo asigna a un cajero en turno (circular)."""
+    global _cajero_idx
+    data = request.get_json() or {}
+
+    # Obtener cajeros con turno abierto
+    from models.shift import Shift
+    from models.user  import User
+    turnos_activos = Shift.query.filter_by(status='abierto').all()
+    cajeros_ids = [t.cashier_id for t in turnos_activos]
+
+    # Si no hay cajeros en turno, usar el primer admin disponible
+    if not cajeros_ids:
+        admin = User.query.filter(User.role.in_(['admin','cajero']), User.is_active==True).first()
+        cajeros_ids = [admin.id] if admin else []
+
+    # Asignación circular
+    cajero_asignado_id = None
+    if cajeros_ids:
+        _cajero_idx = _cajero_idx % len(cajeros_ids)
+        cajero_asignado_id = cajeros_ids[_cajero_idx]
+        _cajero_idx += 1
+
+    import random, string
+    suffix = ''.join(random.choices(string.digits, k=4))
+    numero = f'CAT-{datetime.now().strftime("%Y%m%d")}-{suffix}'
+
+    total = sum(float(i.get('subtotal',0)) for i in data.get('items',[]))
+
+    dom = Domicilio(
+        numero_pedido      = numero,
+        cliente_nombre     = data.get('cliente_nombre','Cliente'),
+        cliente_telefono   = data.get('cliente_telefono',''),
+        cliente_direccion  = data.get('cliente_direccion',''),
+        metodo_pago        = data.get('metodo_pago','por_definir'),
+        total              = total,
+        valor_domicilio    = float(data.get('valor_domicilio',0)),
+        notas              = data.get('notas',''),
+        cashier_id         = cajero_asignado_id,
+        estado             = 'asignado' if cajero_asignado_id else 'pendiente',
+    )
+    db.session.add(dom)
+    db.session.flush()
+
+    for item in data.get('items',[]):
+        db.session.add(DomicilioItem(
+            domicilio_id = dom.id,
+            product_id   = item.get('product_id'),
+            product_name = item.get('product_name',''),
+            quantity     = float(item.get('quantity',1)),
+            price        = float(item.get('price',0)),
+            subtotal     = float(item.get('subtotal',0)),
+        ))
+    db.session.commit()
+
+    # Notificar al cajero asignado vía notificación interna
+    try:
+        from models.notificacion import Notificacion
+        cajero = User.query.get(cajero_asignado_id) if cajero_asignado_id else None
+        n = Notificacion(
+            tipo    = 'pedido_catalogo',
+            titulo  = f'🛵 Nuevo pedido del catálogo: {numero}',
+            mensaje = f'Cliente: {dom.cliente_nombre} | Total: ${total:,.0f} | Cajero: {cajero.name if cajero else "Sin asignar"}',
+        )
+        db.session.add(n)
+        db.session.commit()
+    except Exception: pass
+
+    cajero_info = None
+    if cajero_asignado_id:
+        cajero_obj = User.query.get(cajero_asignado_id)
+        if cajero_obj:
+            cajero_info = {'id': cajero_obj.id, 'nombre': cajero_obj.name}
+
+    return jsonify({
+        'message':        'Pedido creado',
+        'numero_pedido':  numero,
+        'cajero_asignado': cajero_info,
+        'total':          total,
+    }), 201

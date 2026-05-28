@@ -6,6 +6,8 @@ import ExportButtons from '../../components/ExportButtons';
 import { exportClientesPDF, exportClientesExcel } from '../../services/exportService';
 import { apiFetch } from '../../services/api';
 import ConfirmModal from '../../components/ConfirmModal';
+
+
 const EMPTY = { doc_type:'CC', doc_number:'', full_name:'', email:'', phone:'', address:'', price_list_id:'' };
 const DOC_TYPES = ['CC','CE','NIT','Pasaporte'];
 
@@ -114,8 +116,29 @@ const ManageCustomers = () => {
         <h4 className="fw-bold mb-1">👥 Clientes</h4>
         <p className="text-muted mb-4">Gestión de clientes y puntos de fidelidad</p>
 
-        {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
-
+        
+{alert && (
+  <div
+    className={`alert alert-${alert.type}`}
+    style={{
+      position: 'fixed',
+      top: '20px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      zIndex: 99999,
+      minWidth: '350px',
+      maxWidth: '500px',
+      textAlign: 'center',
+      borderRadius: '12px',
+      padding: '14px 20px',
+      boxShadow: '0 8px 25px rgb(220, 74, 74)',
+      animation: 'slideDown 0.4s ease',
+      color: '#000000',
+    }}
+  >
+    {alert.msg}
+  </div>
+)}
         {/* KPIs */}
         <div className="row g-3 mb-4">
           {[
@@ -186,13 +209,13 @@ const ManageCustomers = () => {
                       </td>
                       <td>
                         <div className="d-flex gap-1 flex-wrap">
-                          <button className="btn btn-warning btn-sm" onClick={() => openEdit(c)}>Editar</button>
+                          <button className="btn btn-warning btn-sm" onClick={() => openEdit(c)}>✏️</button>
                           <button className="btn btn-info btn-sm text-white" onClick={() => { setPointsModal(c); setPointsInput(''); }}>⭐</button>
                           <button className={`btn btn-sm ${c.is_active ? 'btn-outline-secondary' : 'btn-outline-success'}`}
                             onClick={() => handleToggle(c)}>
-                            {c.is_active ? 'Desactivar' : 'Activar'}
+                            {c.is_active ? '❌' : '✅'}
                           </button>
-                          <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(c)}>Eliminar</button>
+                          <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(c)}>🗑️</button>
                         </div>
                       </td>
                     </tr>
