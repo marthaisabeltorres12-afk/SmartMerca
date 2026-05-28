@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#1e3a5f"/>
   <link rel="manifest" href="/bodeguero-manifest.json"/>
   <title>SmartMerca Bodeguero</title>
-  <script src="https://rawgit.com/schmich/instascan/master/instascan.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f172a;color:#fff;min-height:100vh;max-width:480px;margin:0 auto}
@@ -764,64 +764,23 @@ async function confirmarTraslado() {
 // ── ESCÁNER ────────────────────────────────────────────────────────────────
 let html5QrCode=null, scannerTarget='recibir';
 async function openScanner(target) {
-  scannerTarget = target;
-
-  // ── 1. Verificar HTTPS ──────────────────────────────────────────────
-  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-    toast('❌ La cámara requiere conexión HTTPS', 4000);
-    return;
-  }
-
-  // ── 2. Verificar soporte de cámara ──────────────────────────────────
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    toast('❌ Tu navegador no soporta cámara', 4000);
-    return;
-  }
-
-  const modal = document.getElementById('scanner-modal');
-  modal.style.display = 'flex';
-
+  scannerTarget=target;
+  const modal=document.getElementById('scanner-modal'); modal.style.display='flex';
   try {
-    // Pedir permiso explícitamente primero
-    await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-
-    document.getElementById('scanner-container').innerHTML =
-      '<div id="qr-reader" style="width:100%;height:100%"></div>';
-
-    if (typeof Html5Qrcode === 'undefined') {
-      toast('❌ Librería QR no cargó. Verifica internet.', 3500);
-      modal.style.display = 'none';
-      return;
-    }
-
-    html5QrCode = new Html5Qrcode('qr-reader');
-    await html5QrCode.start(
-      { facingMode: 'environment' },
-      { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.5 },
+    document.getElementById('scanner-container').innerHTML='<div id="qr-reader" style="width:100%;height:100%"></div>';
+    if (typeof Html5Qrcode==='undefined') { toast('❌ Librería no cargó.',3000); modal.style.display='none'; return; }
+    html5QrCode=new Html5Qrcode('qr-reader');
+    await html5QrCode.start({ facingMode:'environment' }, { fps:10, qrbox:{width:250,height:150}, aspectRatio:1.5 },
       (decodedText) => {
         closeScanner();
-        if (scannerTarget === 'recibir')       { document.getElementById('r-query').value = decodedText;  buscarProducto(true); }
-        else if (scannerTarget === 'traslado') { document.getElementById('t-query').value = decodedText;  buscarProdTraslado(); }
-        else if (scannerTarget === 'conteo')   { document.getElementById('c-search').value = decodedText; renderConteo(); }
-        else if (scannerTarget === 'stock')    { document.getElementById('s-search').value = decodedText; renderStock(); }
+        if (scannerTarget==='recibir')  { document.getElementById('r-query').value=decodedText; buscarProducto(true); }
+        else if (scannerTarget==='traslado') { document.getElementById('t-query').value=decodedText; buscarProdTraslado(); }
+        else if (scannerTarget==='conteo')   { document.getElementById('c-search').value=decodedText; renderConteo(); }
+        else if (scannerTarget==='stock')    { document.getElementById('s-search').value=decodedText; renderStock(); }
         toast(`✅ Código: ${decodedText}`);
-      },
-      () => {} // error de frame (normal, ignorar)
+      }, ()=>{}
     );
-  } catch (e) {
-    modal.style.display = 'none';
-    // Detectar tipo de error
-    const msg = e?.message || e?.name || String(e) || '';
-    if (msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('notallowed') || e?.name === 'NotAllowedError') {
-      toast('❌ Permiso de cámara denegado. Actívalo en ajustes del navegador.', 5000);
-    } else if (e?.name === 'NotFoundError' || msg.toLowerCase().includes('notfound')) {
-      toast('❌ No se encontró cámara en este dispositivo.', 4000);
-    } else if (e?.name === 'NotReadableError') {
-      toast('❌ Cámara ocupada por otra app.', 4000);
-    } else {
-      toast(`❌ Error cámara: ${msg || 'Permiso denegado o cámara no disponible'}`, 4000);
-    }
-  }
+  } catch(e) { toast(`❌ Error cámara: ${e.message}`,3000); modal.style.display='none'; }
 }
 async function closeScanner() {
   try { if(html5QrCode){await html5QrCode.stop();html5QrCode.clear();html5QrCode=null;} } catch{}
@@ -891,5 +850,12 @@ document.addEventListener('keydown', e => { if(e.key==='Enter'&&document.getElem
     </button>
   </div>
 </div>
+
+  <!-- Footer SmartMerca -->
+  <div style="text-align:center;padding:14px;background:#0f172a;border-top:1px solid rgba(255,255,255,.06);margin-top:32px;display:flex;align-items:center;justify-content:center;gap:10px">
+    <img src="/creatsoft-logo.png.jpeg" alt="Creatsoft" style="width:28px;height:28px;object-fit:contain;border-radius:6px"/>
+    <span style="font-size:14px;font-weight:800;color:#fff">SmartMerca</span>
+    <span style="font-size:9px;color:#38bdf8;letter-spacing:2px;text-transform:uppercase;font-weight:600">by Creatsoft</span>
+  </div>
 </body>
 </html>

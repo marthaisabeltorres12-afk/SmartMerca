@@ -2125,10 +2125,17 @@ const Sales = () => {
         boxShadow:'0 1px 4px rgba(0,0,0,.06)',
       }}>
         {/* Izquierda: título + fecha */}
-        <div>
-          <div style={{ fontWeight:800, fontSize:18, lineHeight:1.1 }}>Punto de Venta</div>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <img src="/creatsoft-logo.png.jpeg" alt="Creatsoft"
+            style={{ width:60, height:60, objectFit:'contain', borderRadius:10 }}/>
+          <div>
+            <div style={{ display:'flex', alignItems:'baseline', gap:6 }}>
+              <div style={{ fontWeight:800, fontSize:18, lineHeight:1.1, color:'#1e3a5f' }}>SmartMerca</div>
+              <div style={{ fontSize:9, color:'#38bdf8', letterSpacing:2, textTransform:'uppercase', fontWeight:600 }}>by Creatsoft</div>
+            </div>
           <div style={{ fontSize:12, color:'#64748b' }}>
             Cajero: <strong>{user?.name}</strong> — {new Date().toLocaleDateString('es-CO', { weekday:'long', day:'numeric', month:'long' })}
+          </div>
           </div>
         </div>
 
@@ -2474,19 +2481,11 @@ const Sales = () => {
               </div>
               <div className="modal-body p-4 text-center">
                 <div style={{fontSize:52,marginBottom:12}}>💰</div>
-                <p className="text-muted mb-4">Bienvenido/a <strong>{user?.name}</strong>.<br/>Ingresa el efectivo inicial en tu caja para comenzar.</p>
-                <div className="mb-3">
-                  <label className="form-label fw-semibold">Efectivo inicial en caja</label>
-                  <div className="input-group input-group-lg">
-                    <span className="input-group-text fw-bold">$</span>
-                    <input type="number" className="form-control form-control-lg text-end fw-bold"
-                      placeholder="0" value={efectivoInicial}
-                      onChange={e=>setEfectivoInicial(e.target.value)}
-                      onKeyDown={e=>{ if(e.key==='Enter') abrirTurno(); }}
-                      autoFocus/>
-                  </div>
-                  <small className="text-muted">Si la caja arranca vacía ingresa 0</small>
-                </div>
+                <p className="text-muted mb-4">
+                  Bienvenido/a <strong>{user?.name}</strong>.<br/>
+                  Presiona el botón para abrir tu turno y comenzar.
+                </p>
+                <p className="small text-muted">El efectivo inicial lo configura el administrador.</p>
               </div>
               <div className="modal-footer justify-content-center border-0 pb-4">
                 <button className="btn btn-success btn-lg fw-bold px-5" onClick={abrirTurno}>

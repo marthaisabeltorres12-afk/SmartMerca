@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNotifications } from "../hooks/useNotifications";
-import NotificationToasts from "./NotificationToasts";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
@@ -9,7 +8,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 const adminLinks = [
   { path: "/admin", icon: "bi-speedometer2", label: "Dashboard" },
-{ path: "/admin/domicilios", icon: "bi-bicycle", label: "🛵 Domicilios", badge: "pendientes" },
+
   // 📦 INVENTARIO
   {
     group: true, label: "Inventario", icon: "bi-archive", key: "inventario",
@@ -28,8 +27,8 @@ const adminLinks = [
   },
 
   // 🛵 DOMICILIOS — destacado
-  
- 
+  { path: "/admin/domicilios", icon: "bi-bicycle", label: "🛵 Domicilios", badge: "pendientes" },
+  { path: "/admin/mi-plan", icon: "bi-gem", label: "💎 Mi Plan" },
 
   // 👥 CLIENTES
   {
@@ -46,7 +45,7 @@ const adminLinks = [
     group: true, label: "Finanzas", icon: "bi-cash-stack", key: "finanzas",
     children: [
       { path: "/admin/cuentas-pagar", icon: "bi-receipt",      label: "Cuentas x Pagar" },
-      
+      { path: "/admin/nomina",        icon: "bi-person-badge", label: "Nómina" },
     ]
   },
 
@@ -70,14 +69,13 @@ const adminLinks = [
     group: true, label: "Reportes", icon: "bi-bar-chart", key: "reportes",
     children: [
       { path: "/admin/reportes",        icon: "bi-bar-chart",       label: "Reportes" },
-      
+      { path: "/admin/predicciones", icon: "bi-robot", label: "IA Predictiva" },
       { path: "/admin/analisis-ventas", icon: "bi-graph-up-arrow",  label: "Análisis Ventas" },
       { path: "/admin/finanzas",        icon: "bi-currency-dollar", label: "Finanzas" },
       { path: "/admin/auditoria",       icon: "bi-clipboard-data",  label: "Auditoría" },
       { path: "/admin/alertas",         icon: "bi-bell",            label: "Alertas" },
     ]
   },
-   { path: "/admin/mi-plan", icon: "bi-gem", label: "💎 Mi Plan" },
 ];
 
 const cajeroLinks = [
@@ -135,7 +133,8 @@ const contadorLinks = [
   { path: "/contador/finanzas",    icon: "bi-cash-stack",      label: "Finanzas" },
   { path: "/contador/ventas",      icon: "bi-receipt",         label: "Ventas" },
   { path: "/contador/cuentas",     icon: "bi-credit-card",     label: "Cuentas por pagar" },
-  
+  { separator: true, label: "NÓMINA" },
+  { path: "/contador/nomina",      icon: "bi-person-badge",    label: "Nómina" },
   { separator: true, label: "AUDITORÍA" },
   { path: "/contador/auditoria",   icon: "bi-shield-check",    label: "Auditoría" },
 ];
@@ -244,6 +243,9 @@ const Navbar = () => {
   return (
     <>
       <style>{`
+        /* Espacio para topbar fija */
+        main, .flex-grow-1 { padding-top: 58px !important; }
+
         .sidebar {
           position: fixed; left: 0; top: 0; height: 100vh;
           width: ${collapsed ? "70px" : "240px"};
@@ -290,84 +292,29 @@ const Navbar = () => {
           {collapsed ? "›" : "‹"}
         </button>
 
-        <div className="brand">
-          <div className="brand-icon">🛒</div>
-          {!collapsed && "SmartMerca"}
+        <div className="brand" style={{flexDirection:'column', alignItems:'flex-start', padding:'16px 20px 12px', gap:2}}>
+          <div style={{display:'flex', alignItems:'center', gap:10}}>
+            {collapsed
+              ? <img src="/creatsoft-logo.png.jpeg" alt="Creatsoft"
+                  style={{width:60, height:60, objectFit:'contain', borderRadius:8}}/>
+              : <>
+                  <img src="/creatsoft-logo.png.jpeg" alt="Creatsoft"
+                    style={{width:60, height:60, objectFit:'contain', borderRadius:8}}/>
+                  <div>
+                    <div style={{fontWeight:800, fontSize:17, color:'#fff', lineHeight:1.2, letterSpacing:0.5}}>
+                      SmartMerca
+                    </div>
+                    <div style={{fontSize:9, color:'#38bdf8', letterSpacing:2, textTransform:'uppercase', fontWeight:600}}>
+                      by Creatsoft
+                    </div>
+                  </div>
+                </>
+            }
+          </div>
         </div>
-
         <div className="nav-links">
 
-          <button onClick={toggleDarkMode} title={darkMode?'Modo claro':'Modo oscuro'}
-            style={{ background:'none', border:'none', color:'#cbd5e1', cursor:'pointer', padding:'8px 10px', fontSize:18 }}
-            onMouseEnter={e=>e.currentTarget.style.color='#fff'}
-            onMouseLeave={e=>e.currentTarget.style.color='#cbd5e1'}>
-            {darkMode ? '☀️' : '🌙'}
-          </button>
 
-          {canSeeBell && (
-            <div ref={bellRef} style={{ position:'relative', padding:'8px 10px' }}>
-              <button onClick={() => { setBellOpen(o=>!o); if(!bellOpen) markAllRead(); }}
-                style={{ background:'none', border:'none', color:'#cbd5f5', cursor:'pointer', position:'relative', padding:4 }}
-                title="Notificaciones">
-                <i className="bi bi-bell-fill" style={{ fontSize:18 }}></i>
-                {unread > 0 && (
-                  <span style={{ position:'absolute', top:-2, right:-2, background:'#ef4444', color:'#fff',
-                    borderRadius:'50%', width:17, height:17, fontSize:10, fontWeight:700,
-                    display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    {unread > 99 ? '99+' : unread}
-                  </span>
-                )}
-              </button>
-              {bellOpen && (
-                <div style={{ position:'absolute', left:collapsed?60:0, top:'100%', zIndex:1000,
-                  background:'#1e293b', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8,
-                  width:320, maxHeight:420, overflowY:'auto', boxShadow:'0 8px 32px rgba(0,0,0,0.5)' }}>
-                  <div style={{ padding:'12px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)',
-                    fontWeight:700, fontSize:13, color:'#f1f5f9', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                    <span>🔔 Notificaciones</span>
-                    <span style={{ fontSize:11, color:'#64748b' }}>{notifications.length} activas</span>
-                  </div>
-                  {!notifications.length ? (
-                    <div style={{ padding:'24px 16px', textAlign:'center', color:'#64748b', fontSize:13 }}>
-                      <div style={{ fontSize:24, marginBottom:8 }}>✅</div>Todo en orden
-                    </div>
-                  ) : (
-                    <>
-                      {notifications.map(n => {
-                        const tipoColor = { stock_bajo:'#f59e0b', vencimiento:'#ef4444', cierre_turno:'#8b5cf6',
-                          producto_faltante:'#3b82f6', producto_danado:'#ef4444',
-                          conteo_diferencia:'#f59e0b', otro:'#64748b' }[n.tipo]||'#64748b';
-                        const tipoIcon = { stock_bajo:'bi-graph-down', vencimiento:'bi-calendar-x', cierre_turno:'bi-lock',
-                          producto_faltante:'bi-box', producto_danado:'bi-exclamation-triangle',
-                          conteo_diferencia:'bi-calculator', otro:'bi-bell' }[n.tipo]||'bi-bell';
-                        return (
-                          <div key={n.id} style={{ display:'flex', gap:10, padding:'10px 16px',
-                            borderBottom:'1px solid rgba(255,255,255,0.05)', alignItems:'flex-start' }}>
-                            <i className={`bi ${tipoIcon}`} style={{ color:tipoColor, fontSize:16, marginTop:1, flexShrink:0 }}></i>
-                            <div style={{ flex:1 }}>
-                              <div style={{ color:'#f1f5f9', fontSize:12, fontWeight:600 }}>{n.titulo}</div>
-                              <div style={{ color:'#94a3b8', fontSize:11, marginTop:2 }}>{n.mensaje}</div>
-                              {n.creado_por_nombre && <div style={{ color:'#64748b', fontSize:10, marginTop:2 }}>Por: {n.creado_por_nombre}</div>}
-                            </div>
-                            <button onClick={() => resolverNotif(n.id)}
-                              style={{ background:'none', border:'1px solid #334155', borderRadius:4,
-                                color:'#94a3b8', cursor:'pointer', fontSize:11, padding:'2px 6px', flexShrink:0 }}>✓</button>
-                          </div>
-                        );
-                      })}
-                      <div style={{ padding:'8px 16px', borderTop:'1px solid rgba(255,255,255,0.08)' }}>
-                        <button onClick={() => resolverTodas()}
-                          style={{ width:'100%', background:'#1e3a5f', border:'none', borderRadius:6,
-                            color:'#fff', padding:'6px', fontSize:12, cursor:'pointer', fontWeight:700 }}>
-                          ✓ Resolver todas
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
 
           {links.map((link, i) =>
             link.group ? (
@@ -465,7 +412,93 @@ const Navbar = () => {
           </button>
         </div>
       </div>
-      <NotificationToasts toasts={toasts} onDismiss={dismissToast} />
+
+      {/* ── Topbar superior fija ── */}
+      {(canSeeBell || true) && (
+        <div style={{
+          position:'fixed', top:0,
+          left: collapsed ? 70 : 240,
+          right:0, height:48,
+          background:'#f8fafc',
+          borderBottom:'1px solid #e2e8f0',
+          display:'flex', alignItems:'center',
+          justifyContent:'flex-end',
+          paddingRight:20, gap:10,
+          zIndex:900,
+        }}>
+          {/* Luna */}
+          <button onClick={toggleDarkMode}
+            title={darkMode?'Modo claro':'Modo oscuro'}
+            style={{ background:'none', border:'1px solid #e2e8f0', borderRadius:8,
+              padding:'5px 10px', cursor:'pointer', fontSize:15, lineHeight:1,
+              color:'#475569', display:'flex', alignItems:'center' }}>
+            {darkMode ? '☀️' : '🌙'}
+          </button>
+
+          {/* Campana */}
+          {canSeeBell && (
+            <div ref={bellRef} style={{ position:'relative' }}>
+              <button onClick={() => setBellOpen(o=>!o)} title="Notificaciones"
+                style={{
+                  background: unread>0 ? '#1e3a5f' : 'none',
+                  border: unread>0 ? 'none' : '1px solid #e2e8f0',
+                  borderRadius:8, padding:'5px 10px', cursor:'pointer',
+                  display:'flex', alignItems:'center', gap:6,
+                  boxShadow: unread>0 ? '0 2px 8px rgba(30,58,95,0.25)' : 'none',
+                }}>
+                <i className="bi bi-bell-fill" style={{ fontSize:14, color: unread>0?'#fff':'#475569' }}></i>
+                {unread>0 && (
+                  <span style={{ background:'#ef4444', color:'#fff', borderRadius:20,
+                    padding:'1px 7px', fontSize:11, fontWeight:700, lineHeight:'17px' }}>
+                    {unread}
+                  </span>
+                )}
+              </button>
+
+              {bellOpen && (
+                <div style={{
+                  position:'absolute', top:42, right:0,
+                  background:'#1e293b', border:'1px solid rgba(255,255,255,0.1)',
+                  borderRadius:12, width:340, maxHeight:460,
+                  overflowY:'auto', boxShadow:'0 8px 32px rgba(0,0,0,0.4)',
+                  zIndex:1200,
+                }}>
+                  <div style={{ padding:'12px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)',
+                    display:'flex', justifyContent:'space-between', alignItems:'center',
+                    position:'sticky', top:0, background:'#1e293b', borderRadius:'12px 12px 0 0' }}>
+                    <span style={{ fontWeight:700, fontSize:14, color:'#f1f5f9' }}>🔔 Notificaciones</span>
+                    <span style={{ fontSize:11, color:'#64748b', background:'#0f172a',
+                      padding:'2px 8px', borderRadius:10 }}>{notifications.length} activas</span>
+                  </div>
+                  {!notifications.length ? (
+                    <div style={{ padding:'28px 16px', textAlign:'center', color:'#64748b', fontSize:13 }}>
+                      <div style={{ fontSize:28, marginBottom:8 }}>✅</div>Todo en orden
+                    </div>
+                  ) : notifications.map(n => {
+                    const tipoColor = { stock_bajo:'#f59e0b', vencimiento:'#ef4444', cierre_turno:'#8b5cf6',
+                      producto_faltante:'#3b82f6', producto_danado:'#ef4444',
+                      conteo_diferencia:'#f59e0b', otro:'#64748b' }[n.tipo]||'#64748b';
+                    const tipoIcon = { stock_bajo:'bi-graph-down', vencimiento:'bi-calendar-x',
+                      cierre_turno:'bi-lock', producto_faltante:'bi-box',
+                      producto_danado:'bi-exclamation-triangle',
+                      conteo_diferencia:'bi-calculator', otro:'bi-bell' }[n.tipo]||'bi-bell';
+                    return (
+                      <div key={n.id} style={{ display:'flex', gap:10, padding:'10px 16px',
+                        borderBottom:'1px solid rgba(255,255,255,0.05)', alignItems:'flex-start' }}>
+                        <i className={`bi ${tipoIcon}`} style={{ color:tipoColor, fontSize:15, marginTop:2, flexShrink:0 }}></i>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ color:'#f1f5f9', fontSize:12, fontWeight:600 }}>{n.titulo}</div>
+                          {n.mensaje && <div style={{ color:'#94a3b8', fontSize:11, marginTop:2 }}>{n.mensaje}</div>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 };
