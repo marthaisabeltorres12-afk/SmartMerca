@@ -761,7 +761,7 @@ const Inventory = () => {
 
         {/* Tabs */}
         <ul className="nav nav-tabs mb-4">
-          {[['historial','📜 Historial'],['lotes','📦 Lotes activos'],['entrada','📦 Registrar Pedido'],['salida','📤 Registrar Salida']].map(([k,l]) => (
+          {[['historial','📜 Historial'],['lotes','📦 Lotes activos'],['entrada','📦 Registrar Pedido'],['salida','📤 Novedades']].map(([k,l]) => (
             <li key={k} className="nav-item">
               <button className={`nav-link ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</button>
             </li>

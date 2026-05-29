@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 3
+names: ['Cebolla-', 'Manzana', 'Tomate']
+
+roboflow:
+  workspace: marthaisabeltorres12-gmail-com
+  project: smartmerca-frutas
+  version: 1
+  license: MIT
+  url: https://universe.roboflow.com/marthaisabeltorres12-gmail-com/smartmerca-frutas/dataset/1
