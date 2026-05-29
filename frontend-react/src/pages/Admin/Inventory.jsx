@@ -1140,7 +1140,7 @@ const Inventory = () => {
             <div className="card border-0 shadow-sm">
               <div className="card-header fw-semibold py-3"
                 style={{ background:'#7f1d1d', color:'#fff', borderRadius:'8px 8px 0 0' }}>
-                📤 Registrar Salida de Inventario
+                📤 Registrar Novedades de Inventario
               </div>
               <div className="card-body">
                 <form onSubmit={handleExit}>

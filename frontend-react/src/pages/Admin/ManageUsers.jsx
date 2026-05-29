@@ -4,6 +4,22 @@ import { useAuth } from '../../context/AuthContext';
 import { userService } from '../../services/userService';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
+// Activar mensajes de validación del navegador en español
+const setValidationMessages = () => {
+  document.querySelectorAll('input[required]').forEach(input => {
+    input.addEventListener('invalid', () => {
+      if (!input.value) {
+        input.setCustomValidity('Por favor rellene este campo');
+      } else if (input.type === 'email') {
+        input.setCustomValidity('Ingrese un correo válido (ej: usuario@email.com)');
+      } else if (input.minLength && input.value.length < input.minLength) {
+        input.setCustomValidity(`Mínimo ${input.minLength} caracteres`);
+      }
+    });
+    input.addEventListener('input', () => input.setCustomValidity(''));
+  });
+};
+
 const EMPTY = { name:'', email:'', password:'', role:'cajero', is_active:true };
 
 const ManageUsers = () => {
@@ -35,6 +51,7 @@ const ManageUsers = () => {
     setEditing(null);
     setForm(EMPTY);
     setShowModal(true);
+    setTimeout(setValidationMessages, 100);
   };
 
   const openEdit = (u) => {
@@ -47,6 +64,7 @@ const ManageUsers = () => {
       is_active:u.is_active
     });
     setShowModal(true);
+    setTimeout(setValidationMessages, 100);
   };
 
   const handleSave = async (e) => {
@@ -146,7 +164,20 @@ const ManageUsers = () => {
         <h4 className="fw-bold mb-1">👥 Gestión de Usuarios</h4>
         <p className="text-muted mb-4">Administra usuarios del sistema</p>
 
-        {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+        {alert && (
+          <div className={`alert alert-${alert.type}`} style={{
+            position:'fixed', top:'20px', left:'50%', transform:'translateX(-50%)',
+            zIndex:99999, minWidth:'350px', maxWidth:'500px', textAlign:'center',
+            borderRadius:'12px', padding:'14px 20px', color:'#000',
+            animation:'slideDown 0.4s ease',
+            boxShadow: alert.type==='success' ? '0 8px 25px rgba(34,197,94,0.4)'
+                     : alert.type==='warning' ? '0 8px 25px rgba(234,179,8,0.4)'
+                     : alert.type==='info'    ? '0 8px 25px rgba(59,130,246,0.4)'
+                     : '0 8px 25px rgba(220,74,74,0.4)',
+          }}>
+            {alert.msg}
+          </div>
+        )}
 
         {/* KPIs */}
         <div className="row g-3 mb-4">
@@ -225,21 +256,21 @@ const ManageUsers = () => {
                           className={`btn btn-sm ${u.is_active ? 'btn-outline-secondary' : 'btn-outline-success'}`}
                           onClick={() => handleToggleActive(u)}
                         >
-                          {u.is_active ? '❌' : '✅'}
+                          {u.is_active ? 'Desactivar' : 'Activar'}
                         </button>
 
                         <button
                           className="btn btn-primary btn-sm"
                           onClick={() => openEdit(u)}
                         >
-                          ✏️
+                          Editar
                         </button>
 
                         <button
                           className="btn btn-danger btn-sm"
                           onClick={() => setConfirmDelete(u)}
                         >
-                          🗑️
+                          Eliminar
                         </button>
                       </div>
                     </td>
@@ -267,21 +298,26 @@ const ManageUsers = () => {
                     {/* Campos trampa para evitar autocompletado del navegador */}
                     <input type="text"     name="fake_user" style={{display:'none'}} readOnly />
                     <input type="password" name="fake_pass" style={{display:'none'}} readOnly />
-                    <input className="form-control mb-2" placeholder="Nombre"
+                    <input className="form-control mb-2" placeholder="Nombre *"
                       value={form.name}
                       onChange={e=>setForm({...form,name:e.target.value})}
+                      required
                     />
 
-                    <input className="form-control mb-2" placeholder="Correo"
+                    <input type="email" className="form-control mb-2" placeholder="Correo *"
                       value={form.email}
                       onChange={e=>setForm({...form,email:e.target.value})}
+                      required
                     />
 
-                    <input type="password" className="form-control mb-2" placeholder="Contraseña"
+                    <input type="password" className="form-control mb-2"
+                      placeholder={editing ? "Contraseña (dejar vacío para no cambiar)" : "Contraseña *"}
                       value={form.password}
                       onChange={e=>setForm({...form,password:e.target.value})}
                       autoComplete="new-password"
                       name="new-password"
+                      required={!editing}
+                      minLength={4}
                     />
 
                     <div className="mb-3">

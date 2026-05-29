@@ -129,7 +129,8 @@ def get_active_shift():
 def get_all_shifts():
     claims  = get_jwt()
     user_id = int(get_jwt_identity())
-    if _admin(claims):
+    role    = claims.get('role', '')
+    if role in ('admin', 'admin_tecnico', 'supervisor', 'contador', 'auditor'):
         shifts = Shift.query.order_by(Shift.opened_at.desc()).all()
     else:
         shifts = Shift.query.filter_by(cashier_id=user_id).order_by(Shift.opened_at.desc()).all()

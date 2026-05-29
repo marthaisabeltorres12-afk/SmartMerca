@@ -78,6 +78,9 @@ class Domicilio(db.Model):
             'delivered_at':       self.delivered_at.isoformat() if self.delivered_at else None,
             'cashier_id':         self.cashier_id,
             'cajero':             {'id': self.cashier_id, 'nombre': self._get_cajero_nombre()} if self.cashier_id else None,
+            'domiciliario_nombre':  getattr(self, 'domiciliario_nombre',  None),
+            'domiciliario_celular': getattr(self, 'domiciliario_celular', None),
+            'codigo_confirmacion':  getattr(self, 'codigo_confirmacion',  None),
         }
 
     def _get_cajero_nombre(self):
@@ -272,9 +275,14 @@ def update_estado_domicilio(id):
         return jsonify({'message': 'Estado inválido'}), 400
 
     dom.estado = estado
-    if estado == 'asignado' and data.get('domiciliario_id'):
-        dom.domiciliario_id = data['domiciliario_id']
-        dom.assigned_at     = datetime.now()
+    if estado == 'asignado':
+        dom.assigned_at = datetime.now()
+        if data.get('domiciliario_id'):
+            dom.domiciliario_id = data['domiciliario_id']
+        if data.get('domiciliario_nombre'):
+            dom.domiciliario_nombre  = data.get('domiciliario_nombre', '')
+            dom.domiciliario_celular = data.get('domiciliario_celular', '')
+            dom.codigo_confirmacion  = data.get('codigo_confirmacion', '')
     elif estado == 'en_camino':
         dom.picked_up_at = datetime.now()
     elif estado == 'entregado':
@@ -419,4 +427,24 @@ def crear_desde_catalogo():
         'numero_pedido':  numero,
         'cajero_asignado': cajero_info,
         'total':          total,
-    }), 201
+    }), 201@jwt_required()
+def confirmar_entrega_codigo(id):
+    """Confirma entrega del domicilio con código de 4 dígitos del cliente."""
+    dom  = Domicilio.query.get_or_404(id)
+    data = request.get_json() or {}
+    codigo_ingresado = str(data.get('codigo', '')).strip()
+
+    if not dom.codigo_confirmacion:
+        return jsonify({'message': 'Este pedido no tiene código de confirmación'}), 400
+
+    if codigo_ingresado != str(dom.codigo_confirmacion).strip():
+        return jsonify({'message': 'Código incorrecto. Verifique con el cliente.'}), 400
+
+    dom.estado       = 'entregado'
+    dom.delivered_at = datetime.now()
+    db.session.commit()
+
+    return jsonify({
+        'message':  '✅ Entrega confirmada exitosamente',
+        'domicilio': dom.to_dict(),
+    }), 200

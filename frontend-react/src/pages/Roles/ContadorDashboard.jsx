@@ -3,6 +3,7 @@ import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
 import { apiFetch } from '../../services/api';
 import { useLocation } from 'react-router-dom';
+import { exportViewPDF } from '../../services/exportService';
 
 const ContadorDashboard = () => {
   const { token, user } = useAuth();
@@ -45,10 +46,9 @@ const ContadorDashboard = () => {
     });
   }, [token]);
 
-  const ventasHoy = ventas.filter(v => v.created_at?.slice(0,10) === hoy);
-  const totalHoy  = ventasHoy.reduce((a,v) => a + Number(v.total||0), 0);
-  const totalMes  = ventas.filter(v => v.created_at?.slice(0,7) === hoy.slice(0,7))
-                          .reduce((a,v) => a + Number(v.total||0), 0);
+  const ventasHoy   = ventas.filter(v => v.created_at?.slice(0,10) === hoy);
+  const totalHoy    = ventasHoy.reduce((a,v) => a + Number(v.total||0), 0);
+  const totalMes    = ventas.filter(v => v.created_at?.slice(0,7) === hoy.slice(0,7)).reduce((a,v) => a + Number(v.total||0), 0);
   const cuentasPend = facturas.filter(f => f.estado === 'pendiente' || f.balance_pendiente > 0);
 
   if (loading) return (
@@ -62,19 +62,27 @@ const ContadorDashboard = () => {
   return (
     <div className="d-flex"><Navbar />
       <main className="flex-grow-1 p-4" style={{marginLeft:240, background:'#f8fafc', minHeight:'100vh'}}>
-        <div className="mb-4">
-          <h4 className="fw-bold mb-0">📊 Panel Contador</h4>
-          <small className="text-muted">Bienvenido, {user?.name}</small>
+
+        <div className="mb-4 d-flex justify-content-between align-items-center">
+          <div>
+            <h4 className="fw-bold mb-0">📊 Panel Contador</h4>
+            <small className="text-muted">Bienvenido, {user?.name}</small>
+          </div>
+          <button className="btn btn-danger btn-sm fw-semibold"
+            onClick={() => exportViewPDF('contador-content', 'reporte-contador')}>
+            📄 Descargar PDF
+          </button>
         </div>
 
-        {/* DASHBOARD */}
+        <div id="contador-content">
+
         {tab === 'dashboard' && (<>
           <div className="row g-3 mb-4">
             {[
-              ['💰 Ventas hoy',       fmt(totalHoy),        'success'],
-              ['📅 Ventas del mes',   fmt(totalMes),        'primary'],
-              ['🧾 Transacciones',    ventasHoy.length,     'info'],
-              ['⚠️ Cuentas por pagar',cuentasPend.length,   'danger'],
+              ['💰 Ventas hoy',        fmt(totalHoy),        'success'],
+              ['📅 Ventas del mes',    fmt(totalMes),        'primary'],
+              ['🧾 Transacciones',     ventasHoy.length,     'info'],
+              ['⚠️ Cuentas por pagar', cuentasPend.length,   'danger'],
             ].map(([l,v,c]) => (
               <div key={l} className="col-md-3 col-6">
                 <div className={`card border-0 shadow-sm border-start border-${c} border-3`}>
@@ -111,7 +119,7 @@ const ContadorDashboard = () => {
             </div>
             <div className="col-md-6">
               <div className="card border-0 shadow-sm h-100">
-                <div className="card-header fw-semibold">👤 Últimos períodos de nómina</div>
+                <div className="card-header fw-semibold">📋 Últimos períodos de nómina</div>
                 <div className="table-responsive">
                   <table className="table table-sm mb-0" style={{fontSize:13}}>
                     <thead className="table-light"><tr><th>Período</th><th>Estado</th><th className="text-end">Total neto</th></tr></thead>
@@ -132,25 +140,7 @@ const ContadorDashboard = () => {
           </div>
         </>)}
 
-        {/* FINANZAS */}
-        {tab === 'finanzas' && (<>
-          <div className="row g-3 mb-4">
-            {[
-              ['💰 Total ventas mes',  fmt(totalMes),    'success'],
-              ['🧾 Ventas hoy',        fmt(totalHoy),    'primary'],
-              ['📋 Cuentas pendientes',fmt(cuentasPend.reduce((a,f)=>a+Number(f.balance_pendiente||0),0)), 'danger'],
-              ['📊 Transacciones mes', ventas.filter(v=>v.created_at?.slice(0,7)===hoy.slice(0,7)).length, 'info'],
-            ].map(([l,v,c]) => (
-              <div key={l} className="col-md-3 col-6">
-                <div className={`card border-0 shadow-sm border-start border-${c} border-3`}>
-                  <div className="card-body py-3">
-                    <div className="text-muted small">{l}</div>
-                    <div className={`fw-bold fs-5 text-${c}`}>{v}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+        {tab === 'finanzas' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
               <span>💰 Ventas por día</span>
@@ -160,14 +150,12 @@ const ContadorDashboard = () => {
               <table className="table table-hover mb-0" style={{fontSize:13}}>
                 <thead className="table-light"><tr><th>Fecha</th><th className="text-center">Transacciones</th><th className="text-end">Total</th></tr></thead>
                 <tbody>
-                  {Object.entries(
-                    ventas.reduce((acc,v) => {
-                      const d = v.created_at?.slice(0,10)||'—';
-                      if (!acc[d]) acc[d] = { count:0, total:0 };
-                      acc[d].count++; acc[d].total += Number(v.total||0);
-                      return acc;
-                    }, {})
-                  ).sort(([a],[b])=>b.localeCompare(a)).slice(0,30).map(([d,s]) => (
+                  {Object.entries(ventas.reduce((acc,v) => {
+                    const d = v.created_at?.slice(0,10)||'—';
+                    if (!acc[d]) acc[d] = {count:0,total:0};
+                    acc[d].count++; acc[d].total += Number(v.total||0);
+                    return acc;
+                  }, {})).sort(([a],[b])=>b.localeCompare(a)).slice(0,30).map(([d,s]) => (
                     <tr key={d}>
                       <td className="fw-semibold">{d}</td>
                       <td className="text-center"><span className="badge bg-primary">{s.count}</span></td>
@@ -178,9 +166,8 @@ const ContadorDashboard = () => {
               </table>
             </div>
           </div>
-        </>)}
+        )}
 
-        {/* VENTAS */}
         {tab === 'ventas' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
@@ -211,7 +198,6 @@ const ContadorDashboard = () => {
           </div>
         )}
 
-        {/* NÓMINA */}
         {tab === 'nomina' && (
           <div className="row g-4">
             <div className="col-md-5">
@@ -259,7 +245,6 @@ const ContadorDashboard = () => {
           </div>
         )}
 
-        {/* CUENTAS POR PAGAR */}
         {tab === 'cuentas' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
@@ -287,7 +272,6 @@ const ContadorDashboard = () => {
           </div>
         )}
 
-        {/* AUDITORÍA */}
         {tab === 'auditoria' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
@@ -298,7 +282,7 @@ const ContadorDashboard = () => {
               <table className="table table-hover mb-0" style={{fontSize:13}}>
                 <thead className="table-light"><tr><th>Fecha</th><th>Usuario</th><th>Rol</th><th>Acción</th><th>Descripción</th></tr></thead>
                 <tbody>
-                  {auditoria.filter(a=>!busq||a.user_name?.toLowerCase().includes(busq.toLowerCase())||a.descripcion?.toLowerCase().includes(busq.toLowerCase())).slice(0,100).map((a,i) => (
+                  {auditoria.filter(a=>!busq||a.usuario_nombre?.toLowerCase().includes(busq.toLowerCase())||a.descripcion?.toLowerCase().includes(busq.toLowerCase())).slice(0,100).map((a,i) => (
                     <tr key={i}>
                       <td className="text-muted">{a.fecha_hora?.slice(0,16).replace('T',' ')}</td>
                       <td className="fw-semibold">{a.usuario_nombre||'—'}</td>
@@ -313,6 +297,8 @@ const ContadorDashboard = () => {
             </div>
           </div>
         )}
+
+        </div>
       </main>
     </div>
   );

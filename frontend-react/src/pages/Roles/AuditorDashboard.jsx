@@ -3,6 +3,7 @@ import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
 import { apiFetch } from '../../services/api';
 import { useLocation } from 'react-router-dom';
+import { exportViewPDF } from '../../services/exportService';
 
 const AuditorDashboard = () => {
   const { token, user } = useAuth();
@@ -57,15 +58,23 @@ const AuditorDashboard = () => {
   return (
     <div className="d-flex"><Navbar />
       <main className="flex-grow-1 p-4" style={{marginLeft:240, background:'#f8fafc', minHeight:'100vh'}}>
-        <div className="mb-4 d-flex align-items-center gap-3">
-          <div>
-            <h4 className="fw-bold mb-0">🔍 Panel Auditor</h4>
-            <small className="text-muted">{user?.name} — Solo lectura</small>
+
+        <div className="mb-4 d-flex justify-content-between align-items-center">
+          <div className="d-flex align-items-center gap-3">
+            <div>
+              <h4 className="fw-bold mb-0">🔍 Panel Auditor</h4>
+              <small className="text-muted">{user?.name} — Solo lectura</small>
+            </div>
+            <span className="badge bg-secondary">🔒 Solo lectura</span>
           </div>
-          <span className="badge bg-secondary">🔒 Solo lectura</span>
+          <button className="btn btn-danger btn-sm fw-semibold"
+            onClick={() => exportViewPDF('auditor-content', 'reporte-auditor')}>
+            📄 Descargar PDF
+          </button>
         </div>
 
-        {/* DASHBOARD */}
+        <div id="auditor-content">
+
         {tab === 'dashboard' && (<>
           <div className="row g-3 mb-4">
             {[
@@ -128,7 +137,6 @@ const AuditorDashboard = () => {
           </div>
         </>)}
 
-        {/* LOGS */}
         {tab === 'logs' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
@@ -155,7 +163,6 @@ const AuditorDashboard = () => {
           </div>
         )}
 
-        {/* VENTAS — solo lectura */}
         {tab === 'ventas' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
@@ -186,7 +193,6 @@ const AuditorDashboard = () => {
           </div>
         )}
 
-        {/* MOVIMIENTOS INVENTARIO — solo lectura */}
         {tab === 'inventario' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
@@ -212,6 +218,8 @@ const AuditorDashboard = () => {
             </div>
           </div>
         )}
+
+        </div>
       </main>
     </div>
   );

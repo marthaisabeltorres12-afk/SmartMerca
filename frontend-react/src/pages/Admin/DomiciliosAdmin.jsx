@@ -17,7 +17,11 @@ const fmtFecha = f => f ? new Date(f).toLocaleString('es-CO',{dateStyle:'short',
 export default function DomiciliosAdmin() {
   const { token } = useAuth();
   const [pedidos,       setPedidos]       = useState([]);
-  const [domiciliarios, setDomiciliarios] = useState([]);
+  const [domiciliarios,    setDomiciliarios]    = useState([]);
+  const [modalAsignar,     setModalAsignar]     = useState(null); // pedido a asignar
+  const [formDomiciliario, setFormDomiciliario] = useState({ nombre:'', celular:'' });
+  const [modalCodigo,      setModalCodigo]      = useState(null); // pedido a confirmar entrega
+  const [codigoInput,      setCodigoInput]      = useState('');
   const [stats,         setStats]         = useState(null);
   const [filtroEstado,  setFiltroEstado]  = useState('');
   const [loading,       setLoading]       = useState(true);
@@ -51,6 +55,46 @@ export default function DomiciliosAdmin() {
   useEffect(() => {
     apiFetch('/products/', {}, token).then(setProductos).catch(()=>{});
   }, [token]);
+
+  const generarCodigo = () => Math.floor(1000 + Math.random() * 9000).toString();
+
+  const asignarDomiciliario = async () => {
+    if (!formDomiciliario.nombre.trim() || !formDomiciliario.celular.trim()) {
+      showAlert('warning', 'Nombre y celular del domiciliario son obligatorios'); return;
+    }
+    const codigo = generarCodigo();
+    try {
+      await apiFetch(`/domicilios/${modalAsignar.id}/estado`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          estado: 'asignado',
+          domiciliario_nombre:  formDomiciliario.nombre,
+          domiciliario_celular: formDomiciliario.celular,
+          codigo_confirmacion:  codigo,
+        })
+      }, token);
+      showAlert('success', `✅ Domiciliario asignado · Código: ${codigo}`);
+      setModalAsignar(null);
+      setFormDomiciliario({ nombre:'', celular:'' });
+      load();
+    } catch { showAlert('danger', 'Error asignando domiciliario'); }
+  };
+
+  const confirmarEntrega = async () => {
+    if (!codigoInput.trim()) { showAlert('warning', 'Ingrese el código'); return; }
+    try {
+      const res = await apiFetch(`/domicilios/${modalCodigo.id}/confirmar-entrega`, {
+        method: 'POST',
+        body: JSON.stringify({ codigo: codigoInput.trim() })
+      }, token);
+      showAlert('success', '✅ Entrega confirmada con código');
+      setModalCodigo(null);
+      setCodigoInput('');
+      load();
+    } catch (e) {
+      showAlert('danger', e.message || 'Código incorrecto');
+    }
+  };
 
   const cambiarEstado = async (id, estado, domiciliario_id=null) => {
     try {
@@ -217,10 +261,13 @@ export default function DomiciliosAdmin() {
                       )}
 
                       {/* Domiciliario */}
-                      {p.domiciliario && (
+                      {(p.domiciliario || p.domiciliario_nombre) && (
                         <div className="small p-2 rounded mb-2" style={{background:'#eff6ff'}}>
-                          🛵 <strong>{p.domiciliario.nombre}</strong> · {p.domiciliario.telefono}
-                          {p.domiciliario.vehiculo && <span> · {p.domiciliario.vehiculo} {p.domiciliario.placa}</span>}
+                          🛵 <strong>{p.domiciliario_nombre || p.domiciliario?.nombre}</strong>
+                          {' · '}{p.domiciliario_celular || p.domiciliario?.telefono}
+                          {p.codigo_confirmacion && p.estado !== 'entregado' && (
+                            <span className="badge bg-warning text-dark ms-2">Código: {p.codigo_confirmacion}</span>
+                          )}
                         </div>
                       )}
 
@@ -252,11 +299,10 @@ export default function DomiciliosAdmin() {
                       {/* Acciones */}
                       <div className="d-flex gap-2 flex-wrap">
                         {p.estado === 'pendiente' && (
-                          <select className="form-select form-select-sm"
-                            onChange={e => e.target.value && cambiarEstado(p.id,'asignado',parseInt(e.target.value))}>
-                            <option value="">👤 Asignar domiciliario...</option>
-                            {domiciliarios.map(d => <option key={d.id} value={d.id}>{d.nombre}</option>)}
-                          </select>
+                          <button className="btn btn-warning btn-sm fw-semibold"
+                            onClick={() => { setModalAsignar(p); setFormDomiciliario({nombre:'',celular:''}); }}>
+                            🛵 Asignar domiciliario
+                          </button>
                         )}
                         {p.estado === 'asignado' && (
                           <button className="btn btn-primary btn-sm" onClick={()=>cambiarEstado(p.id,'en_camino')}>
@@ -264,8 +310,9 @@ export default function DomiciliosAdmin() {
                           </button>
                         )}
                         {p.estado === 'en_camino' && (
-                          <button className="btn btn-success btn-sm fw-bold" onClick={()=>cambiarEstado(p.id,'entregado')}>
-                            ✅ Entregado
+                          <button className="btn btn-success btn-sm fw-bold"
+                            onClick={() => { setModalCodigo(p); setCodigoInput(''); }}>
+                            ✅ Confirmar entrega
                           </button>
                         )}
                         {!['entregado','cancelado'].includes(p.estado) && (
@@ -387,6 +434,67 @@ export default function DomiciliosAdmin() {
                   🛵 Crear pedido
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Asignar Domiciliario */}
+      {modalAsignar && (
+        <div className="modal d-block" style={{background:'rgba(0,0,0,0.5)',position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{background:'#fff',borderRadius:14,overflow:'hidden',maxWidth:420,width:'90%',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}>
+            <div style={{background:'#1e3a5f',padding:'14px 20px'}}>
+              <h5 style={{margin:0,fontWeight:700,color:'#fff'}}>🛵 Asignar Domiciliario</h5>
+              <div style={{fontSize:12,color:'rgba(255,255,255,0.7)',marginTop:2}}>Pedido #{modalAsignar.id} · {modalAsignar.cliente_nombre}</div>
+            </div>
+            <div style={{padding:20}}>
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Nombre *</label>
+                <input className="form-control" placeholder="Ej: Juan Pérez"
+                  value={formDomiciliario.nombre} autoFocus
+                  onChange={e => setFormDomiciliario(f=>({...f, nombre:e.target.value}))}/>
+              </div>
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Celular *</label>
+                <input className="form-control" placeholder="Ej: 3001234567"
+                  value={formDomiciliario.celular}
+                  onChange={e => setFormDomiciliario(f=>({...f, celular:e.target.value}))}/>
+              </div>
+              <div className="alert alert-info py-2 mb-0" style={{fontSize:13}}>
+                📱 Se generará un código de 4 dígitos para confirmar la entrega.
+              </div>
+            </div>
+            <div style={{padding:'0 20px 20px',display:'flex',gap:10}}>
+              <button className="btn btn-outline-secondary flex-fill" onClick={()=>setModalAsignar(null)}>Cancelar</button>
+              <button className="btn btn-warning fw-bold flex-fill" onClick={asignarDomiciliario}>🛵 Asignar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmar Entrega */}
+      {modalCodigo && (
+        <div className="modal d-block" style={{background:'rgba(0,0,0,0.5)',position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{background:'#fff',borderRadius:14,overflow:'hidden',maxWidth:400,width:'90%',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}>
+            <div style={{background:'#16a34a',padding:'14px 20px'}}>
+              <h5 style={{margin:0,fontWeight:700,color:'#fff'}}>✅ Confirmar Entrega</h5>
+              <div style={{fontSize:12,color:'rgba(255,255,255,0.8)',marginTop:2}}>Pedido #{modalCodigo.id} · {modalCodigo.cliente_nombre}</div>
+            </div>
+            <div style={{padding:20,textAlign:'center'}}>
+              <div style={{fontSize:14,color:'#475569',marginBottom:16}}>
+                Código de 4 dígitos que el cliente entregó al domiciliario
+              </div>
+              <input className="form-control form-control-lg text-center fw-bold"
+                style={{fontSize:32,letterSpacing:8,maxWidth:200,margin:'0 auto'}}
+                maxLength={4} placeholder="0000"
+                value={codigoInput}
+                onChange={e => setCodigoInput(e.target.value.replace(/[^0-9]/g,''))}
+                onKeyDown={e => e.key==='Enter' && confirmarEntrega()}
+                autoFocus/>
+            </div>
+            <div style={{padding:'0 20px 20px',display:'flex',gap:10}}>
+              <button className="btn btn-outline-secondary flex-fill" onClick={()=>setModalCodigo(null)}>Cancelar</button>
+              <button className="btn btn-success fw-bold flex-fill" onClick={confirmarEntrega}>✅ Confirmar</button>
             </div>
           </div>
         </div>

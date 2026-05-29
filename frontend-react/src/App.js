@@ -89,7 +89,7 @@ function App() {
             <Route path="/supervisor/clientes"  element={<PrivateRoute roles={['supervisor']}><SupervisorDashboard /></PrivateRoute>} />
             <Route path="/supervisor/alertas"   element={<PrivateRoute roles={['supervisor']}><SupervisorDashboard /></PrivateRoute>} />
             <Route path="/supervisor/analisis"  element={<PrivateRoute roles={['supervisor']}><SupervisorDashboard /></PrivateRoute>} />
-
+<Route path="/supervisor/turnos" element={<PrivateRoute roles={['supervisor']}><SupervisorDashboard /></PrivateRoute>} />
             {/* ── Contador ── */}
             <Route path="/contador"             element={<PrivateRoute roles={['contador']}><ContadorDashboard /></PrivateRoute>} />
             <Route path="/contador/finanzas"    element={<PrivateRoute roles={['contador']}><ContadorDashboard /></PrivateRoute>} />
@@ -99,10 +99,10 @@ function App() {
             <Route path="/contador/auditoria"   element={<PrivateRoute roles={['contador']}><ContadorDashboard /></PrivateRoute>} />
 
             {/* ── Auditor ── */}
-            <Route path="/auditor"              element={<PrivateRoute roles={['auditor']}><AuditorDashboard /></PrivateRoute>} />
-            <Route path="/auditor/logs"         element={<PrivateRoute roles={['auditor']}><AuditorDashboard /></PrivateRoute>} />
-            <Route path="/auditor/ventas"       element={<PrivateRoute roles={['auditor']}><AuditorDashboard /></PrivateRoute>} />
-            <Route path="/auditor/inventario"   element={<PrivateRoute roles={['auditor']}><AuditorDashboard /></PrivateRoute>} />
+<Route path="/auditor"              element={<PrivateRoute roles={['auditor']}><AuditorDashboard /></PrivateRoute>} />
+<Route path="/auditor/logs"         element={<PrivateRoute roles={['auditor']}><AuditorDashboard /></PrivateRoute>} />
+<Route path="/auditor/ventas"       element={<PrivateRoute roles={['auditor']}><AuditorDashboard /></PrivateRoute>} />
+<Route path="/auditor/inventario"   element={<PrivateRoute roles={['auditor']}><Inventory /></PrivateRoute>} />
 
             {/* ── Admin ── */}
             <Route path="/admin"                   element={<PrivateRoute roles={['admin','admin_tecnico']}><AdminDashboard /></PrivateRoute>} />

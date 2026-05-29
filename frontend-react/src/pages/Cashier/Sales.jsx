@@ -1945,7 +1945,11 @@ const Sales = () => {
   const reservaciones = useCartReservations(token);
   const MAX_TABS = 5;
   const [pedidosCatalogo, setPedidosCatalogo] = useState([]);
-  const [showPedidos,     setShowPedidos]     = useState(false);
+  const [showPedidos,       setShowPedidos]       = useState(false);
+  const [modalDomiciliario, setModalDomiciliario] = useState(null);
+  const [formDom,           setFormDom]           = useState({nombre:'',celular:''});
+  const [modalCodigoS,      setModalCodigoS]      = useState(null);
+  const [codigoS,           setCodigoS]           = useState('');
 
   // Consultar pedidos del catálogo asignados a este cajero cada 30s
   useEffect(() => {
@@ -1980,7 +1984,40 @@ const Sales = () => {
       .catch(() => { setShiftOk(false); setShowAbrirTurno(true); });
   }, [token]);
 
-  const showAlert = useCallback((type, msg, retryable = false) => {
+  const asignarDomiciliarioS = async () => {
+    if (!formDom.nombre.trim() || !formDom.celular.trim()) return;
+    const codigo = Math.floor(1000 + Math.random() * 9000).toString();
+    try {
+      await apiFetch(`/domicilios/${modalDomiciliario.id}/estado`, {
+        method:'PUT',
+        body: JSON.stringify({
+          estado:'asignado',
+          domiciliario_nombre:  formDom.nombre,
+          domiciliario_celular: formDom.celular,
+          codigo_confirmacion:  codigo,
+        })
+      }, token);
+      showAlert('success', `✅ Domiciliario asignado · Código de entrega: ${codigo} · Dígaselo al domiciliario para dárselo al cliente`);
+      setModalDomiciliario(null);
+      setFormDom({nombre:'',celular:''});
+      apiFetch(`/domicilios?cajero_id=${user.id}&estado=asignado`, {}, token)
+        .then(data => setPedidosCatalogo(Array.isArray(data) ? data.filter(d => d.numero_pedido?.startsWith('CAT-')) : []));
+    } catch { showAlert('danger', 'Error asignando domiciliario'); }
+  };
+
+  const confirmarEntregaS = async () => {
+    if (!codigoS.trim()) return;
+    try {
+      await apiFetch(`/domicilios/${modalCodigoS.id}/confirmar-entrega`, {
+        method:'POST', body: JSON.stringify({ codigo: codigoS })
+      }, token);
+      setModalCodigoS(null); setCodigoS('');
+      apiFetch(`/domicilios?cajero_id=${user.id}&estado=asignado`, {}, token)
+        .then(data => setPedidosCatalogo(Array.isArray(data) ? data.filter(d => d.numero_pedido?.startsWith('CAT-')) : []));
+    } catch { showAlert('danger', 'Código incorrecto. Verifique con el cliente.'); }
+  };
+
+    const showAlert = useCallback((type, msg, retryable = false) => {
     setAlert({ type, msg, retryable });
     if (!retryable) setTimeout(() => setAlert(null), 4500);
   }, []);
@@ -2126,8 +2163,8 @@ const Sales = () => {
       }}>
         {/* Izquierda: título + fecha */}
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          <img src="/creatsoft-logo.png.jpeg" alt="Creatsoft"
-            style={{ width:60, height:60, objectFit:'contain', borderRadius:10 }}/>
+          <img src="/creatsoft-logo.png" alt="Creatsoft"
+            style={{ width:48, height:48, objectFit:'contain', borderRadius:10 }}/>
           <div>
             <div style={{ display:'flex', alignItems:'baseline', gap:6 }}>
               <div style={{ fontWeight:800, fontSize:18, lineHeight:1.1, color:'#1e3a5f' }}>SmartMerca</div>
@@ -2415,14 +2452,32 @@ const Sales = () => {
                           target="_blank" rel="noreferrer" className="btn btn-success btn-sm">
                           💬 Contactar cliente
                         </a>
-                        <button className="btn btn-primary btn-sm"
-                          onClick={()=>{ apiFetch(`/domicilios/${p.id}/estado`,{method:'PUT',body:JSON.stringify({estado:'en_camino'})},token).then(()=>{ setPedidosCatalogo(prev=>prev.filter(x=>x.id!==p.id)); if(pedidosCatalogo.length<=1)setShowPedidos(false); }); }}>
-                          🛵 En camino
-                        </button>
-                        <button className="btn btn-success btn-sm fw-bold"
-                          onClick={()=>{ apiFetch(`/domicilios/${p.id}/estado`,{method:'PUT',body:JSON.stringify({estado:'entregado'})},token).then(()=>{ setPedidosCatalogo(prev=>prev.filter(x=>x.id!==p.id)); if(pedidosCatalogo.length<=1)setShowPedidos(false); }); }}>
-                          ✅ Entregado
-                        </button>
+                        {!p.domiciliario_nombre && (
+                          <button className="btn btn-warning btn-sm fw-semibold"
+                            onClick={() => { setModalDomiciliario(p); setFormDom({nombre:'',celular:''}); }}>
+                            🛵 Asignar domiciliario
+                          </button>
+                        )}
+                        {p.domiciliario_nombre && (
+                          <div className="small text-primary me-2">
+                            🛵 <strong>{p.domiciliario_nombre}</strong> · {p.domiciliario_celular}
+                            {p.codigo_confirmacion && (
+                              <span className="badge bg-warning text-dark ms-1">Código: {p.codigo_confirmacion}</span>
+                            )}
+                          </div>
+                        )}
+                        {p.domiciliario_nombre && p.estado !== 'en_camino' && (
+                          <button className="btn btn-primary btn-sm"
+                            onClick={()=>{ apiFetch(`/domicilios/${p.id}/estado`,{method:'PUT',body:JSON.stringify({estado:'en_camino'})},token).then(()=>{ apiFetch('/domicilios/?estado=pendiente&mine=true',{},token).then(data=>setPedidosCatalogo(Array.isArray(data)?data.filter(d=>d.numero_pedido?.startsWith('CAT-')):[])); }); }}>
+                            🛵 En camino
+                          </button>
+                        )}
+                        {p.domiciliario_nombre && (
+                          <button className="btn btn-success btn-sm fw-bold"
+                            onClick={() => { setModalCodigoS(p); setCodigoS(''); }}>
+                            ✅ Confirmar entrega
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -2544,6 +2599,59 @@ const Sales = () => {
         onConfirmar={() => { _doCloseTab(confirmCancelVenta); setConfirmCancelVenta(null); }}
         onCancelar={() => setConfirmCancelVenta(null)}
       />
+
+      {/* Modal Asignar Domiciliario */}
+      {modalDomiciliario && (
+        <div className="modal d-block" style={{background:'rgba(0,0,0,0.6)',zIndex:9995,position:'fixed',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{background:'#fff',borderRadius:14,overflow:'hidden',maxWidth:400,width:'90%',boxShadow:'0 20px 60px rgba(0,0,0,0.4)'}}>
+            <div style={{background:'#1e3a5f',padding:'14px 20px'}}>
+              <h5 style={{margin:0,fontWeight:700,color:'#fff'}}>🛵 Asignar Domiciliario</h5>
+              <div style={{fontSize:12,color:'rgba(255,255,255,0.75)'}}>Pedido {modalDomiciliario.numero_pedido}</div>
+            </div>
+            <div style={{padding:20}}>
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Nombre *</label>
+                <input className="form-control" placeholder="Ej: Juan Pérez" autoFocus
+                  value={formDom.nombre} onChange={e=>setFormDom(f=>({...f,nombre:e.target.value}))}/>
+              </div>
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Celular *</label>
+                <input className="form-control" placeholder="Ej: 3001234567"
+                  value={formDom.celular} onChange={e=>setFormDom(f=>({...f,celular:e.target.value}))}/>
+              </div>
+              <div className="alert alert-info py-2 small mb-0">📱 Se generará código de 4 dígitos para confirmar la entrega.</div>
+            </div>
+            <div style={{padding:'0 20px 20px',display:'flex',gap:10}}>
+              <button className="btn btn-outline-secondary flex-fill" onClick={()=>setModalDomiciliario(null)}>Cancelar</button>
+              <button className="btn btn-warning fw-bold flex-fill" onClick={asignarDomiciliarioS}>🛵 Asignar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmar Entrega */}
+      {modalCodigoS && (
+        <div className="modal d-block" style={{background:'rgba(0,0,0,0.6)',zIndex:9995,position:'fixed',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{background:'#fff',borderRadius:14,overflow:'hidden',maxWidth:380,width:'90%',boxShadow:'0 20px 60px rgba(0,0,0,0.4)'}}>
+            <div style={{background:'#16a34a',padding:'14px 20px'}}>
+              <h5 style={{margin:0,fontWeight:700,color:'#fff'}}>✅ Confirmar Entrega</h5>
+              <div style={{fontSize:12,color:'rgba(255,255,255,0.8)'}}>Pedido {modalCodigoS.numero_pedido}</div>
+            </div>
+            <div style={{padding:20,textAlign:'center'}}>
+              <p style={{color:'#475569',fontSize:14,marginBottom:16}}>Código de 4 dígitos que el cliente dio al domiciliario</p>
+              <input className="form-control form-control-lg text-center fw-bold"
+                style={{fontSize:32,letterSpacing:8,maxWidth:180,margin:'0 auto'}}
+                maxLength={4} placeholder="0000" value={codigoS} autoFocus
+                onChange={e=>setCodigoS(e.target.value.replace(/[^0-9]/g,''))}
+                onKeyDown={e=>e.key==='Enter'&&confirmarEntregaS()}/>
+            </div>
+            <div style={{padding:'0 20px 20px',display:'flex',gap:10}}>
+              <button className="btn btn-outline-secondary flex-fill" onClick={()=>setModalCodigoS(null)}>Cancelar</button>
+              <button className="btn btn-success fw-bold flex-fill" onClick={confirmarEntregaS}>✅ Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
