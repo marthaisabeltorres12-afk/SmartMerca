@@ -20,7 +20,7 @@ const setValidationMessages = () => {
   });
 };
 
-const EMPTY = { name:'', email:'', password:'', role:'cajero', is_active:true };
+const EMPTY = { name:'', email:'', password:'', role:'cajero', phone:'', address:'', doc_type:'CC', doc_number:'', is_active:true };
 
 const ManageUsers = () => {
   const { token, user: me } = useAuth();
@@ -61,6 +61,10 @@ const ManageUsers = () => {
       email:u.email,
       password:'',
       role:u.role,
+      phone:u.phone||'',
+      address:u.address||'',
+      doc_type:u.doc_type||'CC',
+      doc_number:u.doc_number||'',
       is_active:u.is_active
     });
     setShowModal(true);
@@ -75,6 +79,10 @@ const ManageUsers = () => {
       name:form.name,
       email:form.email,
       role:form.role,
+      phone:form.phone,
+      address:form.address,
+      doc_type:form.doc_type,
+      doc_number:form.doc_number,
       is_active:form.is_active
     };
 
@@ -217,8 +225,11 @@ const ManageUsers = () => {
               <thead className="table-light">
                 <tr>
                   <th>#</th>
+                  <th>Documento</th>
                   <th>Nombre</th>
+                  <th>Teléfono</th>
                   <th>Correo</th>
+                  <th>Dirección</th>
                   <th>Rol</th>
                   <th>Estado</th>
                   <th>Creado</th>
@@ -228,15 +239,18 @@ const ManageUsers = () => {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="text-center text-muted py-4">
+                    <td colSpan="10" className="text-center text-muted py-4">
                       No hay usuarios
                     </td>
                   </tr>
                 ) : filtered.map((u,i) => (
                   <tr key={u.id} style={{ opacity: u.is_active ? 1 : 0.6 }}>
                     <td>{i+1}</td>
+                    <td className="text-muted small">{u.doc_type} {u.doc_number||'—'}</td>
                     <td className="fw-semibold">{u.name}</td>
+                    <td className="text-muted small">{u.phone||'—'}</td>
                     <td className="text-muted small">{u.email}</td>
+                    <td className="text-muted small" style={{maxWidth:120,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.address||'—'}</td>
                     <td>
                       <span className={roleBadge(u.role)}>
                         {roleLabel(u.role)}
@@ -256,21 +270,22 @@ const ManageUsers = () => {
                           className={`btn btn-sm ${u.is_active ? 'btn-outline-secondary' : 'btn-outline-success'}`}
                           onClick={() => handleToggleActive(u)}
                         >
-                          {u.is_active ? 'Desactivar' : 'Activar'}
+                          {u.is_active ? '❌' : '✅'}
                         </button>
 
                         <button
                           className="btn btn-primary btn-sm"
                           onClick={() => openEdit(u)}
-                        >
-                          Editar
+                        > ✏️
+                          
                         </button>
 
                         <button
                           className="btn btn-danger btn-sm"
                           onClick={() => setConfirmDelete(u)}
-                        >
-                          Eliminar
+                        > 
+      🗑️
+                         
                         </button>
                       </div>
                     </td>
@@ -319,6 +334,33 @@ const ManageUsers = () => {
                       required={!editing}
                       minLength={4}
                     />
+                    <div className="row g-2 mt-1">
+                      <div className="col-md-4">
+                        <select className="form-select form-select-sm" value={form.doc_type}
+                          onChange={e=>setForm({...form,doc_type:e.target.value})}>
+                          <option value="CC">CC</option>
+                          <option value="CE">CE</option>
+                          <option value="NIT">NIT</option>
+                          <option value="Pasaporte">Pasaporte</option>
+                          <option value="TI">TI</option>
+                        </select>
+                      </div>
+                      <div className="col-md-8">
+                        <input className="form-control form-control-sm" placeholder="Número documento"
+                          value={form.doc_number}
+                          onChange={e=>setForm({...form,doc_number:e.target.value})}/>
+                      </div>
+                      <div className="col-md-6">
+                        <input className="form-control form-control-sm" placeholder="Teléfono"
+                          value={form.phone}
+                          onChange={e=>setForm({...form,phone:e.target.value})}/>
+                      </div>
+                      <div className="col-md-6">
+                        <input className="form-control form-control-sm" placeholder="Dirección"
+                          value={form.address}
+                          onChange={e=>setForm({...form,address:e.target.value})}/>
+                      </div>
+                    </div>
 
                     <div className="mb-3">
                       <label className="form-label fw-semibold">Rol *</label>

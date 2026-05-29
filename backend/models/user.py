@@ -8,16 +8,22 @@ class User(db.Model):
     name                = db.Column(db.String(100), nullable=False)
     email               = db.Column(db.String(150), unique=True, nullable=False)
     password_hash       = db.Column(db.String(255), nullable=False)
-    role                = db.Column(db.Enum('admin_tecnico', 'admin', 'cajero', 'bodeguero', 'supervisor', 'contador', 'auditor'), default='cajero', nullable=False)
+    role                = db.Column(db.Enum('admin_tecnico','admin','cajero','bodeguero','supervisor','contador','auditor'), default='cajero', nullable=False)
     is_active           = db.Column(db.Boolean, default=True)
     approved            = db.Column(db.Boolean, default=False)
     reset_token         = db.Column(db.String(100), nullable=True)
     reset_token_expires = db.Column(db.DateTime, nullable=True)
-    admin_pin           = db.Column(db.String(256), nullable=True)  # PIN 4-6 dígitos hasheado
+    admin_pin           = db.Column(db.String(256), nullable=True)
     branch_id           = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     created_at          = db.Column(db.DateTime, server_default=db.func.now())
     pin                 = db.Column(db.String(10), nullable=True)
-    avatar              = db.Column(db.Text, nullable=True)  # base64 o URL
+    avatar              = db.Column(db.Text, nullable=True)
+    # Campos nuevos
+    phone               = db.Column(db.String(20), nullable=True)
+    address             = db.Column(db.String(200), nullable=True)
+    doc_type            = db.Column(db.String(20), nullable=True, default='CC')
+    doc_number          = db.Column(db.String(30), nullable=True)
+
     branch = db.relationship('Branch', foreign_keys=[branch_id])
 
     def set_password(self, password):
@@ -45,17 +51,22 @@ class User(db.Model):
             'auditor':       'Auditor Externo',
         }
         return {
-            'id':         self.id,
-            'name':       self.name,
-            'email':      self.email,
-            'role':       self.role,
-            'role_label': role_labels.get(self.role, self.role),
-            'is_active':  self.is_active,
-            'approved':   self.approved,
-            'has_pin':    self.admin_pin is not None,
-            'branch_id':  self.branch_id,
+            'id':          self.id,
+            'name':        self.name,
+            'email':       self.email,
+            'role':        self.role,
+            'role_label':  role_labels.get(self.role, self.role),
+            'is_active':   self.is_active,
+            'approved':    self.approved,
+            'has_pin':     self.admin_pin is not None,
+            'branch_id':   self.branch_id,
             'branch_name': self.branch.nombre if self.branch else None,
             'avatar':      self.avatar or None,
-            'estado':     'Activo' if self.is_active else 'Desactivado',
-            'created_at': str(self.created_at)
+            'estado':      'Activo' if self.is_active else 'Desactivado',
+            'created_at':  str(self.created_at),
+            # Campos nuevos
+            'phone':       self.phone or '',
+            'address':     self.address or '',
+            'doc_type':    self.doc_type or 'CC',
+            'doc_number':  self.doc_number or '',
         }
