@@ -123,6 +123,7 @@ const supervisorLinks = [
   { separator: true, label: "OPERACIONES" },
   { path: "/supervisor/alertas",   icon: "bi-bell",           label: "Alertas de stock" },
   { path: "/supervisor/productos", icon: "bi-box",            label: "Productos" },
+  { path: "/supervisor/turnos",    icon: "bi-toggle-on",      label: "Turnos y Cierres" },
   { separator: true, label: "CLIENTES" },
   { path: "/supervisor/clientes",  icon: "bi-people",         label: "Clientes" },
 ];
@@ -145,7 +146,7 @@ const auditorLinks = [
   { path: "/auditor/logs",         icon: "bi-shield-check",   label: "Logs del sistema" },
   { separator: true, label: "REPORTES" },
   { path: "/auditor/ventas",       icon: "bi-receipt",        label: "Ventas (lectura)" },
-  { path: "/auditor/inventario",   icon: "bi-archive",        label: "Movimientos" },
+  { path: "/auditor/inventario", icon: "bi-archive", label: "Inventario" },
 ];
 
 const Navbar = () => {

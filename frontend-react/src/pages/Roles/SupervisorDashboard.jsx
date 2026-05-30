@@ -3,6 +3,7 @@ import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
 import { apiFetch } from '../../services/api';
 import { useLocation } from 'react-router-dom';
+import { exportViewPDF } from '../../services/exportService';
 
 const SupervisorDashboard = () => {
   const { token, user } = useAuth();
@@ -11,18 +12,23 @@ const SupervisorDashboard = () => {
   const [productos, setProductos] = useState([]);
   const [clientes,  setClientes]  = useState([]);
   const [alertas,   setAlertas]   = useState([]);
+  const [shifts,    setShifts]    = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [busq,      setBusq]      = useState('');
+  const [filterCaj, setFilterCaj] = useState('');
+  const [filterDate,setFilterDate]= useState('');
 
-  const tab = location.pathname.includes('ventas')     ? 'ventas'
-            : location.pathname.includes('productos')  ? 'productos'
-            : location.pathname.includes('clientes')   ? 'clientes'
-            : location.pathname.includes('alertas')    ? 'alertas'
-            : location.pathname.includes('analisis')   ? 'analisis'
+  const tab = location.pathname.includes('ventas')    ? 'ventas'
+            : location.pathname.includes('productos') ? 'productos'
+            : location.pathname.includes('clientes')  ? 'clientes'
+            : location.pathname.includes('alertas')   ? 'alertas'
+            : location.pathname.includes('analisis')  ? 'analisis'
+            : location.pathname.includes('turnos')    ? 'turnos'
             : 'dashboard';
 
-  const fmt = n => '$' + Number(n||0).toLocaleString('es-CO');
-  const hoy = new Date().toISOString().slice(0,10);
+  const fmt   = n => '$' + Number(n||0).toLocaleString('es-CO');
+  const fmtDt = v => v ? new Date(v).toLocaleString('es-CO', { dateStyle:'short', timeStyle:'short' }) : '—';
+  const hoy   = new Date().toISOString().slice(0,10);
 
   useEffect(() => {
     Promise.all([
@@ -30,18 +36,26 @@ const SupervisorDashboard = () => {
       apiFetch('/products/',  {}, token).catch(() => []),
       apiFetch('/customers/', {}, token).catch(() => []),
       apiFetch('/notificaciones/?pendientes=true', {}, token).catch(() => []),
-    ]).then(([v, p, c, a]) => {
+      apiFetch('/shifts/',    {}, token).catch(() => []),
+    ]).then(([v, p, c, a, s]) => {
       setVentas(Array.isArray(v) ? v : v.sales || []);
       setProductos(Array.isArray(p) ? p : []);
       setClientes(Array.isArray(c) ? c : c.customers || []);
       setAlertas(Array.isArray(a) ? a : []);
+      setShifts(Array.isArray(s) ? s : s.shifts || []);
       setLoading(false);
     });
   }, [token]);
 
-  const ventasHoy   = ventas.filter(v => v.created_at?.slice(0,10) === hoy);
-  const totalHoy    = ventasHoy.reduce((a,v) => a + Number(v.total||0), 0);
-  const stockBajos  = productos.filter(p => p.is_active && p.stock <= (p.min_stock||5));
+  const ventasHoy  = ventas.filter(v => v.created_at?.slice(0,10) === hoy);
+  const totalHoy   = ventasHoy.reduce((a,v) => a + Number(v.total||0), 0);
+  const stockBajos = productos.filter(p => p.is_active && p.stock <= (p.min_stock||5));
+  const cajeros    = [...new Set(shifts.map(s => s.cashier).filter(Boolean))].sort();
+  const filteredShifts = shifts.filter(s => {
+    if (filterCaj  && s.cashier !== filterCaj) return false;
+    if (filterDate && s.opened_at?.slice(0,10) !== filterDate) return false;
+    return true;
+  });
 
   const filtered = {
     ventas:    ventas.filter(v => !busq || v.cashier_name?.toLowerCase().includes(busq.toLowerCase()) || v.customer_name?.toLowerCase().includes(busq.toLowerCase())),
@@ -67,12 +81,20 @@ const SupervisorDashboard = () => {
   return (
     <div className="d-flex"><Navbar />
       <main className="flex-grow-1 p-4" style={{marginLeft:240, background:'#f8fafc', minHeight:'100vh'}}>
-        <div className="mb-4">
-          <h4 className="fw-bold mb-0">👁️ Panel Supervisor</h4>
-          <small className="text-muted">Bienvenido, {user?.name} — {new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</small>
+
+        <div className="mb-4 d-flex justify-content-between align-items-center">
+          <div>
+            <h4 className="fw-bold mb-0">👁️ Panel Supervisor</h4>
+            <small className="text-muted">Bienvenido, {user?.name} — {new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</small>
+          </div>
+          <button className="btn btn-danger btn-sm fw-semibold"
+            onClick={() => exportViewPDF('supervisor-content', 'reporte-supervisor')}>
+            📄 Descargar PDF
+          </button>
         </div>
 
-        {/* DASHBOARD */}
+        <div id="supervisor-content">
+
         {tab === 'dashboard' && (<>
           <div className="row g-3 mb-4">
             {stats.map(([l,v,c]) => (
@@ -131,7 +153,6 @@ const SupervisorDashboard = () => {
           </div>
         </>)}
 
-        {/* VENTAS */}
         {tab === 'ventas' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
@@ -162,7 +183,6 @@ const SupervisorDashboard = () => {
           </div>
         )}
 
-        {/* PRODUCTOS */}
         {tab === 'productos' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
@@ -189,7 +209,6 @@ const SupervisorDashboard = () => {
           </div>
         )}
 
-        {/* CLIENTES */}
         {tab === 'clientes' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
@@ -216,7 +235,6 @@ const SupervisorDashboard = () => {
           </div>
         )}
 
-        {/* ALERTAS */}
         {tab === 'alertas' && (
           <div className="row g-3">
             <div className="col-12">
@@ -264,7 +282,6 @@ const SupervisorDashboard = () => {
           </div>
         )}
 
-        {/* ANÁLISIS */}
         {tab === 'analisis' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold">📈 Análisis de ventas</div>
@@ -311,6 +328,74 @@ const SupervisorDashboard = () => {
             </div>
           </div>
         )}
+
+        {tab === 'turnos' && (
+          <div>
+            <div className="card border-0 shadow-sm mb-3">
+              <div className="card-body py-2">
+                <div className="row g-2 align-items-end">
+                  <div className="col-md-3">
+                    <label className="form-label small fw-semibold mb-1">Cajero</label>
+                    <select className="form-select form-select-sm" value={filterCaj} onChange={e=>setFilterCaj(e.target.value)}>
+                      <option value="">Todos</option>
+                      {cajeros.map(c=><option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div className="col-md-3">
+                    <label className="form-label small fw-semibold mb-1">Fecha</label>
+                    <input type="date" className="form-control form-control-sm" value={filterDate} onChange={e=>setFilterDate(e.target.value)}/>
+                  </div>
+                  <div className="col-auto">
+                    <button className="btn btn-sm btn-outline-secondary" onClick={()=>{setFilterCaj('');setFilterDate('');}}>Limpiar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="card border-0 shadow-sm">
+              <div className="card-header fw-semibold d-flex justify-content-between">
+                <span>🔄 Historial de Turnos — Solo lectura</span>
+                <span className="badge bg-secondary">{filteredShifts.length} turnos</span>
+              </div>
+              <div className="table-responsive">
+                <table className="table table-hover align-middle mb-0" style={{fontSize:13}}>
+                  <thead className="table-light">
+                    <tr><th>#</th><th>Cajero</th><th>Caja</th><th>Apertura</th><th>Cierre</th><th className="text-end">Base</th><th className="text-end">Ventas</th><th className="text-end">Contó</th><th className="text-end">Diferencia</th><th>Estado</th></tr>
+                  </thead>
+                  <tbody>
+                    {!filteredShifts.length
+                      ? <tr><td colSpan="10" className="text-center text-muted py-4">Sin turnos</td></tr>
+                      : filteredShifts.map(s => {
+                          const diff   = parseFloat(s.difference ?? 0);
+                          const isOpen = s.status === 'abierto';
+                          const saldado= s.difference != null && diff < 0 && (parseFloat(s.ajustes_ingreso||0) + diff) >= 0;
+                          return (
+                            <tr key={s.id} style={{background: isOpen?'#f0fdf4': diff<0&&!saldado?'#fff5f5':''}}>
+                              <td className="text-muted">{s.id}</td>
+                              <td className="fw-semibold">👤 {s.cashier}</td>
+                              <td className="text-muted">{s.cash_register?`🖥️ ${s.cash_register}`:'—'}</td>
+                              <td className="text-muted small">{fmtDt(s.opened_at)}</td>
+                              <td className="text-muted small">{s.closed_at?fmtDt(s.closed_at):<span className="badge bg-success">Abierto</span>}</td>
+                              <td className="text-end">{fmt(s.base_amount)}</td>
+                              <td className="text-end text-success fw-semibold">{fmt(s.total_sales)}</td>
+                              <td className="text-end">{s.cash_counted!=null?fmt(s.cash_counted):'—'}</td>
+                              <td className="text-end fw-bold">
+                                {s.difference!=null
+                                  ? <span className={diff>=0?'text-success':saldado?'text-success':'text-danger'}>{diff>=0?'+':''}{fmt(diff)}{saldado?' ✓':''}</span>
+                                  : '—'}
+                              </td>
+                              <td><span className={`badge ${isOpen?'bg-success':diff<0&&saldado?'bg-warning text-dark':diff<0?'bg-danger':'bg-secondary'}`}>{isOpen?'Abierto':diff<0&&saldado?'✓ Saldado':diff<0?'Faltante':'Cerrado'}</span></td>
+                            </tr>
+                          );
+                        })
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        </div>
       </main>
     </div>
   );

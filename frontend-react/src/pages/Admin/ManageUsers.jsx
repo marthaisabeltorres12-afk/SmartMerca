@@ -4,7 +4,23 @@ import { useAuth } from '../../context/AuthContext';
 import { userService } from '../../services/userService';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-const EMPTY = { name:'', email:'', password:'', role:'cajero', is_active:true };
+// Activar mensajes de validación del navegador en español
+const setValidationMessages = () => {
+  document.querySelectorAll('input[required]').forEach(input => {
+    input.addEventListener('invalid', () => {
+      if (!input.value) {
+        input.setCustomValidity('Por favor rellene este campo');
+      } else if (input.type === 'email') {
+        input.setCustomValidity('Ingrese un correo válido (ej: usuario@email.com)');
+      } else if (input.minLength && input.value.length < input.minLength) {
+        input.setCustomValidity(`Mínimo ${input.minLength} caracteres`);
+      }
+    });
+    input.addEventListener('input', () => input.setCustomValidity(''));
+  });
+};
+
+const EMPTY = { name:'', email:'', password:'', role:'cajero', phone:'', address:'', doc_type:'CC', doc_number:'', is_active:true };
 
 const ManageUsers = () => {
   const { token, user: me } = useAuth();
@@ -35,6 +51,7 @@ const ManageUsers = () => {
     setEditing(null);
     setForm(EMPTY);
     setShowModal(true);
+    setTimeout(setValidationMessages, 100);
   };
 
   const openEdit = (u) => {
@@ -44,9 +61,14 @@ const ManageUsers = () => {
       email:u.email,
       password:'',
       role:u.role,
+      phone:u.phone||'',
+      address:u.address||'',
+      doc_type:u.doc_type||'CC',
+      doc_number:u.doc_number||'',
       is_active:u.is_active
     });
     setShowModal(true);
+    setTimeout(setValidationMessages, 100);
   };
 
   const handleSave = async (e) => {
@@ -57,6 +79,10 @@ const ManageUsers = () => {
       name:form.name,
       email:form.email,
       role:form.role,
+      phone:form.phone,
+      address:form.address,
+      doc_type:form.doc_type,
+      doc_number:form.doc_number,
       is_active:form.is_active
     };
 
@@ -146,7 +172,20 @@ const ManageUsers = () => {
         <h4 className="fw-bold mb-1">👥 Gestión de Usuarios</h4>
         <p className="text-muted mb-4">Administra usuarios del sistema</p>
 
-        {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+        {alert && (
+          <div className={`alert alert-${alert.type}`} style={{
+            position:'fixed', top:'20px', left:'50%', transform:'translateX(-50%)',
+            zIndex:99999, minWidth:'350px', maxWidth:'500px', textAlign:'center',
+            borderRadius:'12px', padding:'14px 20px', color:'#000',
+            animation:'slideDown 0.4s ease',
+            boxShadow: alert.type==='success' ? '0 8px 25px rgba(34,197,94,0.4)'
+                     : alert.type==='warning' ? '0 8px 25px rgba(234,179,8,0.4)'
+                     : alert.type==='info'    ? '0 8px 25px rgba(59,130,246,0.4)'
+                     : '0 8px 25px rgba(220,74,74,0.4)',
+          }}>
+            {alert.msg}
+          </div>
+        )}
 
         {/* KPIs */}
         <div className="row g-3 mb-4">
@@ -186,8 +225,11 @@ const ManageUsers = () => {
               <thead className="table-light">
                 <tr>
                   <th>#</th>
+                  <th>Documento</th>
                   <th>Nombre</th>
+                  <th>Teléfono</th>
                   <th>Correo</th>
+                  <th>Dirección</th>
                   <th>Rol</th>
                   <th>Estado</th>
                   <th>Creado</th>
@@ -197,15 +239,18 @@ const ManageUsers = () => {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="text-center text-muted py-4">
+                    <td colSpan="10" className="text-center text-muted py-4">
                       No hay usuarios
                     </td>
                   </tr>
                 ) : filtered.map((u,i) => (
                   <tr key={u.id} style={{ opacity: u.is_active ? 1 : 0.6 }}>
                     <td>{i+1}</td>
+                    <td className="text-muted small">{u.doc_type} {u.doc_number||'—'}</td>
                     <td className="fw-semibold">{u.name}</td>
+                    <td className="text-muted small">{u.phone||'—'}</td>
                     <td className="text-muted small">{u.email}</td>
+                    <td className="text-muted small" style={{maxWidth:120,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.address||'—'}</td>
                     <td>
                       <span className={roleBadge(u.role)}>
                         {roleLabel(u.role)}
@@ -231,15 +276,16 @@ const ManageUsers = () => {
                         <button
                           className="btn btn-primary btn-sm"
                           onClick={() => openEdit(u)}
-                        >
-                          ✏️
+                        > ✏️
+                          
                         </button>
 
                         <button
                           className="btn btn-danger btn-sm"
                           onClick={() => setConfirmDelete(u)}
-                        >
-                          🗑️
+                        > 
+      🗑️
+                         
                         </button>
                       </div>
                     </td>
@@ -267,22 +313,54 @@ const ManageUsers = () => {
                     {/* Campos trampa para evitar autocompletado del navegador */}
                     <input type="text"     name="fake_user" style={{display:'none'}} readOnly />
                     <input type="password" name="fake_pass" style={{display:'none'}} readOnly />
-                    <input className="form-control mb-2" placeholder="Nombre"
+                    <input className="form-control mb-2" placeholder="Nombre *"
                       value={form.name}
                       onChange={e=>setForm({...form,name:e.target.value})}
+                      required
                     />
 
-                    <input className="form-control mb-2" placeholder="Correo"
+                    <input type="email" className="form-control mb-2" placeholder="Correo *"
                       value={form.email}
                       onChange={e=>setForm({...form,email:e.target.value})}
+                      required
                     />
 
-                    <input type="password" className="form-control mb-2" placeholder="Contraseña"
+                    <input type="password" className="form-control mb-2"
+                      placeholder={editing ? "Contraseña (dejar vacío para no cambiar)" : "Contraseña *"}
                       value={form.password}
                       onChange={e=>setForm({...form,password:e.target.value})}
                       autoComplete="new-password"
                       name="new-password"
+                      required={!editing}
+                      minLength={4}
                     />
+                    <div className="row g-2 mt-1">
+                      <div className="col-md-4">
+                        <select className="form-select form-select-sm" value={form.doc_type}
+                          onChange={e=>setForm({...form,doc_type:e.target.value})}>
+                          <option value="CC">CC</option>
+                          <option value="CE">CE</option>
+                          <option value="NIT">NIT</option>
+                          <option value="Pasaporte">Pasaporte</option>
+                          <option value="TI">TI</option>
+                        </select>
+                      </div>
+                      <div className="col-md-8">
+                        <input className="form-control form-control-sm" placeholder="Número documento"
+                          value={form.doc_number}
+                          onChange={e=>setForm({...form,doc_number:e.target.value})}/>
+                      </div>
+                      <div className="col-md-6">
+                        <input className="form-control form-control-sm" placeholder="Teléfono"
+                          value={form.phone}
+                          onChange={e=>setForm({...form,phone:e.target.value})}/>
+                      </div>
+                      <div className="col-md-6">
+                        <input className="form-control form-control-sm" placeholder="Dirección"
+                          value={form.address}
+                          onChange={e=>setForm({...form,address:e.target.value})}/>
+                      </div>
+                    </div>
 
                     <div className="mb-3">
                       <label className="form-label fw-semibold">Rol *</label>
