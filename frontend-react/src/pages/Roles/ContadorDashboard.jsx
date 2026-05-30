@@ -10,8 +10,6 @@ const ContadorDashboard = () => {
   const location = useLocation();
   const [ventas,     setVentas]     = useState([]);
   const [finanzas,   setFinanzas]   = useState(null);
-  const [nomina,     setNomina]     = useState([]);
-  const [empleados,  setEmpleados]  = useState([]);
   const [facturas,   setFacturas]   = useState([]);
   const [auditoria,  setAuditoria]  = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -19,7 +17,6 @@ const ContadorDashboard = () => {
 
   const tab = location.pathname.includes('finanzas')  ? 'finanzas'
             : location.pathname.includes('ventas')    ? 'ventas'
-            : location.pathname.includes('nomina')    ? 'nomina'
             : location.pathname.includes('cuentas')   ? 'cuentas'
             : location.pathname.includes('auditoria') ? 'auditoria'
             : 'dashboard';
@@ -27,24 +24,21 @@ const ContadorDashboard = () => {
   const fmt = n => '$' + Number(n||0).toLocaleString('es-CO');
   const hoy = new Date().toISOString().slice(0,10);
 
-  useEffect(() => {
+    useEffect(() => {
     Promise.all([
       apiFetch('/sales/',             {}, token).catch(() => []),
       apiFetch('/finance/summary',    {}, token).catch(() => null),
-      apiFetch('/payroll/periods',    {}, token).catch(() => []),
-      apiFetch('/payroll/employees',  {}, token).catch(() => []),
       apiFetch('/supplier-invoices/', {}, token).catch(() => []),
       apiFetch('/audit/',             {}, token).catch(() => []),
-    ]).then(([v, f, n, e, fac, a]) => {
+    ]).then(([v, f, fac, a]) => {
       setVentas(Array.isArray(v) ? v : v.sales || []);
       setFinanzas(f);
-      setNomina(Array.isArray(n) ? n : []);
-      setEmpleados(Array.isArray(e) ? e : []);
       setFacturas(Array.isArray(fac) ? fac : fac.invoices || []);
       setAuditoria(Array.isArray(a) ? a : a.logs || []);
       setLoading(false);
     });
   }, [token]);
+
 
   const ventasHoy   = ventas.filter(v => v.created_at?.slice(0,10) === hoy);
   const totalHoy    = ventasHoy.reduce((a,v) => a + Number(v.total||0), 0);
@@ -123,16 +117,7 @@ const ContadorDashboard = () => {
                 <div className="table-responsive">
                   <table className="table table-sm mb-0" style={{fontSize:13}}>
                     <thead className="table-light"><tr><th>Período</th><th>Estado</th><th className="text-end">Total neto</th></tr></thead>
-                    <tbody>
-                      {nomina.slice(0,5).map(n => (
-                        <tr key={n.id}>
-                          <td>{n.nombre||`Período ${n.id}`}</td>
-                          <td><span className={`badge ${n.estado==='pagado'?'bg-success':n.estado==='aprobado'?'bg-primary':'bg-warning text-dark'}`}>{n.estado}</span></td>
-                          <td className="text-end fw-bold">{fmt(n.total_neto||0)}</td>
-                        </tr>
-                      ))}
-                      {!nomina.length && <tr><td colSpan={3} className="text-center text-muted py-3">Sin períodos de nómina</td></tr>}
-                    </tbody>
+                   
                   </table>
                 </div>
               </div>
@@ -198,52 +183,6 @@ const ContadorDashboard = () => {
           </div>
         )}
 
-        {tab === 'nomina' && (
-          <div className="row g-4">
-            <div className="col-md-5">
-              <div className="card border-0 shadow-sm">
-                <div className="card-header fw-semibold">👥 Empleados ({empleados.length})</div>
-                <div className="table-responsive">
-                  <table className="table table-sm mb-0" style={{fontSize:13}}>
-                    <thead className="table-light"><tr><th>Nombre</th><th>Cargo</th><th className="text-end">Salario base</th></tr></thead>
-                    <tbody>
-                      {empleados.map(e => (
-                        <tr key={e.id}>
-                          <td className="fw-semibold">{e.nombre}</td>
-                          <td className="text-muted">{e.cargo||'—'}</td>
-                          <td className="text-end text-success fw-bold">{fmt(e.salario_base)}</td>
-                        </tr>
-                      ))}
-                      {!empleados.length && <tr><td colSpan={3} className="text-center text-muted py-3">Sin empleados registrados</td></tr>}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-7">
-              <div className="card border-0 shadow-sm">
-                <div className="card-header fw-semibold">📋 Períodos de nómina</div>
-                <div className="table-responsive">
-                  <table className="table table-sm mb-0" style={{fontSize:13}}>
-                    <thead className="table-light"><tr><th>Período</th><th>Inicio</th><th>Fin</th><th>Estado</th><th className="text-end">Total neto</th></tr></thead>
-                    <tbody>
-                      {nomina.map(n => (
-                        <tr key={n.id}>
-                          <td className="fw-semibold">{n.nombre||`Período ${n.id}`}</td>
-                          <td>{n.fecha_inicio?.slice(0,10)||'—'}</td>
-                          <td>{n.fecha_fin?.slice(0,10)||'—'}</td>
-                          <td><span className={`badge ${n.estado==='pagado'?'bg-success':n.estado==='aprobado'?'bg-primary':'bg-warning text-dark'}`}>{n.estado}</span></td>
-                          <td className="text-end fw-bold text-success">{fmt(n.total_neto||0)}</td>
-                        </tr>
-                      ))}
-                      {!nomina.length && <tr><td colSpan={5} className="text-center text-muted py-3">Sin períodos de nómina</td></tr>}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {tab === 'cuentas' && (
           <div className="card border-0 shadow-sm">
