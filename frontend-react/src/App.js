@@ -94,7 +94,6 @@ function App() {
             <Route path="/contador"             element={<PrivateRoute roles={['contador']}><ContadorDashboard /></PrivateRoute>} />
             <Route path="/contador/finanzas"    element={<PrivateRoute roles={['contador']}><ContadorDashboard /></PrivateRoute>} />
             <Route path="/contador/ventas"      element={<PrivateRoute roles={['contador']}><ContadorDashboard /></PrivateRoute>} />
-           
             <Route path="/contador/cuentas"     element={<PrivateRoute roles={['contador']}><ContadorDashboard /></PrivateRoute>} />
             <Route path="/contador/auditoria"   element={<PrivateRoute roles={['contador']}><ContadorDashboard /></PrivateRoute>} />
 

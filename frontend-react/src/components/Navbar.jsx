@@ -134,8 +134,7 @@ const contadorLinks = [
   { path: "/contador/finanzas",    icon: "bi-cash-stack",      label: "Finanzas" },
   { path: "/contador/ventas",      icon: "bi-receipt",         label: "Ventas" },
   { path: "/contador/cuentas",     icon: "bi-credit-card",     label: "Cuentas por pagar" },
-  { separator: true, label: "NÓMINA" },
-  { path: "/contador/nomina",      icon: "bi-person-badge",    label: "Nómina" },
+  
   { separator: true, label: "AUDITORÍA" },
   { path: "/contador/auditoria",   icon: "bi-shield-check",    label: "Auditoría" },
 ];

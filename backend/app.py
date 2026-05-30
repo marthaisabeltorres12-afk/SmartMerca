@@ -28,7 +28,6 @@ from routes.purchase_order_routes   import purchase_orders_bp
 from routes.inventory_count_routes  import inventory_counts_bp
 from routes.location_routes         import locations_bp
 from routes.branch_routes           import branches_bp
-from routes.payroll_routes          import payroll_bp
 from routes.profitability_routes    import profitability_bp
 from routes.replenishment_routes    import replenishment_bp
 from routes.coupon_routes           import coupons_bp
@@ -88,7 +87,6 @@ def create_app():
     app.register_blueprint(inventory_counts_bp,  url_prefix='/api/inventory-counts')
     app.register_blueprint(locations_bp,         url_prefix='/api/locations')
     app.register_blueprint(branches_bp,          url_prefix='/api/branches')
-    app.register_blueprint(payroll_bp,           url_prefix='/api/payroll')
     app.register_blueprint(profitability_bp,     url_prefix='/api/profitability')
     app.register_blueprint(replenishment_bp,     url_prefix='/api/replenishment')
     app.register_blueprint(auth_admin_bp,        url_prefix='/api/auth-admin')
