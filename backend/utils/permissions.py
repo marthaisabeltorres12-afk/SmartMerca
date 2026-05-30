@@ -8,7 +8,7 @@ ROLE_PERMISSIONS = {
         'ventas.*', 'inventario.*', 'clientes.*', 'reportes.*',
         'usuarios.cajero', 'usuarios.bodeguero', 'usuarios.supervisor',
         'turnos.*', 'devoluciones.*', 'proveedores.*', 'promociones.*',
-        'nomina.ver', 'finanzas.ver', 'auditoria.ver', 'ordenes.*',
+        'finanzas.ver', 'auditoria.ver', 'ordenes.*',
         'merma.*', 'conteo.*', 'bodegas.*', 'sucursales.ver',
     ],
     'cajero': [
@@ -26,7 +26,7 @@ ROLE_PERMISSIONS = {
         'turnos.ver',
     ],
     'contador': [
-        'reportes.*', 'finanzas.*', 'nomina.*', 'auditoria.ver',
+        'reportes.*', 'finanzas.*', 'auditoria.ver',
         'proveedores.ver', 'inventario.ver', 'productos.ver',
     ],
     'auditor': [
