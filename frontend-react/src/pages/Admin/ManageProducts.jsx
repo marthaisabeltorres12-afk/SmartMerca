@@ -154,9 +154,11 @@ const ManageProducts = () => {
     <input className="form-control ps-5"placeholder="Buscar por nombre, categoría o código..."value={search}onChange={e => setSearch(e.target.value)}/>
   </div>
 
-  <select className="form-select"style={{ maxWidth: 240 }}value={catFilter}onChange={e => setCatFilter(e.target.value)}>
-    <option value="">Todas las categorías</option>{CATEGORIAS.map(c => (<option key={c} value={c}> {c}</option>))}
-    </select>
+  <select className="form-select" style={{ maxWidth: 200 }}
+  value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
+  <option value="">Todas las categorías</option>
+  {categorias.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
+</select>
 
   {catFilter && (
     <button className="btn btn-outline-secondary" onClick={() => setCatFilter('')}><i className="bi bi-x-circle me-1"></i>Limpiar filtro</button>
@@ -192,7 +194,10 @@ const ManageProducts = () => {
                         )}
                         {p.description && <div className="text-muted small">{p.description.slice(0,40)}</div>}
                       </td>
-                      <td><span className="badge bg-light text-dark border">{p.category || '—'}</span></td>
+<span className="badge bg-light text-dark border">
+  {typeof p.category === 'object' ? p.category?.name : p.category || '—'}
+</span>
+
                       <td>
                         {discPrice ? (
                           <>
