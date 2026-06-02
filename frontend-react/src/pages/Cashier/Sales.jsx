@@ -47,7 +47,7 @@ const displayName = (p) => {
   return p.name;
 };
 
-const PESO_CATS = ['🥦 Frutas y Verduras', '🥩 Carnes y Embutidos'];
+const PESO_CATS = ['Frutas y verduras', 'Carnes y embutidos'];
 const esPorPeso = (cat) => PESO_CATS.includes(cat);
 
 let _tabCounter = 1;

@@ -18,7 +18,7 @@ const dname = (p) => {
 const fmt = n => Number(n||0).toLocaleString('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
 
 const CAT_COLORS = {
-  '🥦 Frutas y Verduras':       '#22c55e',
+  'Frutas y Verduras':       '#22c55e',
   '🥩 Carnes y Embutidos':      '#ef4444',
   '🥛 Lácteos y Huevos':        '#3b82f6',
   '🍞 Panadería y Repostería':  '#f59e0b',

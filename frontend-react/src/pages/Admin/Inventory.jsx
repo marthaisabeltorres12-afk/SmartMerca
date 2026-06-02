@@ -6,6 +6,7 @@ import { productService } from '../../services/productService';
 import { supplierService } from '../../services/supplierService';
 import { apiFetch } from '../../services/api';
 
+
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
 const fmt = (n) =>
   n != null ? Number(n).toLocaleString('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 }) : '—';
@@ -42,12 +43,6 @@ const IVA_OPTS = [
   { v: 0, label:'0%  — frutas, verduras, carnes, huevos, leche, pan, arroz' },
 ];
 const CATS = [
-  '🥦 Frutas y Verduras','🥩 Carnes y Embutidos','🥛 Lácteos y Huevos',
-  '🍞 Panadería y Repostería','🥤 Bebidas y Jugos','🍺 Bebidas Alcohólicas',
-  '🍿 Snacks y Dulces','🥫 Enlatados y Conservas','🌾 Granos y Cereales',
-  '🫙 Aceites y Condimentos','🧊 Congelados','🧹 Limpieza del Hogar',
-  '🧴 Higiene Personal','👶 Bebés y Maternidad','🐾 Mascotas',
-  '📝 Papelería','🔋 Electrónica y Pilas','💊 Medicamentos Básicos','📦 Otros',
 ];
 
 const stockColor = (p) => {
@@ -216,7 +211,7 @@ const Historial = ({ movements, products }) => {
 };
 
 /* ─── Panel de edición de una fila (modal inline) ──────────────────────────── */
-const RowEditor = ({ row, products, onSave, onCancel }) => {
+const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
   const [r, setR] = useState({ ...row });
   const p = r.product;
   const iva = p?.iva_type ?? r.iva_type ?? 19;
@@ -274,10 +269,13 @@ const RowEditor = ({ row, products, onSave, onCancel }) => {
           <div className="col-md-6">
             <label className="form-label small fw-semibold">Categoría</label>
             <select className="form-select form-select-sm" value={r.category}
-              onChange={e => set('category', e.target.value)}>
-              <option value="">— Seleccionar —</option>
-              {CATS.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+  onChange={e => set('category', e.target.value)}>
+  <option value="">— Seleccionar —</option>
+  {categorias.length > 0
+    ? categorias.map(c => <option key={c.id} value={c.name}>{c.name}</option>)
+    : CATS.map(c => <option key={c} value={c}>{c}</option>)
+  }
+</select>
           </div>
           <div className="col-md-3">
             <label className="form-label small fw-semibold">Gramaje</label>
@@ -494,7 +492,7 @@ const Inventory = () => {
   const [alert,     setAlert]     = useState(null);
   const [loading,         setLoading]         = useState(false);
   const [deactivatedModal, setDeactivatedModal] = useState(null);
-
+  const [categorias,       setCategorias]       = useState([]);
   /* Encabezado del pedido */
   const [header, setHeader] = useState({
     supplier_id: '', invoice_num: '', reason: 'Llegada de mercancía',
@@ -528,7 +526,15 @@ const Inventory = () => {
     } catch(e) { showAlert('danger', e.message); }
   }, [token]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+  const loadCats = async () => {
+    try {
+      const data = await apiFetch('/categories/', {}, token);
+      setCategorias(Array.isArray(data) ? data.filter(c => c.is_active) : []);
+    } catch(e) { console.warn('No se cargaron categorías:', e.message); }
+  };
+  if (token) loadCats();
+}, [token]);
 
   const showAlert = (type, msg) => { setAlert({type,msg}); setTimeout(()=>setAlert(null),4500); };
 
@@ -1031,11 +1037,12 @@ const Inventory = () => {
                       <span className="fw-semibold small">Completa los detalles del producto</span>
                     </div>
                     <RowEditor
-                      row={editingRow}
-                      products={products}
-                      onSave={saveRow}
-                      onCancel={() => { setEditing(null); setEditingRow(null); }}
-                    />
+  row={editingRow}
+  products={products}
+  categorias={categorias}
+  onSave={saveRow}
+  onCancel={() => { setEditing(null); setEditingRow(null); }}
+/>
                   </div>
                 )}
               </div>
