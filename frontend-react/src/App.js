@@ -44,6 +44,7 @@ import SalesAnalysis         from './pages/Admin/SalesAnalysis';
 import AdvancedFinance       from './pages/Admin/AdvancedFinance';
 import BusinessPolicy        from './pages/Admin/BusinessPolicy';
 import ImportarProductos from './pages/Admin/ImportarProductos';
+import Categorias from './pages/Admin/Categorias';
 // ── Cajero ──
 import Sales                 from './pages/Cashier/Sales';
 import SalesHistory          from './pages/Cashier/SalesHistory';
@@ -109,6 +110,7 @@ function App() {
             <Route path="/admin/productos"         element={<PrivateRoute roles={['admin','admin_tecnico','bodeguero']}><ManageProducts /></PrivateRoute>} />
             <Route path="/admin/inventario"        element={<PrivateRoute roles={['admin','admin_tecnico','bodeguero']}><Inventory /></PrivateRoute>} />
             <Route path="/admin/proveedores"       element={<PrivateRoute roles={['admin','admin_tecnico','bodeguero']}><ManageSuppliers /></PrivateRoute>} />
+            <Route path="/admin/categorias"              element={<PrivateRoute roles={['admin','admin_tecnico']}><Categorias /></PrivateRoute>} />
             <Route path="/admin/usuarios"          element={<PrivateRoute roles={['admin','admin_tecnico','auditor']}><ManageUsers /></PrivateRoute>} />
             <Route path="/admin/clientes"          element={<PrivateRoute roles={['admin','admin_tecnico']}><ManageCustomers /></PrivateRoute>} />
             <Route path="/admin/alertas"           element={<PrivateRoute roles={['admin','admin_tecnico']}><Alerts /></PrivateRoute>} />

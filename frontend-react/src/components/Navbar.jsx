@@ -16,6 +16,7 @@ const adminLinks = [
     group: true, label: "Inventario", icon: "bi-archive", key: "inventario",
     children: [
       { path: "/admin/productos",      icon: "bi-box",          label: "Productos" },
+      { path: "/admin/categorias",     icon: "bi-tags",         label: "Categorías" },
       { path: "/admin/importar",       icon: "bi-upload", label: "Importar/Exportar" },
       { path: "/admin/inventario",     icon: "bi-archive",      label: "Inventario" },
       { path: "/admin/proveedores",    icon: "bi-truck",        label: "Proveedores" },

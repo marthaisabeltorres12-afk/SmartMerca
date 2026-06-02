@@ -6,19 +6,12 @@ import { supplierService } from '../../services/supplierService';
 import { apiFetch } from '../../services/api';
 import ConfirmModal from '../../components/ConfirmModal';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { categoryService } from '../../services/categoryService';
 
 const EMPTY = { name:'', description:'', price:'', stock:'', category:'', barcode:'', supplier_id:'', expiry_date:'', discount:0, discount_start:'', discount_end:'', gramaje_cantidad:'', gramaje_unidad:'', iva_type:19 };
 
-const CATEGORIAS = [
-  '🥦 Frutas y Verduras','🥩 Carnes y Embutidos','🥛 Lácteos y Huevos',
-  '🍞 Panadería y Repostería','🥤 Bebidas y Jugos','🍺 Bebidas Alcohólicas',
-  '🍿 Snacks y Dulces','🥫 Enlatados y Conservas','🌾 Granos y Cereales',
-  '🫙 Aceites y Condimentos','🧊 Congelados','🧹 Limpieza del Hogar',
-  '🧴 Higiene Personal','👶 Bebés y Maternidad','🐾 Mascotas',
-  '📝 Papelería','🔋 Electrónica y Pilas','💊 Medicamentos Básicos','📦 Otros',
-];
-
 const ManageProducts = () => {
+  const [categorias, setCategorias] = useState([]);
   const { token } = useAuth();
   const [products, setProducts]           = useState([]);
   const [suppliers, setSuppliers]         = useState([]);
@@ -41,6 +34,23 @@ const ManageProducts = () => {
     } catch (e) { showAlert('danger', e.message); }
   };
   useEffect(() => { load(); }, [token]);
+  useEffect(() => {
+  const loadCategorias = async () => {
+    try {
+      const data = await categoryService.getAll(token);
+
+      setCategorias(
+        data.filter(c => c.is_active)
+      );
+    } catch (error) {
+      console.error('Error cargando categorías:', error);
+    }
+  };
+
+  if (token) {
+    loadCategorias();
+  }
+}, [token]);
 
   const showAlert = (type, msg) => { setAlert({type, msg}); setTimeout(() => setAlert(null), 3500); };
 
@@ -127,6 +137,7 @@ const ManageProducts = () => {
       p.category?.toLowerCase().includes(search.toLowerCase()) ||
       p.barcode?.includes(search);
     const matchCat = catFilter === '' || p.category === catFilter;
+    console.log(p.category, catFilter);
     return matchSearch && matchCat;
   });
 
@@ -137,6 +148,7 @@ const ManageProducts = () => {
         <h4 className="fw-bold mb-4"><i className="bi bi-box-fill me-2"></i> Gestión de Productos</h4>
         {alert && <div className={`alert alert-${alert.type} alert-dismissible`}>{alert.msg}</div>}
         <div className="d-flex gap-2 mb-3 flex-wrap">
+<<<<<<< HEAD
 <div style={{ maxWidth: 300 }} className="position-relative">
     <i className="bi bi-search position-absolute"style={{ left: 12,top: '50%',transform: 'translateY(-50%)',color: '#6c757d'}}></i>
 
@@ -152,6 +164,21 @@ const ManageProducts = () => {
   )}
 
 </div>
+=======
+          <input className="form-control" style={{ maxWidth: 300 }}
+            placeholder=" Buscar por nombre, categoría o código..."
+            value={search} onChange={e => setSearch(e.target.value)} />
+         <select className="form-select" style={{ maxWidth: 200 }}
+  value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
+  <option value="">Todas las categorías</option>
+  {categorias.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
+</select>
+          {catFilter && (
+            <button className="btn btn-outline-secondary" onClick={() => setCatFilter('')}>✕ Limpiar filtro</button>
+          )}
+         
+        </div>
+>>>>>>> b75233fbb9dedfb2c4819aed14d311d20bfa70e5
 
         <p className="text-muted small mb-2">
           Mostrando <strong>{filtered.length}</strong> de <strong>{products.length}</strong> productos
@@ -276,11 +303,11 @@ const ManageProducts = () => {
                       </div>
                       <div className="col-md-6">
                         <label className="form-label">Categoría</label>
-                        <select className="form-select" value={form.category}
-                          onChange={e => setForm({...form, category: e.target.value})}>
-                          <option value="">— Seleccionar categoría —</option>
-                          {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
+                        <select className="form-select" value={form.category || ''}
+  onChange={(e) => setForm({...form, category: e.target.value})}>
+  <option value="">— Sin categoría —</option>
+  {categorias.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
+</select>
                       </div>
                       <div className="col-md-6">
                         <label className="form-label">Precio *</label>

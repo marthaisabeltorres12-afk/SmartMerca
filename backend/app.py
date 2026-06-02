@@ -40,6 +40,7 @@ from routes.whatsapp_routes import whatsapp_bp
 from routes.dian_routes import dian_bp
 from routes.datafono_routes import datafono_bp
 from routes.wompi_routes import wompi_bp
+from routes.category_routes import categories_bp
 
 try:
     from routes.promotions    import promotions_bp
@@ -60,6 +61,7 @@ def create_app():
     mail.init_app(app)
     app.register_blueprint(wompi_bp, url_prefix='/api/wompi')
    
+    app.register_blueprint(categories_bp,url_prefix='/api/categories')
     app.register_blueprint(whatsapp_bp, url_prefix='/api/whatsapp')
     app.register_blueprint(reservas_bp, url_prefix='/api/reservas')
     app.register_blueprint(multicaja_bp, url_prefix='/api/cajas')
