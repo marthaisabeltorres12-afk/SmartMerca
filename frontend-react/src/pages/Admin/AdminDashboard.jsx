@@ -10,7 +10,7 @@ const KpiCard = ({ icon, label, value, sub, subColor }) => (
   <div className="card border-0 shadow-sm h-100">
     <div className="card-body py-3 px-3">
       <div className="d-flex align-items-center gap-2 mb-1">
-        <span style={{ fontSize:22 }}>{icon}</span>
+<span className="text-primary" style={{ fontSize:22 }}>{icon}</span>
         <span className="text-muted small">{label}</span>
       </div>
       <div className="fw-bold" style={{ fontSize:22 }}>{value}</div>
@@ -64,40 +64,62 @@ const AdminDashboard = () => {
       <main className="flex-grow-1 p-4" style={{ marginLeft:240 }}>
         <div className="d-flex align-items-center justify-content-between mb-4">
           <div>
-            <h4 className="fw-bold mb-0">📊 Dashboard</h4>
+        <h4 className="fw-bold mb-0"> <i className="bi bi-speedometer2 me-2"></i> Dashboard</h4>
             <p className="text-muted small mb-0">
               Resumen del día · Actualizado {lastUpdate ? lastUpdate.toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'}) : '—'}
             </p>
           </div>
-          <button className="btn btn-outline-secondary btn-sm" onClick={load}>🔄 Actualizar</button>
+          <button className="btn btn-outline-secondary btn-sm" onClick={load}>
+  <i className="bi bi-arrow-clockwise me-1"></i>
+  Actualizar
+</button>
         </div>
 
         <div className="row g-3 mb-4">
-          <div className="col-6 col-md-3">
-            <KpiCard icon="💰" label="Ventas del día" value={fmt(data?.ventas_hoy)}
-              sub={`${varIcon} ${Math.abs(variacion)}% vs ayer`} subColor={varColor} />
-          </div>
-          <div className="col-6 col-md-3">
-            <KpiCard icon="🧾" label="Transacciones" value={fmtNum(data?.transacciones)}
-              sub={`Ticket prom: ${fmt(data?.ticket_promedio)}`} />
-          </div>
-          <div className="col-6 col-md-3">
-            <KpiCard icon="👤" label="Cajero top" value={data?.cajero_top?.nombre || '—'}
-              sub={data?.cajero_top ? fmt(data.cajero_top.total) : 'Sin ventas aún'} />
-          </div>
-          <div className="col-6 col-md-3">
-            <KpiCard icon="⚠️" label="Alertas activas" value={alertas.total || 0}
-              sub={alertas.total > 0 ? 'Requieren atención' : 'Todo en orden'}
-              subColor={alertas.total > 0 ? 'text-warning' : 'text-success'} />
-          </div>
-        </div>
+  <div className="col-6 col-md-3">
+    <KpiCard
+      icon={<i className="bi bi-cash-stack"></i>}
+      label="Ventas del día"
+      value={fmt(data?.ventas_hoy)}
+      sub={`${varIcon} ${Math.abs(variacion)}% vs ayer`}
+      subColor={varColor}
+    />
+  </div>
+
+  <div className="col-6 col-md-3">
+    <KpiCard
+      icon={<i className="bi bi-receipt-cutoff"></i>}
+      label="Transacciones"
+      value={fmtNum(data?.transacciones)}
+      sub={`Ticket prom: ${fmt(data?.ticket_promedio)}`}
+    />
+  </div>
+
+  <div className="col-6 col-md-3">
+    <KpiCard
+      icon={<i className="bi bi-trophy-fill"></i>}
+      label="Cajero top"
+      value={data?.cajero_top?.nombre || '—'}
+      sub={data?.cajero_top ? fmt(data.cajero_top.total) : 'Sin ventas aún'}
+    />
+  </div>
+
+  <div className="col-6 col-md-3">
+    <KpiCard
+      icon={<i className="bi bi-exclamation-triangle-fill"></i>}
+      label="Alertas activas"
+      value={alertas.total || 0}
+      sub={alertas.total > 0 ? 'Requieren atención' : 'Todo en orden'}
+      subColor={alertas.total > 0 ? 'text-warning' : 'text-success'}
+    />
+  </div>
+</div>
 
         <div className="row g-4">
           <div className="col-md-6">
             <div className="card border-0 shadow-sm h-100">
-              <div className="card-header fw-semibold py-3" style={{ background:'#1e3a5f', color:'#fff' }}>
-                🏆 Top 5 productos del día
-              </div>
+              <div className="card-header fw-semibold py-3" style={{ background:'#1e3a5f', color:'#fff' }}><i className="bi bi-trophy-fill me-2"></i> Top 5 productos del día
+</div>
               <div className="card-body p-0">
                 {!data?.top_productos?.length ? (
                   <div className="text-center text-muted py-4">Sin ventas registradas hoy</div>
@@ -124,9 +146,7 @@ const AdminDashboard = () => {
 
           <div className="col-md-6 d-flex flex-column gap-4">
             <div className="card border-0 shadow-sm">
-              <div className="card-header fw-semibold py-3" style={{ background:'#1e3a5f', color:'#fff' }}>
-                💳 Ventas por método de pago
-              </div>
+              <div className="card-header fw-semibold py-3" style={{ background:'#1e3a5f', color:'#fff' }}><i className="bi bi-credit-card-fill me-2"></i> Ventas por método de pago</div>
               <div className="card-body">
                 {!data?.metodos_pago || !Object.keys(data.metodos_pago).length ? (
                   <div className="text-center text-muted py-2 small">Sin datos de métodos aún</div>
@@ -154,9 +174,7 @@ const AdminDashboard = () => {
             </div>
 
             <div className="card border-0 shadow-sm">
-              <div className="card-header fw-semibold py-3" style={{ background:'#1e3a5f', color:'#fff' }}>
-                🔔 Estado del sistema
-              </div>
+              <div className="card-header fw-semibold py-3" style={{ background:'#1e3a5f', color:'#fff' }}><i className="bi bi-bell-fill me-2"></i>Estado del sistema</div>
               <div className="card-body p-2">
                 {[
                   { label:'Productos agotados',      val: alertas.stock_cero,   color:'danger'  },

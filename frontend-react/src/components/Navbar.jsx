@@ -8,7 +8,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 const adminLinks = [
   { path: "/admin", icon: "bi-speedometer2", label: "Dashboard" },
-   { path: "/admin/domicilios", icon: "bi-bicycle", label: "🛵 Domicilios", badge: "pendientes" },
+   { path: "/admin/domicilios", icon: "bi-bicycle", label: "Domicilios", badge: "pendientes" },
   
 
   // 📦 INVENTARIO
@@ -76,7 +76,7 @@ const adminLinks = [
       { path: "/admin/alertas",         icon: "bi-bell",            label: "Alertas" },
     ]
   },
-  { path: "/admin/mi-plan", icon: "bi-gem", label: "💎 Mi Plan" }, 
+  { path: "/admin/mi-plan", icon: "bi-gem", label: " Mi Plan" }, 
 ];
 
 const cajeroLinks = [

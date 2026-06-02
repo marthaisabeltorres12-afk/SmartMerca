@@ -4,11 +4,11 @@ import { useAuth } from '../../context/AuthContext';
 import { apiFetch } from '../../services/api';
 
 const ESTADOS = {
-  pendiente:  { label:'⏳ Pendiente',   color:'warning',  bg:'#fffbeb', text:'#92400e' },
-  asignado:   { label:'👤 Asignado',    color:'info',     bg:'#eff6ff', text:'#1d4ed8' },
-  en_camino:  { label:'🛵 En camino',   color:'primary',  bg:'#eff6ff', text:'#1d4ed8' },
-  entregado:  { label:'✅ Entregado',   color:'success',  bg:'#f0fdf4', text:'#15803d' },
-  cancelado:  { label:'❌ Cancelado',   color:'danger',   bg:'#fef2f2', text:'#dc2626' },
+  pendiente:  { label:' Pendiente',   color:'warning',  bg:'#fffbeb', text:'#92400e' },
+  asignado:   { label:' Asignado',    color:'info',     bg:'#eff6ff', text:'#1d4ed8' },
+  en_camino:  { label:' En camino',   color:'primary',  bg:'#eff6ff', text:'#1d4ed8' },
+  entregado:  { label:' Entregado',   color:'success',  bg:'#f0fdf4', text:'#15803d' },
+  cancelado:  { label:' Cancelado',   color:'danger',   bg:'#fef2f2', text:'#dc2626' },
 };
 
 const fmt = n => Number(n||0).toLocaleString('es-CO',{style:'currency',currency:'COP',minimumFractionDigits:0});
@@ -73,7 +73,7 @@ export default function DomiciliosAdmin() {
           codigo_confirmacion:  codigo,
         })
       }, token);
-      showAlert('success', `✅ Domiciliario asignado · Código: ${codigo}`);
+      showAlert('success', ` Domiciliario asignado · Código: ${codigo}`);
       setModalAsignar(null);
       setFormDomiciliario({ nombre:'', celular:'' });
       load();
@@ -87,7 +87,7 @@ export default function DomiciliosAdmin() {
         method: 'POST',
         body: JSON.stringify({ codigo: codigoInput.trim() })
       }, token);
-      showAlert('success', '✅ Entrega confirmada con código');
+      showAlert('success', ' Entrega confirmada con código');
       setModalCodigo(null);
       setCodigoInput('');
       load();
@@ -140,16 +140,22 @@ export default function DomiciliosAdmin() {
       <main className="flex-grow-1" style={{ marginLeft:240, padding:'16px 24px' }}>
 
         {alert && (
-          <div className={`alert alert-${alert.type} alert-dismissible`} role="alert">
-            {alert.msg}
-            <button type="button" className="btn-close" onClick={()=>setAlert(null)}/>
-          </div>
+         <div className={`alert alert-${alert.type}`}>
+  <i className={`bi ${
+    alert.type === 'success' ? 'bi-check-circle-fill' :
+    alert.type === 'danger' ? 'bi-x-circle-fill' :
+    alert.type === 'warning' ? 'bi-exclamation-triangle-fill' :
+    'bi-info-circle-fill'
+  } me-2`}></i>
+
+  {alert.message}
+</div>
         )}
 
         {/* Header */}
         <div className="d-flex align-items-center justify-content-between mb-3">
           <div>
-            <h4 className="fw-bold mb-0">🛵 Domicilios</h4>
+            <h4 className="fw-bold mb-0"><i className="bi bi-bicycle me-2"></i> Domicilios </h4>
             <small className="text-muted">Gestión de pedidos a domicilio</small>
           </div>
           <button className="btn btn-success fw-bold" onClick={()=>setShowForm(true)}>
@@ -160,54 +166,129 @@ export default function DomiciliosAdmin() {
         {/* Stats */}
         {stats && (
           <div className="row g-3 mb-3">
-            {[
-              { icon:'📦', label:'Pedidos hoy',    val: stats.hoy_total,      color:'primary' },
-              { icon:'✅', label:'Entregados hoy', val: stats.hoy_entregados, color:'success' },
-              { icon:'⏳', label:'En curso',       val: stats.pendientes,     color:'warning' },
-              { icon:'💰', label:'Ingresos hoy',   val: fmt(stats.ingresos_hoy), color:'info', isMoney:true },
-            ].map((s,i) => (
-              <div key={i} className="col-6 col-md-3">
-                <div className={`card border-${s.color} border-2 text-center py-2`}>
-                  <div style={{fontSize:28}}>{s.icon}</div>
-                  <div className={`fw-bold text-${s.color}`} style={{fontSize:s.isMoney?16:24}}>{s.val}</div>
-                  <div className="small text-muted">{s.label}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+  {[
+    {
+      icon: <i className="bi bi-box-seam-fill"></i>,
+      label: 'Pedidos hoy',
+      val: stats.hoy_total,
+      color: 'primary'
+    },
+    {
+      icon: <i className="bi bi-check-circle-fill"></i>,
+      label: 'Entregados hoy',
+      val: stats.hoy_entregados,
+      color: 'success'
+    },
+    {
+      icon: <i className="bi bi-hourglass-split"></i>,
+      label: 'En curso',
+      val: stats.pendientes,
+      color: 'warning'
+    },
+    {
+      icon: <i className="bi bi-cash-coin"></i>,
+      label: 'Ingresos hoy',
+      val: fmt(stats.ingresos_hoy),
+      color: 'info',
+      isMoney: true
+    },
+  ].map((s, i) => (
+    <div key={i} className="col-6 col-md-3">
+      <div className={`card border-${s.color} border-2 text-center py-2`}>
+        <div
+          className={`text-${s.color}`}
+          style={{ fontSize: 28 }}
+        >
+          {s.icon}
+        </div>
+
+        <div
+          className={`fw-bold text-${s.color}`}
+          style={{ fontSize: s.isMoney ? 16 : 24 }}
+        >
+          {s.val}
+        </div>
+
+        <div className="small text-muted">
+          {s.label}
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
         )}
 
         {/* Filtros */}
-        <div className="mb-3" style={{overflowX:"auto", whiteSpace:"nowrap", paddingBottom:4}}>
+       <div
+  className="mb-3"
+  style={{ overflowX: "auto", whiteSpace: "nowrap", paddingBottom: 4 }}
+>
+  {[
+    {
+      val: "",
+      label: "Todos",
+      icon: "bi-card-list"
+    },
+    {
+      val: "pendiente",
+      label: "Pendiente",
+      icon: "bi-hourglass-split"
+    },
+    {
+      val: "asignado",
+      label: "Asignado",
+      icon: "bi-person-check-fill"
+    },
+    {
+      val: "en_camino",
+      label: "En camino",
+      icon: "bi-scooter"
+    },
+    {
+      val: "entregado",
+      label: "Entregado",
+      icon: "bi-check-circle-fill"
+    },
+    {
+      val: "cancelado",
+      label: "Cancelado",
+      icon: "bi-x-circle-fill"
+    },
+  ].map((e) => (
+    <button
+      key={e.val}
+      className={`btn btn-sm me-2 ${
+        filtroEstado === e.val
+          ? "btn-dark fw-bold"
+          : "btn-outline-secondary"
+      }`}
+      style={{ display: "inline-block" }}
+      onClick={() => setFiltroEstado(e.val)}
+    >
+      <i className={`bi ${e.icon} me-1`}></i>
+      {e.label}
+    </button>
+  ))}
 
-          {[
-            { val:'',          label:'📋 Todos'      },
-            { val:'pendiente', label:'⏳ Pendiente'   },
-            { val:'asignado',  label:'👤 Asignado'   },
-            { val:'en_camino', label:'🛵 En camino'  },
-            { val:'entregado', label:'✅ Entregado'  },
-            { val:'cancelado', label:'❌ Cancelado'  },
-          ].map(e => (
-            <button key={e.val}
-              className={`btn btn-sm me-2 ${filtroEstado===e.val ? 'btn-dark fw-bold' : 'btn-outline-secondary'}`}
-              style={{display:'inline-block'}}
-              onClick={()=>setFiltroEstado(e.val)}>
-              {e.label}
-            </button>
-          ))}
-          <button className="btn btn-sm btn-outline-primary ms-2" onClick={load}>
-            🔄 Actualizar
-          </button>
-        </div>
+  <button
+    className="btn btn-sm btn-outline-primary ms-2"
+    onClick={load}
+  >
+    <i className="bi bi-arrow-clockwise me-1"></i>
+    Actualizar
+  </button>
+</div>
 
         {/* Lista de pedidos */}
         {loading ? (
-          <div className="text-center py-5"><div className="spinner-border text-primary"/></div>
-        ) : !pedidos.length ? (
           <div className="text-center py-5 text-muted">
-            <div style={{fontSize:48}}>🛵</div>
-            <div>No hay pedidos {filtroEstado ? `con estado "${ESTADOS[filtroEstado]?.label}"` : ''}</div>
-          </div>
+  <div style={{ fontSize: 48 }}>
+    <i className="bi bi-inbox"></i>
+  </div>
+  <div>
+    No hay pedidos {filtroEstado ? `con estado "${ESTADOS[filtroEstado]?.label}"` : ''}
+  </div>
+</div>
         ) : (
           <div className="row g-3">
             {pedidos.map(p => {
@@ -230,12 +311,29 @@ export default function DomiciliosAdmin() {
                       </div>
 
                       {/* Cliente */}
-                      <div className="mb-2 p-2 rounded" style={{background:'#f8fafc'}}>
-                        <div className="fw-semibold">👤 {p.cliente_nombre}</div>
-                        <div className="small text-muted">📱 {p.cliente_telefono}</div>
-                        <div className="small text-muted">📍 {p.cliente_direccion}</div>
-                        {p.cliente_referencia && <div className="small text-muted">🏠 {p.cliente_referencia}</div>}
-                      </div>
+                      <div className="mb-2 p-2 rounded" style={{ background: '#f8fafc' }}>
+  <div className="fw-semibold">
+    <i className="bi bi-person-fill me-2"></i>
+    {p.cliente_nombre}
+  </div>
+
+  <div className="small text-muted">
+    <i className="bi bi-telephone-fill me-2"></i>
+    {p.cliente_telefono}
+  </div>
+
+  <div className="small text-muted">
+    <i className="bi bi-geo-alt-fill me-2"></i>
+    {p.cliente_direccion}
+  </div>
+
+  {p.cliente_referencia && (
+    <div className="small text-muted">
+      <i className="bi bi-house-door-fill me-2"></i>
+      {p.cliente_referencia}
+    </div>
+  )}
+</div>6
 
                       {/* Productos */}
                       <div className="mb-2">
@@ -255,15 +353,16 @@ export default function DomiciliosAdmin() {
 
                       {/* Cajero asignado */}
                       {p.cajero && (
-                        <div className="small p-2 rounded mb-2" style={{background:'#eff6ff'}}>
-                          👤 <strong>Cajero:</strong> {p.cajero.nombre}
-                        </div>
+                        <div className="small p-2 rounded mb-2" style={{ background: '#eff6ff' }}>
+  <i className="bi bi-person-workspace me-2"></i>
+  <strong>Cajero:</strong> {p.cajero.nombre}
+</div>
                       )}
 
                       {/* Domiciliario */}
                       {(p.domiciliario || p.domiciliario_nombre) && (
                         <div className="small p-2 rounded mb-2" style={{background:'#eff6ff'}}>
-                          🛵 <strong>{p.domiciliario_nombre || p.domiciliario?.nombre}</strong>
+                           <strong>{p.domiciliario_nombre || p.domiciliario?.nombre}</strong>
                           {' · '}{p.domiciliario_celular || p.domiciliario?.telefono}
                           {p.codigo_confirmacion && p.estado !== 'entregado' && (
                             <span className="badge bg-warning text-dark ms-2">Código: {p.codigo_confirmacion}</span>
@@ -286,7 +385,7 @@ export default function DomiciliosAdmin() {
                                 border: `2px solid ${p.estado==='cancelado' ? '#dc2626' : activo ? '#16a34a' : '#cbd5e1'}`,
                                 display:'flex',alignItems:'center',justifyContent:'center',fontSize:10
                               }}>
-                                {p.estado==='cancelado' && eIdx===0 ? '❌' : activo ? '✓' : ''}
+                                {p.estado==='cancelado' && eIdx===0 ? '' : activo ? '✓' : ''}
                               </div>
                               <div style={{fontSize:8,color:'#64748b',marginTop:2}}>
                                 {e==='pendiente'?'Pedido':e==='asignado'?'Asignado':e==='en_camino'?'Camino':'Entregado'}
@@ -301,29 +400,29 @@ export default function DomiciliosAdmin() {
                         {p.estado === 'pendiente' && (
                           <button className="btn btn-warning btn-sm fw-semibold"
                             onClick={() => { setModalAsignar(p); setFormDomiciliario({nombre:'',celular:''}); }}>
-                            🛵 Asignar domiciliario
+                             Asignar domiciliario
                           </button>
                         )}
                         {p.estado === 'asignado' && (
                           <button className="btn btn-primary btn-sm" onClick={()=>cambiarEstado(p.id,'en_camino')}>
-                            🛵 En camino
+                            En camino
                           </button>
                         )}
                         {p.estado === 'en_camino' && (
                           <button className="btn btn-success btn-sm fw-bold"
                             onClick={() => { setModalCodigo(p); setCodigoInput(''); }}>
-                            ✅ Confirmar entrega
+                             Confirmar entrega
                           </button>
                         )}
                         {!['entregado','cancelado'].includes(p.estado) && (
                           <button className="btn btn-outline-danger btn-sm" onClick={()=>cambiarEstado(p.id,'cancelado')}>
-                            ❌ Cancelar
+                            Cancelar
                           </button>
                         )}
                       </div>
 
                       {p.estado==='entregado' && p.delivered_at && (
-                        <div className="small text-success mt-1">✅ Entregado: {fmtFecha(p.delivered_at)}</div>
+                        <div className="small text-success mt-1"> Entregado: {fmtFecha(p.delivered_at)}</div>
                       )}
                     </div>
                   </div>
@@ -339,7 +438,7 @@ export default function DomiciliosAdmin() {
           <div className="modal-dialog modal-lg modal-dialog-scrollable">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title fw-bold">🛵 Nuevo pedido a domicilio</h5>
+                <h5 className="modal-title fw-bold"> Nuevo pedido a domicilio</h5>
                 <button className="btn-close" onClick={()=>setShowForm(false)}/>
               </div>
               <div className="modal-body">
@@ -365,15 +464,25 @@ export default function DomiciliosAdmin() {
                       value={form.cliente_referencia} onChange={e=>setForm(f=>({...f,cliente_referencia:e.target.value}))}/>
                   </div>
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold">Método de pago</label>
-                    <select className="form-select" value={form.metodo_pago}
-                      onChange={e=>setForm(f=>({...f,metodo_pago:e.target.value}))}>
-                      <option value="efectivo">💵 Efectivo</option>
-                      <option value="nequi">📱 Nequi</option>
-                      <option value="transferencia">🏦 Transferencia</option>
-                      <option value="tarjeta">💳 Tarjeta</option>
-                    </select>
-                  </div>
+  <label className="form-label fw-semibold">
+    <i className="bi bi-credit-card-2-front-fill me-2"></i>
+    Método de pago
+  </label>
+
+  <select
+    className="form-select"
+    value={form.metodo_pago}
+    onChange={e => setForm(f => ({
+      ...f,
+      metodo_pago: e.target.value
+    }))}
+  >
+    <option value="efectivo">Efectivo</option>
+    <option value="nequi">Nequi</option>
+    <option value="transferencia">Transferencia</option>
+    <option value="tarjeta">Tarjeta</option>
+  </select>
+</div>
                   <div className="col-md-6">
                     <label className="form-label fw-semibold">Valor domicilio</label>
                     <input className="form-control" type="number" min="0" step="500"
@@ -387,7 +496,7 @@ export default function DomiciliosAdmin() {
                 </div>
 
                 <hr/>
-                <div className="fw-bold mb-2">🛍️ Productos</div>
+               <div className="fw-bold mb-2"><i className="bi bi-bag-fill me-2"></i>Productos</div>
                 <input className="form-control form-control-sm mb-2" placeholder="Buscar producto..."
                   value={busqueda} onChange={e=>setBusqueda(e.target.value)}/>
                 <div className="row g-1 mb-3" style={{maxHeight:180,overflowY:'auto'}}>
@@ -431,7 +540,7 @@ export default function DomiciliosAdmin() {
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={()=>setShowForm(false)}>Cancelar</button>
                 <button className="btn btn-success fw-bold" onClick={crearPedido}>
-                  🛵 Crear pedido
+                   Crear pedido
                 </button>
               </div>
             </div>
@@ -444,7 +553,7 @@ export default function DomiciliosAdmin() {
         <div className="modal d-block" style={{background:'rgba(0,0,0,0.5)',position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center'}}>
           <div style={{background:'#fff',borderRadius:14,overflow:'hidden',maxWidth:420,width:'90%',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}>
             <div style={{background:'#1e3a5f',padding:'14px 20px'}}>
-              <h5 style={{margin:0,fontWeight:700,color:'#fff'}}>🛵 Asignar Domiciliario</h5>
+              <h5 style={{margin:0,fontWeight:700,color:'#fff'}}> Asignar Domiciliario</h5>
               <div style={{fontSize:12,color:'rgba(255,255,255,0.7)',marginTop:2}}>Pedido #{modalAsignar.id} · {modalAsignar.cliente_nombre}</div>
             </div>
             <div style={{padding:20}}>
@@ -466,7 +575,7 @@ export default function DomiciliosAdmin() {
             </div>
             <div style={{padding:'0 20px 20px',display:'flex',gap:10}}>
               <button className="btn btn-outline-secondary flex-fill" onClick={()=>setModalAsignar(null)}>Cancelar</button>
-              <button className="btn btn-warning fw-bold flex-fill" onClick={asignarDomiciliario}>🛵 Asignar</button>
+              <button className="btn btn-warning fw-bold flex-fill" onClick={asignarDomiciliario}> Asignar</button>
             </div>
           </div>
         </div>
@@ -477,7 +586,7 @@ export default function DomiciliosAdmin() {
         <div className="modal d-block" style={{background:'rgba(0,0,0,0.5)',position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center'}}>
           <div style={{background:'#fff',borderRadius:14,overflow:'hidden',maxWidth:400,width:'90%',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}>
             <div style={{background:'#16a34a',padding:'14px 20px'}}>
-              <h5 style={{margin:0,fontWeight:700,color:'#fff'}}>✅ Confirmar Entrega</h5>
+              <h5 style={{margin:0,fontWeight:700,color:'#fff'}}> Confirmar Entrega</h5>
               <div style={{fontSize:12,color:'rgba(255,255,255,0.8)',marginTop:2}}>Pedido #{modalCodigo.id} · {modalCodigo.cliente_nombre}</div>
             </div>
             <div style={{padding:20,textAlign:'center'}}>
@@ -494,7 +603,7 @@ export default function DomiciliosAdmin() {
             </div>
             <div style={{padding:'0 20px 20px',display:'flex',gap:10}}>
               <button className="btn btn-outline-secondary flex-fill" onClick={()=>setModalCodigo(null)}>Cancelar</button>
-              <button className="btn btn-success fw-bold flex-fill" onClick={confirmarEntrega}>✅ Confirmar</button>
+              <button className="btn btn-success fw-bold flex-fill" onClick={confirmarEntrega}> Confirmar</button>
             </div>
           </div>
         </div>

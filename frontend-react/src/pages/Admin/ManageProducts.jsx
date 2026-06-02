@@ -134,24 +134,24 @@ const ManageProducts = () => {
     <div className="d-flex">
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft: 240 }}>
-        <h4 className="fw-bold mb-4">📦 Gestión de Productos</h4>
-
+        <h4 className="fw-bold mb-4"><i className="bi bi-box-fill me-2"></i> Gestión de Productos</h4>
         {alert && <div className={`alert alert-${alert.type} alert-dismissible`}>{alert.msg}</div>}
-
         <div className="d-flex gap-2 mb-3 flex-wrap">
-          <input className="form-control" style={{ maxWidth: 300 }}
-            placeholder="🔍 Buscar por nombre, categoría o código..."
-            value={search} onChange={e => setSearch(e.target.value)} />
-          <select className="form-select" style={{ maxWidth: 240 }}
-            value={catFilter} onChange={e => setCatFilter(e.target.value)}>
-            <option value="">📂 Todas las categorías</option>
-            {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          {catFilter && (
-            <button className="btn btn-outline-secondary" onClick={() => setCatFilter('')}>✕ Limpiar filtro</button>
-          )}
-         
-        </div>
+<div style={{ maxWidth: 300 }} className="position-relative">
+    <i className="bi bi-search position-absolute"style={{ left: 12,top: '50%',transform: 'translateY(-50%)',color: '#6c757d'}}></i>
+
+    <input className="form-control ps-5"placeholder="Buscar por nombre, categoría o código..."value={search}onChange={e => setSearch(e.target.value)}/>
+  </div>
+
+  <select className="form-select"style={{ maxWidth: 240 }}value={catFilter}onChange={e => setCatFilter(e.target.value)}>
+    <option value="">Todas las categorías</option>{CATEGORIAS.map(c => (<option key={c} value={c}> {c}</option>))}
+    </select>
+
+  {catFilter && (
+    <button className="btn btn-outline-secondary" onClick={() => setCatFilter('')}><i className="bi bi-x-circle me-1"></i>Limpiar filtro</button>
+  )}
+
+</div>
 
         <p className="text-muted small mb-2">
           Mostrando <strong>{filtered.length}</strong> de <strong>{products.length}</strong> productos
@@ -195,19 +195,20 @@ const ManageProducts = () => {
                       <td>
                         {p.active_discount > 0
                           ? <div>
-                              <span className="badge bg-danger">🏷️ {p.active_discount}% OFF</span>
+                              <span className="badge bg-danger"> {p.active_discount}% OFF</span>
                               <div className="text-success fw-bold small">${Number(p.final_price).toLocaleString('es-CO')}</div>
                               {p.discount_end && <div className="text-muted" style={{fontSize:'0.7rem'}}>hasta {p.discount_end}</div>}
                             </div>
                           : p.discount > 0
-                            ? <span className="badge bg-secondary">⏸️ {p.discount}% (inactivo)</span>
+                            ? <span className="badge bg-secondary">⏸ {p.discount}% (inactivo)</span>
                             : <span className="text-muted small">—</span>
                         }
                       </td>
                       <td>
-                        <span className={`badge ${p.stock <= 5 ? 'bg-danger' : p.stock <= 15 ? 'bg-warning text-dark' : 'bg-secondary'}`}>
-                          {p.stock} {p.stock <= 5 && '⚠️'}
-                        </span>
+                       <span className={`badge ${p.stock <= 5? 'bg-danger': p.stock <= 15? 'bg-warning text-dark': 'bg-secondary' }`}>{p.stock}
+
+  {p.stock <= 5 && (
+    <i className="bi bi-exclamation-triangle-fill ms-1"></i> )}</span>
                       </td>
                       <td className="text-muted small">{p.barcode || '—'}</td>
                       <td>{p.supplier_display_name || p.supplier_company || p.supplier || '—'}</td>
