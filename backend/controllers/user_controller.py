@@ -6,10 +6,14 @@ from extensions import db
 def _is_admin(claims):
     return claims.get('role') in ('admin', 'admin_tecnico')
 
+def _can_read_users(claims):
+    # Admins y auditor pueden VER usuarios (auditor solo lectura)
+    return claims.get('role') in ('admin', 'admin_tecnico', 'auditor')
+
 @jwt_required()
 def get_users():
     claims = get_jwt()
-    if not _is_admin(claims):
+    if not _can_read_users(claims):
         return jsonify({'message': 'Acceso denegado'}), 403
     users = User.query.all()
     return jsonify([u.to_dict() for u in users]), 200
@@ -17,7 +21,7 @@ def get_users():
 @jwt_required()
 def get_user(id):
     claims = get_jwt()
-    if not _is_admin(claims):
+    if not _can_read_users(claims):
         return jsonify({'message': 'Acceso denegado'}), 403
     user = User.query.get_or_404(id)
     return jsonify(user.to_dict()), 200

@@ -3,7 +3,8 @@ import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
 import { apiFetch } from '../../services/api';
 import { useLocation } from 'react-router-dom';
-import { exportViewPDF } from '../../services/exportService';
+import { exportSupervisorPDF, exportSupervisorExcel } from '../../services/exportService';
+import PeriodFilter from '../../components/PeriodFilter';
 
 const SupervisorDashboard = () => {
   const { token, user } = useAuth();
@@ -17,6 +18,10 @@ const SupervisorDashboard = () => {
   const [busq,      setBusq]      = useState('');
   const [filterCaj, setFilterCaj] = useState('');
   const [filterDate,setFilterDate]= useState('');
+  const [dateFrom,  setDateFrom]   = useState('');
+  const [dateTo,    setDateTo]     = useState('');
+  const [timeFrom,  setTimeFrom]   = useState('');
+  const [timeTo,    setTimeTo]     = useState('');
 
   const tab = location.pathname.includes('ventas')    ? 'ventas'
             : location.pathname.includes('productos') ? 'productos'
@@ -48,6 +53,14 @@ const SupervisorDashboard = () => {
   }, [token]);
 
   const ventasHoy  = ventas.filter(v => v.created_at?.slice(0,10) === hoy);
+  // Ventas filtradas por período seleccionado
+  const ventasFiltradas = ventas.filter(v => {
+    if (!dateFrom) return true;
+    const d = v.created_at?.slice(0,10);
+    if (dateFrom && d < dateFrom) return false;
+    if (dateTo   && d > dateTo)   return false;
+    return true;
+  });
   const totalHoy   = ventasHoy.reduce((a,v) => a + Number(v.total||0), 0);
   const stockBajos = productos.filter(p => p.is_active && p.stock <= (p.min_stock||5));
   const cajeros    = [...new Set(shifts.map(s => s.cashier).filter(Boolean))].sort();
@@ -87,12 +100,18 @@ const SupervisorDashboard = () => {
             <h4 className="fw-bold mb-0">👁️ Panel Supervisor</h4>
             <small className="text-muted">Bienvenido, {user?.name} — {new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</small>
           </div>
-          <button className="btn btn-danger btn-sm fw-semibold"
-            onClick={() => exportViewPDF('supervisor-content', 'reporte-supervisor')}>
-            📄 Descargar PDF
-          </button>
+          <span className="text-muted small">{new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span>
         </div>
 
+        <PeriodFilter
+          dateFrom={dateFrom} setDateFrom={setDateFrom}
+          dateTo={dateTo}     setDateTo={setDateTo}
+          timeFrom={timeFrom} setTimeFrom={setTimeFrom}
+          timeTo={timeTo}     setTimeTo={setTimeTo}
+          count={ventasFiltradas.length} countLabel="ventas"
+          onPDF={()   => exportSupervisorPDF(ventasFiltradas, filteredShifts, dateFrom, dateTo)}
+          onExcel={()  => exportSupervisorExcel(ventasFiltradas, filteredShifts, dateFrom, dateTo)}
+        />
         <div id="supervisor-content">
 
         {tab === 'dashboard' && (<>

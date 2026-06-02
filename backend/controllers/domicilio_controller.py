@@ -47,7 +47,12 @@ class Domicilio(db.Model):
     notas              = db.Column(db.Text, nullable=True)
     lat                = db.Column(db.Numeric(10,7), nullable=True)
     lng                = db.Column(db.Numeric(10,7), nullable=True)
-    assigned_at        = db.Column(db.DateTime, nullable=True)
+    domiciliario_nombre  = db.Column(db.String(100), nullable=True)
+    domiciliario_celular = db.Column(db.String(20),  nullable=True)
+    domiciliario_moto    = db.Column(db.String(50),  nullable=True)
+    domiciliario_placa   = db.Column(db.String(15),  nullable=True)
+    codigo_confirmacion  = db.Column(db.String(10),  nullable=True)
+    assigned_at          = db.Column(db.DateTime, nullable=True)
     picked_up_at       = db.Column(db.DateTime, nullable=True)
     delivered_at       = db.Column(db.DateTime, nullable=True)
     created_at         = db.Column(db.DateTime, default=datetime.now)
@@ -78,9 +83,11 @@ class Domicilio(db.Model):
             'delivered_at':       self.delivered_at.isoformat() if self.delivered_at else None,
             'cashier_id':         self.cashier_id,
             'cajero':             {'id': self.cashier_id, 'nombre': self._get_cajero_nombre()} if self.cashier_id else None,
-            'domiciliario_nombre':  getattr(self, 'domiciliario_nombre',  None),
-            'domiciliario_celular': getattr(self, 'domiciliario_celular', None),
-            'codigo_confirmacion':  getattr(self, 'codigo_confirmacion',  None),
+            'domiciliario_nombre':  self.domiciliario_nombre,
+            'domiciliario_celular': self.domiciliario_celular,
+            'domiciliario_moto':    self.domiciliario_moto,
+            'domiciliario_placa':   self.domiciliario_placa,
+            'codigo_confirmacion':  self.codigo_confirmacion,
         }
 
     def _get_cajero_nombre(self):
@@ -275,13 +282,15 @@ def update_estado_domicilio(id):
         return jsonify({'message': 'Estado inválido'}), 400
 
     dom.estado = estado
-    if estado == 'asignado':
+    if estado in ('asignado', 'en_camino'):
         dom.assigned_at = datetime.now()
         if data.get('domiciliario_id'):
             dom.domiciliario_id = data['domiciliario_id']
         if data.get('domiciliario_nombre'):
             dom.domiciliario_nombre  = data.get('domiciliario_nombre', '')
             dom.domiciliario_celular = data.get('domiciliario_celular', '')
+            dom.domiciliario_moto    = data.get('domiciliario_moto', '')
+            dom.domiciliario_placa   = data.get('domiciliario_placa', '')
             dom.codigo_confirmacion  = data.get('codigo_confirmacion', '')
     elif estado == 'en_camino':
         dom.picked_up_at = datetime.now()

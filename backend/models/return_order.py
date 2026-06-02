@@ -8,7 +8,13 @@ class ReturnOrder(db.Model):
     cashier_id   = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     customer_id  = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=True)
     reason       = db.Column(db.String(255), nullable=True)
-    mode         = db.Column(db.Enum('dinero', 'cambio'), default='dinero')
+    mode             = db.Column(db.Enum('dinero', 'cambio'), default='dinero')
+    exchange_product    = db.Column(db.String(200), nullable=True)   # Nombre producto entregado a cambio
+    exchange_product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=True)  # FK producto a cambio
+    exchange_qty        = db.Column(db.Numeric(10,3), default=1)          # Cantidad del producto a cambio
+    exchange_price      = db.Column(db.Numeric(10,2), nullable=True)      # Precio del producto a cambio
+    diferencia          = db.Column(db.Numeric(10,2), default=0)          # Diferencia de precio (+cobra/-devuelve)
+    authorized_by    = db.Column(db.String(100), nullable=True)  # Admin que autorizo con PIN
     total        = db.Column(db.Numeric(10,2), default=0)
     created_at   = db.Column(db.DateTime, server_default=db.func.now())
 
@@ -26,7 +32,13 @@ class ReturnOrder(db.Model):
             'customer_id': self.customer_id,
             'customer':    self.customer.full_name if self.customer else None,
             'reason':      self.reason,
-            'mode':        self.mode,
+            'mode':             self.mode,
+            'exchange_product':    self.exchange_product,
+            'exchange_product_id': self.exchange_product_id,
+            'exchange_qty':        float(self.exchange_qty) if self.exchange_qty else 1,
+            'exchange_price':      float(self.exchange_price) if self.exchange_price else None,
+            'diferencia':         float(self.diferencia) if self.diferencia else 0,
+            'authorized_by':    self.authorized_by,
             'total':       float(self.total),
             'items':       [i.to_dict() for i in self.items],
             'created_at':  str(self.created_at),

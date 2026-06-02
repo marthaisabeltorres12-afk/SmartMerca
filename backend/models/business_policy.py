@@ -8,6 +8,9 @@ class BusinessPolicy(db.Model):
     return_mode            = db.Column(db.Enum('dinero', 'cambio', 'ambos'), default='ambos')
     return_reason_required = db.Column(db.Boolean, default=True)
     return_max_days        = db.Column(db.Integer, default=30)
+    # PIN en devoluciones
+    return_pin_monto       = db.Column(db.Integer, default=30000)  # PIN si devolucion en dinero supera este monto
+    return_pin_multiple    = db.Column(db.Boolean, default=True)   # PIN si se devuelven varios productos
     # Stock
     low_stock_threshold    = db.Column(db.Integer, default=5)
     expiry_alert_days      = db.Column(db.Integer, default=30)
@@ -25,6 +28,8 @@ class BusinessPolicy(db.Model):
             'return_mode':            self.return_mode,
             'return_reason_required': self.return_reason_required,
             'return_max_days':        self.return_max_days,
+            'return_pin_monto':        self.return_pin_monto,
+            'return_pin_multiple':     self.return_pin_multiple,
             'low_stock_threshold':    self.low_stock_threshold,
             'expiry_alert_days':      self.expiry_alert_days,
             'business_name':          self.business_name,

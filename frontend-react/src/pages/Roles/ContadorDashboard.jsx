@@ -3,7 +3,8 @@ import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
 import { apiFetch } from '../../services/api';
 import { useLocation } from 'react-router-dom';
-import { exportViewPDF } from '../../services/exportService';
+import { exportContadorPDF, exportContadorExcel } from '../../services/exportService';
+import PeriodFilter from '../../components/PeriodFilter';
 
 const ContadorDashboard = () => {
   const { token, user } = useAuth();
@@ -12,13 +13,17 @@ const ContadorDashboard = () => {
   const [finanzas,   setFinanzas]   = useState(null);
   const [facturas,   setFacturas]   = useState([]);
   const [auditoria,  setAuditoria]  = useState([]);
+  const [clientes,   setClientes]   = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [busq,       setBusq]       = useState('');
+  const [dateFrom,  setDateFrom]   = useState('');
+  const [dateTo,    setDateTo]     = useState('');
 
   const tab = location.pathname.includes('finanzas')  ? 'finanzas'
             : location.pathname.includes('ventas')    ? 'ventas'
             : location.pathname.includes('cuentas')   ? 'cuentas'
             : location.pathname.includes('auditoria') ? 'auditoria'
+            : location.pathname.includes('cartera')   ? 'cartera'
             : 'dashboard';
 
   const fmt = n => '$' + Number(n||0).toLocaleString('es-CO');
@@ -30,17 +35,26 @@ const ContadorDashboard = () => {
       apiFetch('/finance/summary',    {}, token).catch(() => null),
       apiFetch('/supplier-invoices/', {}, token).catch(() => []),
       apiFetch('/audit/',             {}, token).catch(() => []),
-    ]).then(([v, f, fac, a]) => {
+      apiFetch('/customers/',         {}, token).catch(() => []),
+    ]).then(([v, f, fac, a, c]) => {
       setVentas(Array.isArray(v) ? v : v.sales || []);
       setFinanzas(f);
       setFacturas(Array.isArray(fac) ? fac : fac.invoices || []);
       setAuditoria(Array.isArray(a) ? a : a.logs || []);
+      setClientes(Array.isArray(c) ? c : c.customers || []);
       setLoading(false);
     });
   }, [token]);
 
 
   const ventasHoy   = ventas.filter(v => v.created_at?.slice(0,10) === hoy);
+  const ventasFiltradas = ventas.filter(v => {
+    if (!dateFrom) return true;
+    const d = v.created_at?.slice(0,10);
+    if (dateFrom && d < dateFrom) return false;
+    if (dateTo   && d > dateTo)   return false;
+    return true;
+  });
   const totalHoy    = ventasHoy.reduce((a,v) => a + Number(v.total||0), 0);
   const totalMes    = ventas.filter(v => v.created_at?.slice(0,7) === hoy.slice(0,7)).reduce((a,v) => a + Number(v.total||0), 0);
   const cuentasPend = facturas.filter(f => f.estado === 'pendiente' || f.balance_pendiente > 0);
@@ -62,12 +76,16 @@ const ContadorDashboard = () => {
             <h4 className="fw-bold mb-0">📊 Panel Contador</h4>
             <small className="text-muted">Bienvenido, {user?.name}</small>
           </div>
-          <button className="btn btn-danger btn-sm fw-semibold"
-            onClick={() => exportViewPDF('contador-content', 'reporte-contador')}>
-            📄 Descargar PDF
-          </button>
+
         </div>
 
+        <PeriodFilter
+          dateFrom={dateFrom} setDateFrom={setDateFrom}
+          dateTo={dateTo}     setDateTo={setDateTo}
+          count={ventasFiltradas.length} countLabel="ventas"
+          onPDF={()   => exportContadorPDF(ventasFiltradas, facturas, dateFrom, dateTo)}
+          onExcel={()  => exportContadorExcel(ventasFiltradas, facturas, dateFrom, dateTo)}
+        />
         <div id="contador-content">
 
         {tab === 'dashboard' && (<>
@@ -236,6 +254,84 @@ const ContadorDashboard = () => {
             </div>
           </div>
         )}
+
+
+        {/* ── CARTERA — Clientes con crédito pendiente ── */}
+        {tab === 'cartera' && (() => {
+          const conCredito = clientes.filter(c => c.credit_balance > 0);
+          const totalPend  = conCredito.reduce((a,c) => a + Number(c.credit_balance||0), 0);
+          return (
+            <div>
+              <div className="row g-3 mb-4">
+                {[
+                  ['👥 Clientes con deuda', conCredito.length, 'danger'],
+                  ['💸 Total cartera',      fmt(totalPend),    'warning'],
+                  ['📊 Promedio por cliente', conCredito.length ? fmt(totalPend/conCredito.length) : '$0', 'info'],
+                ].map(([l,v,c]) => (
+                  <div key={l} className="col-md-4">
+                    <div className={`card border-0 shadow-sm border-start border-${c} border-3`}>
+                      <div className="card-body py-3">
+                        <div className="text-muted small">{l}</div>
+                        <div className={`fw-bold fs-4 text-${c}`}>{v}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="card border-0 shadow-sm">
+                <div className="card-header fw-semibold d-flex justify-content-between">
+                  <span>💳 Clientes con saldo de crédito pendiente</span>
+                  <span className="badge bg-danger">{conCredito.length} clientes</span>
+                </div>
+                <div className="table-responsive">
+                  <table className="table table-hover align-middle mb-0" style={{fontSize:13}}>
+                    <thead className="table-light">
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Documento</th>
+                        <th>Teléfono</th>
+                        <th className="text-end">Límite crédito</th>
+                        <th className="text-end">Saldo pendiente</th>
+                        <th className="text-end">% Utilizado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {conCredito.length === 0
+                        ? <tr><td colSpan="6" className="text-center text-muted py-4">✅ Sin clientes con cartera pendiente</td></tr>
+                        : conCredito.sort((a,b) => b.credit_balance - a.credit_balance).map(c => {
+                            const pct = c.credit_limit > 0 ? Math.round((c.credit_balance / c.credit_limit) * 100) : 100;
+                            return (
+                              <tr key={c.id} style={{background: pct >= 90 ? '#fff5f5' : pct >= 70 ? '#fffbeb' : ''}}>
+                                <td className="fw-semibold">{c.full_name}</td>
+                                <td className="text-muted small">{c.doc_type} {c.doc_number}</td>
+                                <td className="small">{c.phone || '—'}</td>
+                                <td className="text-end">{fmt(c.credit_limit || 0)}</td>
+                                <td className="text-end fw-bold text-danger">{fmt(c.credit_balance)}</td>
+                                <td className="text-end">
+                                  <span className={`badge ${pct >= 90 ? 'bg-danger' : pct >= 70 ? 'bg-warning text-dark' : 'bg-success'}`}>
+                                    {pct}%
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })
+                      }
+                    </tbody>
+                    {conCredito.length > 0 && (
+                      <tfoot className="table-light">
+                        <tr>
+                          <td colSpan="4" className="text-end fw-bold">Total cartera:</td>
+                          <td className="text-end fw-bold text-danger">{fmt(totalPend)}</td>
+                          <td/>
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         </div>
       </main>

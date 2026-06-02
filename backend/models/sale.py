@@ -30,6 +30,7 @@ class Sale(db.Model):
             'line_name':      self.line.name  if self.line else None,
             'line_color':     self.line.color if self.line else None,
             'items':          [i.to_dict() for i in self.items],
+            'payments':       [p.to_dict() for p in self.payments] if self.payments else [],
             'created_at':     str(self.created_at),
         }
 

@@ -58,7 +58,8 @@ import TechSuppliers         from './pages/TechAdmin/TechSuppliers';
 import TechUsers             from './pages/TechAdmin/TechUsers';
 import TechConfig            from './pages/TechAdmin/TechConfig';
 
-import DomiciliosAdmin from './pages/Admin/DomiciliosAdmin';
+import DomiciliosAdmin     from './pages/Admin/DomiciliosAdmin';
+import DevolucionesAdmin   from './pages/Admin/DevolucionesAdmin';
 import MiPlan          from './pages/Admin/MiPlan';
 import './App.css';
 
@@ -108,20 +109,20 @@ function App() {
             <Route path="/admin/productos"         element={<PrivateRoute roles={['admin','admin_tecnico','bodeguero']}><ManageProducts /></PrivateRoute>} />
             <Route path="/admin/inventario"        element={<PrivateRoute roles={['admin','admin_tecnico','bodeguero']}><Inventory /></PrivateRoute>} />
             <Route path="/admin/proveedores"       element={<PrivateRoute roles={['admin','admin_tecnico','bodeguero']}><ManageSuppliers /></PrivateRoute>} />
-            <Route path="/admin/usuarios"          element={<PrivateRoute roles={['admin','admin_tecnico']}><ManageUsers /></PrivateRoute>} />
+            <Route path="/admin/usuarios"          element={<PrivateRoute roles={['admin','admin_tecnico','auditor']}><ManageUsers /></PrivateRoute>} />
             <Route path="/admin/clientes"          element={<PrivateRoute roles={['admin','admin_tecnico']}><ManageCustomers /></PrivateRoute>} />
             <Route path="/admin/alertas"           element={<PrivateRoute roles={['admin','admin_tecnico']}><Alerts /></PrivateRoute>} />
             <Route path="/admin/reportes"          element={<PrivateRoute roles={['admin','admin_tecnico']}><Reports /></PrivateRoute>} />
             <Route path="/admin/auditoria"         element={<PrivateRoute roles={['admin','admin_tecnico']}><AuditLogs /></PrivateRoute>} />
             <Route path="/admin/pin"               element={<PrivateRoute roles={['admin','admin_tecnico']}><AdminPinSetup /></PrivateRoute>} />
-            <Route path="/admin/cartera"           element={<PrivateRoute roles={['admin','admin_tecnico']}><Cartera /></PrivateRoute>} />
+            <Route path="/admin/cartera"           element={<PrivateRoute roles={['admin','admin_tecnico','contador']}><Cartera /></PrivateRoute>} />
             <Route path="/admin/presentaciones"    element={<PrivateRoute roles={['admin','admin_tecnico']}><ManagePresentations /></PrivateRoute>} />
             <Route path="/admin/lineas"            element={<PrivateRoute roles={['admin','admin_tecnico']}><LinesOverview /></PrivateRoute>} />
             <Route path="/admin/lineas/:categoria" element={<PrivateRoute roles={['admin','admin_tecnico']}><LineDashboard /></PrivateRoute>} />
             <Route path="/admin/turno"             element={<PrivateRoute roles={['admin','admin_tecnico']}><ShiftManager /></PrivateRoute>} />
             <Route path="/admin/promociones"       element={<PrivateRoute roles={['admin','admin_tecnico']}><Promotions /></PrivateRoute>} />
             <Route path="/admin/catalogo"          element={<PrivateRoute roles={['admin','admin_tecnico']}><Catalogo /></PrivateRoute>} />
-            <Route path="/admin/etiquetas"         element={<PrivateRoute roles={['admin','admin_tecnico']}><Etiquetas /></PrivateRoute>} />
+            <Route path="/admin/etiquetas"         element={<PrivateRoute roles={['admin','admin_tecnico','cajero']}><Etiquetas /></PrivateRoute>} />
             <Route path="/admin/reporte-clientes"  element={<PrivateRoute roles={['admin','admin_tecnico']}><CustomerReport /></PrivateRoute>} />
             <Route path="/admin/analisis-ventas"   element={<PrivateRoute roles={['admin','admin_tecnico']}><SalesAnalysis /></PrivateRoute>} />
             <Route path="/admin/finanzas"          element={<PrivateRoute roles={['admin','admin_tecnico']}><AdvancedFinance /></PrivateRoute>} />
@@ -142,6 +143,7 @@ function App() {
             <Route path="/cajero/ventas"       element={<PrivateRoute roles={['cajero']}><Sales /></PrivateRoute>} />
             <Route path="/cajero/historial"    element={<PrivateRoute roles={['cajero']}><SalesHistory /></PrivateRoute>} />
             <Route path="/cajero/devoluciones" element={<PrivateRoute roles={['cajero']}><Returns /></PrivateRoute>} />
+            <Route path="/admin/devoluciones"  element={<PrivateRoute roles={['admin','admin_tecnico','supervisor','contador','auditor']}><DevolucionesAdmin /></PrivateRoute>} />
             <Route path="/cajero/turno"        element={<PrivateRoute roles={['cajero']}><CashierShift /></PrivateRoute>} />
             <Route path="/cajero"              element={<Navigate to="/cajero/ventas" />} />
 

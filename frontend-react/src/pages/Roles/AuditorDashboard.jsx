@@ -3,7 +3,8 @@ import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
 import { apiFetch } from '../../services/api';
 import { useLocation } from 'react-router-dom';
-import { exportViewPDF } from '../../services/exportService';
+import { exportAuditorPDF, exportAuditorExcel } from '../../services/exportService';
+import PeriodFilter from '../../components/PeriodFilter';
 
 const AuditorDashboard = () => {
   const { token, user } = useAuth();
@@ -13,6 +14,8 @@ const AuditorDashboard = () => {
   const [movimientos, setMovimientos] = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [busq,        setBusq]        = useState('');
+  const [dateFrom,   setDateFrom]    = useState('');
+  const [dateTo,     setDateTo]      = useState('');
 
   const tab = location.pathname.includes('logs')       ? 'logs'
             : location.pathname.includes('ventas')     ? 'ventas'
@@ -36,6 +39,13 @@ const AuditorDashboard = () => {
   }, [token]);
 
   const ventasHoy = ventas.filter(v => v.created_at?.slice(0,10) === hoy);
+  const logsFiltrados = auditoria.filter(l => {
+    if (!dateFrom) return true;
+    const d = l.fecha_hora?.slice(0,10);
+    if (dateFrom && d < dateFrom) return false;
+    if (dateTo   && d > dateTo)   return false;
+    return true;
+  });
   const totalHoy  = ventasHoy.reduce((a,v) => a + Number(v.total||0), 0);
   const logsHoy   = auditoria.filter(a => a.fecha_hora?.slice(0,10) === hoy);
 
@@ -67,12 +77,16 @@ const AuditorDashboard = () => {
             </div>
             <span className="badge bg-secondary">🔒 Solo lectura</span>
           </div>
-          <button className="btn btn-danger btn-sm fw-semibold"
-            onClick={() => exportViewPDF('auditor-content', 'reporte-auditor')}>
-            📄 Descargar PDF
-          </button>
+
         </div>
 
+        <PeriodFilter
+          dateFrom={dateFrom} setDateFrom={setDateFrom}
+          dateTo={dateTo}     setDateTo={setDateTo}
+          count={logsFiltrados.length} countLabel="registros"
+          onPDF={()   => exportAuditorPDF(logsFiltrados, dateFrom, dateTo)}
+          onExcel={()  => exportAuditorExcel(logsFiltrados, dateFrom, dateTo)}
+        />
         <div id="auditor-content">
 
         {tab === 'dashboard' && (<>

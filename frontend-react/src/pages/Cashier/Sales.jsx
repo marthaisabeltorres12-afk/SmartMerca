@@ -9,7 +9,7 @@ import { saleService } from '../../services/saleService';
 import { customerService } from '../../services/customerService';
 import { presentationService } from '../../services/presentationService';
 import { apiFetch } from '../../services/api';
-import AuthModal from '../../components/AuthModal';
+import AuthModal      from '../../components/AuthModal';
 import useOfflineMode from '../../hooks/useOfflineMode';
 import OfflineIndicator from '../../components/OfflineIndicator';
 import BasculaWidget from '../../components/BasculaWidget';
@@ -79,25 +79,25 @@ const Invoice = ({ sale, cashierName, onClose, mode = 'sin_dian' }) => {
   const handlePrint = () => {
     const content = printRef.current.innerHTML;
     const css = `
-      @page { size: 72mm auto; margin: 0 !important; }
+      @page { size: 80mm auto; margin: 0 !important; }
       * { box-sizing: border-box; margin: 0; padding: 0; page-break-inside: avoid !important; break-inside: avoid !important; }
-      html, body { width: 72mm !important; margin: 0 !important; padding: 0 !important; height: auto !important; }
-      body { font-family: 'Courier New', Courier, monospace; font-size: 10px; color: #000; background: #fff; padding: 6px 6mm 6px 6mm; }
+      html, body { width: 80mm !important; margin: 0 !important; padding: 0 !important; height: auto !important; }
+      body { font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #000; background: #fff; padding: 6px 6mm 6px 6mm; }
       .c { text-align: center; }
       .r { text-align: right; }
       .b { font-weight: bold; }
       .sep { border: none; border-top: 1px dashed #000; margin: 3px 0; display: block; }
       .sep2 { border: none; border-top: 1px solid #000; margin: 1px 0; display: block; }
-      table { width: 100%; border-collapse: collapse; font-size: 10px; }
+      table { width: 100%; border-collapse: collapse; font-size: 11px; }
       td, th { padding: 0 1px; line-height: 1.5; vertical-align: top; }
       .info-table td:first-child { white-space: nowrap; min-width: 55px; }
       .info-table td:last-child { text-align: right; }
       .prod-table th { font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 1px; }
       .prod-table td { border-bottom: 1px dashed #ccc; }
-      .prod-table th:first-child, .prod-table td:first-child { text-align: left; width: 38%; }
-      .prod-table th:nth-child(2), .prod-table td:nth-child(2) { text-align: center; width: 18%; }
-      .prod-table th:nth-child(3), .prod-table td:nth-child(3) { text-align: right; width: 22%; }
-      .prod-table th:last-child, .prod-table td:last-child { text-align: right; width: 22%; }
+      .prod-table th:first-child, .prod-table td:first-child { text-align: left; width: 30%; }
+      .prod-table th:nth-child(2), .prod-table td:nth-child(2) { text-align: center; width: 15%; }
+      .prod-table th:nth-child(3), .prod-table td:nth-child(3) { text-align: right; width: 25%; }
+      .prod-table th:last-child, .prod-table td:last-child { text-align: right; width: 30%; }
       .tot-table td:first-child { font-weight: bold; font-size: 12px; }
       .tot-table td:last-child { text-align: right; font-weight: bold; font-size: 12px; }
       .iva-row td { font-size: 9px; }
@@ -107,7 +107,7 @@ const Invoice = ({ sale, cashierName, onClose, mode = 'sin_dian' }) => {
     `;
     // Usar iframe oculto para evitar márgenes de Chrome
     const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:72mm;height:0;border:none;';
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:80mm;height:0;border:none;';
     document.body.appendChild(iframe);
     const doc = iframe.contentDocument || iframe.contentWindow.document;
     doc.open();
@@ -132,8 +132,27 @@ const Invoice = ({ sale, cashierName, onClose, mode = 'sin_dian' }) => {
             </h6>
             <button className="btn-close btn-close-white btn-sm" onClick={onClose} />
           </div>
-          <div className="modal-body p-2" style={{ background:'#fafafa' }}>
-            <div ref={printRef} style={{ fontFamily:'"Courier New",Courier,monospace', fontSize:11, color:'#000', background:'#fff', padding:'2px 3px', width:'72mm', margin:'0' }}>
+         <div
+  className="modal-body p-0"
+  style={{
+    background:'#fafafa',
+    display:'flex',
+    justifyContent:'center'
+  }}
+>
+            <div
+  ref={printRef}
+  style={{
+    fontFamily:'"Courier New",Courier,monospace',
+    fontSize:11,
+    color:'#000',
+    background:'#fff',
+    padding:'6px 8px',
+    width:'100%',
+    maxWidth:'80mm',
+    margin:'0 auto'
+  }}
+>
 
               {/* ENCABEZADO */}
               <div className="c" style={{ textAlign:'center' }}>
@@ -690,7 +709,15 @@ const SalePanel = ({
         { metodo: 'efectivo',       monto: ef2,   cambio: cambioEfectivo, referencia: null },
         { metodo: tab.mixtoSegundo, monto: m2,    cambio: 0,              referencia: tab.mixtoRef || null },
       ] : [
-        { metodo: tab.paymentMethod, monto: total, cambio: cambioEfectivo, referencia: null },
+        {
+          metodo:     tab.paymentMethod,
+          // Si es efectivo guardamos lo que el cliente entrego, no el total
+          monto:      tab.paymentMethod === 'efectivo'
+                        ? parseFloat(tab.cashReceived || total)
+                        : total,
+          cambio:     cambioEfectivo,
+          referencia: null,
+        },
       ];
 
  
@@ -862,6 +889,10 @@ setDianModal(true);
           break;
         case 'F10': // Cierre de turno — manejado en Sales principal
           e.preventDefault();
+          break;
+        case 'F11': // Etiquetas de productos
+          e.preventDefault();
+          window.location.href = '/admin/etiquetas';
           break;
         case 'F12': // Cobrar
           e.preventDefault();
@@ -1272,6 +1303,7 @@ setDianModal(true);
                       ['F8',    'Devoluciones'],
                       ['F9',    'Abrir cajón de dinero'],
                       ['F10',   'Ir a cierre de turno'],
+                      ['F11',   '🏷️ Etiquetas de productos'],
                       ['F12',   'Cobrar'],
                       ['Enter', 'Agregar producto escaneado'],
                       ['ESC',   'Cerrar modal / cancelar búsqueda'],
@@ -1947,9 +1979,7 @@ const Sales = () => {
   const [pedidosCatalogo, setPedidosCatalogo] = useState([]);
   const [showPedidos,       setShowPedidos]       = useState(false);
   const [modalDomiciliario, setModalDomiciliario] = useState(null);
-  const [formDom,           setFormDom]           = useState({nombre:'',celular:''});
-  const [modalCodigoS,      setModalCodigoS]      = useState(null);
-  const [codigoS,           setCodigoS]           = useState('');
+  const [formDom,           setFormDom]           = useState({nombre:'',celular:'',marca_moto:'',placa:''});
 
   // Consultar pedidos del catálogo asignados a este cajero cada 30s
   useEffect(() => {
@@ -1985,37 +2015,83 @@ const Sales = () => {
   }, [token]);
 
   const asignarDomiciliarioS = async () => {
-    if (!formDom.nombre.trim() || !formDom.celular.trim()) return;
+    if (!formDom.nombre.trim() || !formDom.celular.trim()) {
+      showAlert('danger', 'Nombre y celular del domiciliario son obligatorios');
+      return;
+    }
     const codigo = Math.floor(1000 + Math.random() * 9000).toString();
     try {
       await apiFetch(`/domicilios/${modalDomiciliario.id}/estado`, {
         method:'PUT',
         body: JSON.stringify({
-          estado:'asignado',
+          estado:               'en_camino',
           domiciliario_nombre:  formDom.nombre,
           domiciliario_celular: formDom.celular,
-          codigo_confirmacion:  codigo,
+          domiciliario_moto:    formDom.marca_moto,
+          domiciliario_placa:   formDom.placa,
         })
       }, token);
-      showAlert('success', `✅ Domiciliario asignado · Código de entrega: ${codigo} · Dígaselo al domiciliario para dárselo al cliente`);
+      // Imprimir comprobante de envio
+      imprimirComprobanteEnvio(modalDomiciliario, formDom);
+      showAlert('success', `✅ Enviado · Código de entrega: ${codigo}`);
       setModalDomiciliario(null);
-      setFormDom({nombre:'',celular:''});
-      apiFetch(`/domicilios?cajero_id=${user.id}&estado=asignado`, {}, token)
-        .then(data => setPedidosCatalogo(Array.isArray(data) ? data.filter(d => d.numero_pedido?.startsWith('CAT-')) : []));
+      setFormDom({nombre:'',celular:'',marca_moto:'',placa:''});
+      apiFetch(`/domicilios?cajero_id=${user.id}&estado=en_camino`, {}, token)
+        .then(data => setPedidosCatalogo(Array.isArray(data) ? data.filter(d =>
+          d.numero_pedido?.startsWith('CAT-') || d.numero_pedido?.startsWith('DOM-')) : []));
     } catch { showAlert('danger', 'Error asignando domiciliario'); }
   };
 
-  const confirmarEntregaS = async () => {
-    if (!codigoS.trim()) return;
-    try {
-      await apiFetch(`/domicilios/${modalCodigoS.id}/confirmar-entrega`, {
-        method:'POST', body: JSON.stringify({ codigo: codigoS })
-      }, token);
-      setModalCodigoS(null); setCodigoS('');
-      apiFetch(`/domicilios?cajero_id=${user.id}&estado=asignado`, {}, token)
-        .then(data => setPedidosCatalogo(Array.isArray(data) ? data.filter(d => d.numero_pedido?.startsWith('CAT-')) : []));
-    } catch { showAlert('danger', 'Código incorrecto. Verifique con el cliente.'); }
+  // Imprimir comprobante de envío
+  const imprimirComprobanteEnvio = (pedido, domiciliario) => {
+    const fmt = n => '$' + Number(n||0).toLocaleString('es-CO');
+    const css = `
+      @page { size: 72mm auto; margin: 0; }
+      body { font-family: 'Courier New', monospace; font-size: 11px; padding: 6px 8px; width: 72mm; color: #000; }
+      .c { text-align: center; } .b { font-weight: bold; }
+      .sep { border-top: 1px dashed #000; margin: 4px 0; }
+      table { width: 100%; font-size: 10px; border-collapse: collapse; }
+      td { padding: 1px 2px; vertical-align: top; }
+      td:last-child { text-align: right; }
+    `;
+    const html = `
+      <div class="c b" style="font-size:14px">COMPROBANTE DE ENVÍO</div>
+      <div class="c">LA ESQUINA DE DULCE</div>
+      <div class="sep"></div>
+      <table>
+        <tr><td>Pedido:</td><td><b>${pedido.numero_pedido}</b></td></tr>
+        <tr><td>Cliente:</td><td>${pedido.cliente_nombre}</td></tr>
+        <tr><td>Dirección:</td><td>${pedido.cliente_direccion}</td></tr>
+        <tr><td>Teléfono:</td><td>${pedido.cliente_telefono}</td></tr>
+      </table>
+      <div class="sep"></div>
+      <div class="b" style="font-size:10px">DOMICILIARIO</div>
+      <table>
+        <tr><td>Nombre:</td><td>${domiciliario.nombre}</td></tr>
+        <tr><td>Celular:</td><td>${domiciliario.celular}</td></tr>
+        ${domiciliario.marca_moto ? `<tr><td>Moto:</td><td>${domiciliario.marca_moto}</td></tr>` : ''}
+        ${domiciliario.placa ? `<tr><td>Placa:</td><td>${domiciliario.placa}</td></tr>` : ''}
+      </table>
+      <div class="sep"></div>
+      <div class="b" style="font-size:10px">PRODUCTOS</div>
+      <table>
+        ${(pedido.items||[]).map(i => `<tr><td>${i.product_name} x${i.quantity}</td><td>${fmt(i.subtotal)}</td></tr>`).join('')}
+        <tr><td><b>TOTAL:</b></td><td><b>${fmt(pedido.total)}</b></td></tr>
+      </table>
+      <div class="sep"></div>
+      <div class="sep"></div>
+      <div class="c" style="font-size:11px;font-weight:bold">📲 ENVIAR FOTO DE COMPROBANTE AL:</div>
+      <div class="c" style="font-size:14px;font-weight:900">WhatsApp: 3203308547</div>
+      <div class="c" style="font-size:9px">(Foto del comprobante firmado por el cliente)</div>
+      <div class="sep"></div>
+      <div class="c" style="font-size:9px">Fecha: ${new Date().toLocaleString('es-CO')}</div>
+    `;
+    const w = window.open('','_blank','width=400,height=600');
+    w.document.write(`<html><head><style>${css}</style></head><body>${html}<script>window.onload=function(){window.print();window.close();}<\/script></body></html>`);
+    w.document.close();
   };
+
+
 
     const showAlert = useCallback((type, msg, retryable = false) => {
     setAlert({ type, msg, retryable });
@@ -2147,6 +2223,7 @@ const Sales = () => {
     { key:'F8',  label:'Devoluciones' },
     { key:'F9',  label:'Cajón' },
     { key:'F10', label:'Cierre', highlight: true },
+    { key:'F11', label:'🏷️ Etiquetas' },
     { key:'F12', label:'Cobrar', highlight: true },
     { key:'ESC', label:'Cancelar' },
   ];
@@ -2163,7 +2240,7 @@ const Sales = () => {
       }}>
         {/* Izquierda: título + fecha */}
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          <img src="/creatsoft-logo.png" alt="Creatsoft"
+          <img src="/creatsoft-logo.png.jpeg" alt="Creatsoft"
             style={{ width:48, height:48, objectFit:'contain', borderRadius:10 }}/>
           <div>
             <div style={{ display:'flex', alignItems:'baseline', gap:6 }}>
@@ -2415,25 +2492,42 @@ const Sales = () => {
                 <button className="btn-close btn-close-white" onClick={()=>setShowPedidos(false)}/>
               </div>
               <div className="modal-body p-3">
-                {pedidosCatalogo.map(p => (
-                  <div key={p.id} className="card mb-3 border-warning border-2">
-                    <div className="card-body p-3">
-                      <div className="d-flex justify-content-between align-items-start mb-2">
-                        <div>
-                          <div className="fw-bold">{p.numero_pedido}</div>
-                          <div className="small text-muted">{new Date(p.created_at).toLocaleString('es-CO')}</div>
-                        </div>
-                        <span className="badge bg-warning text-dark">⏳ Pendiente</span>
+                {pedidosCatalogo.map(p => {
+                  const tel = (p.cliente_telefono||'').replace(/\D/g,'');
+                  const waLink = `https://wa.me/${tel.startsWith('57') ? tel : '57'+tel}`;
+                  const estadoColor = {
+                    pendiente:'warning', asignado:'info', en_camino:'primary', entregado:'success', cancelado:'secondary'
+                  }[p.estado] || 'secondary';
+                  const estadoLabel = {
+                    pendiente:'⏳ Pendiente', asignado:'📋 Asignado', en_camino:'🛵 En camino',
+                    entregado:'✅ Entregado', cancelado:'❌ Cancelado'
+                  }[p.estado] || p.estado;
+                  return (
+                  <div key={p.id} className={`card mb-3 border-${estadoColor} border-2`}>
+                    <div className="card-header py-2 d-flex justify-content-between align-items-center"
+                      style={{background:`var(--bs-${estadoColor}-bg-subtle,#fff)`}}>
+                      <div>
+                        <span className="fw-bold">{p.numero_pedido}</span>
+                        <span className="text-muted small ms-2">{new Date(p.created_at).toLocaleString('es-CO')}</span>
                       </div>
-                      <div className="mb-2 p-2 rounded" style={{background:'#f8fafc'}}>
+                      <span className={`badge bg-${estadoColor} text-${estadoColor==='warning'?'dark':'white'}`}>
+                        {estadoLabel}
+                      </span>
+                    </div>
+                    <div className="card-body p-3">
+
+                      {/* Info cliente */}
+                      <div className="p-2 rounded mb-2" style={{background:'#f8fafc'}}>
                         <div className="fw-semibold">👤 {p.cliente_nombre}</div>
                         <div className="small">📱 {p.cliente_telefono}</div>
                         <div className="small">📍 {p.cliente_direccion}</div>
                         {p.notas && <div className="small text-muted">📝 {p.notas}</div>}
                       </div>
-                      <div className="mb-2">
+
+                      {/* Productos */}
+                      <div className="mb-2" style={{fontSize:12}}>
                         {p.items?.map((item,i) => (
-                          <div key={i} className="d-flex justify-content-between small">
+                          <div key={i} className="d-flex justify-content-between">
                             <span>{item.quantity} × {item.product_name}</span>
                             <span className="fw-semibold">${Number(item.subtotal).toLocaleString('es-CO')}</span>
                           </div>
@@ -2443,45 +2537,80 @@ const Sales = () => {
                           <span className="text-success">${Number(p.total).toLocaleString('es-CO')}</span>
                         </div>
                       </div>
-                      <div className="small text-muted mb-2">💳 Pago: {p.metodo_pago === 'por_definir' ? 'Por definir con cliente' : p.metodo_pago}</div>
-                      <div className="d-flex gap-2 flex-wrap">
-                        <a href={`https://wa.me/${(() => {
-                            const t = (p.cliente_telefono||'').replace(/\D/g,'');
-                            return t.startsWith('57') ? t : '57' + t;
-                          })()}`}
-                          target="_blank" rel="noreferrer" className="btn btn-success btn-sm">
+
+                      {/* Info domiciliario si ya fue asignado */}
+                      {p.domiciliario_nombre && (
+                        <div className="p-2 rounded mb-2" style={{background:'#eff6ff',fontSize:12}}>
+                          <div className="fw-semibold text-primary">🛵 Domiciliario asignado:</div>
+                          <div>{p.domiciliario_nombre} · {p.domiciliario_celular}</div>
+                          {p.domiciliario && p.domiciliario.vehiculo && <div>Moto: {p.domiciliario.vehiculo}</div>}
+                          {p.domiciliario && p.domiciliario.placa && <div>Placa: {p.domiciliario.placa}</div>}
+                          <div className="mt-1 small text-muted">
+                            📲 El domiciliario debe enviar foto del comprobante al WhatsApp de la tienda
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Botones de acción */}
+                      <div className="d-flex gap-2 flex-wrap mt-2">
+                        {/* Contactar cliente siempre disponible */}
+                        <a href={waLink} target="_blank" rel="noreferrer"
+                          className="btn btn-success btn-sm fw-semibold">
                           💬 Contactar cliente
                         </a>
-                        {!p.domiciliario_nombre && (
+
+                        {/* Asignar domiciliario — solo si no tiene */}
+                        {p.estado !== 'entregado' && p.estado !== 'cancelado' && !p.domiciliario_nombre && (
                           <button className="btn btn-warning btn-sm fw-semibold"
-                            onClick={() => { setModalDomiciliario(p); setFormDom({nombre:'',celular:''}); }}>
+                            onClick={() => { setModalDomiciliario(p); setFormDom({nombre:'',celular:'',marca_moto:'',placa:''}); }}>
                             🛵 Asignar domiciliario
                           </button>
                         )}
-                        {p.domiciliario_nombre && (
-                          <div className="small text-primary me-2">
-                            🛵 <strong>{p.domiciliario_nombre}</strong> · {p.domiciliario_celular}
-                            {p.codigo_confirmacion && (
-                              <span className="badge bg-warning text-dark ms-1">Código: {p.codigo_confirmacion}</span>
-                            )}
-                          </div>
-                        )}
-                        {p.domiciliario_nombre && p.estado !== 'en_camino' && (
-                          <button className="btn btn-primary btn-sm"
-                            onClick={()=>{ apiFetch(`/domicilios/${p.id}/estado`,{method:'PUT',body:JSON.stringify({estado:'en_camino'})},token).then(()=>{ apiFetch('/domicilios/?estado=pendiente&mine=true',{},token).then(data=>setPedidosCatalogo(Array.isArray(data)?data.filter(d=>d.numero_pedido?.startsWith('CAT-')):[])); }); }}>
-                            🛵 En camino
+
+                        {/* Confirmar entrega — directo, sin código */}
+                        {p.estado === 'en_camino' && (
+                          <button className="btn btn-success btn-sm fw-bold"
+                            onClick={() => {
+                              if (!window.confirm(`¿Confirmar que el pedido ${p.numero_pedido} fue entregado al cliente?`)) return;
+                              apiFetch(`/domicilios/${p.id}/estado`,
+                                { method:'PUT', body: JSON.stringify({ estado:'entregado' }) }, token)
+                              .then(() => {
+                                showAlert('success', `✅ Pedido ${p.numero_pedido} marcado como entregado`);
+                                apiFetch(`/domicilios?cajero_id=${user.id}`, {}, token)
+                                  .then(data => setPedidosCatalogo(
+                                    Array.isArray(data) ? data.filter(d =>
+                                      ['CAT-','DOM-'].some(prefix => d.numero_pedido?.startsWith(prefix)) &&
+                                      d.estado !== 'entregado' && d.estado !== 'cancelado'
+                                    ) : []
+                                  ));
+                              })
+                              .catch(() => showAlert('danger','Error al confirmar entrega'));
+                            }}>
+                            ✅ Confirmar entrega
                           </button>
                         )}
-                        {p.domiciliario_nombre && (
-                          <button className="btn btn-success btn-sm fw-bold"
-                            onClick={() => { setModalCodigoS(p); setCodigoS(''); }}>
-                            ✅ Confirmar entrega
+
+                        {/* Cancelar pedido */}
+                        {p.estado !== 'entregado' && p.estado !== 'cancelado' && (
+                          <button className="btn btn-outline-danger btn-sm"
+                            onClick={() => {
+                              if (!window.confirm('¿Cancelar este pedido?')) return;
+                              apiFetch(`/domicilios/${p.id}/estado`,
+                                {method:'PUT', body:JSON.stringify({estado:'cancelado'})}, token)
+                              .then(() => {
+                                apiFetch(`/domicilios?cajero_id=${user.id}&estado=en_camino`, {}, token)
+                                  .then(data => setPedidosCatalogo(Array.isArray(data)
+                                    ? data.filter(d => ['CAT-','DOM-'].some(p => d.numero_pedido?.startsWith(p))) : []));
+                              });
+                            }}>
+                            ❌ Cancelar
                           </button>
                         )}
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -2609,50 +2738,48 @@ const Sales = () => {
               <div style={{fontSize:12,color:'rgba(255,255,255,0.75)'}}>Pedido {modalDomiciliario.numero_pedido}</div>
             </div>
             <div style={{padding:20}}>
-              <div className="mb-3">
-                <label className="form-label fw-semibold">Nombre *</label>
-                <input className="form-control" placeholder="Ej: Juan Pérez" autoFocus
-                  value={formDom.nombre} onChange={e=>setFormDom(f=>({...f,nombre:e.target.value}))}/>
+              <div className="row g-2 mb-2">
+                <div className="col-12">
+                  <label className="form-label fw-semibold small mb-1">Nombre del domiciliario *</label>
+                  <input className="form-control" placeholder="Ej: Juan Pérez" autoFocus
+                    value={formDom.nombre} onChange={e=>setFormDom(f=>({...f,nombre:e.target.value}))}/>
+                </div>
+                <div className="col-12">
+                  <label className="form-label fw-semibold small mb-1">Celular *</label>
+                  <input className="form-control" placeholder="Ej: 3001234567" type="tel"
+                    value={formDom.celular} onChange={e=>setFormDom(f=>({...f,celular:e.target.value}))}/>
+                </div>
+                <div className="col-7">
+                  <label className="form-label fw-semibold small mb-1">Marca de la moto</label>
+                  <input className="form-control" placeholder="Ej: Honda, Yamaha..."
+                    value={formDom.marca_moto} onChange={e=>setFormDom(f=>({...f,marca_moto:e.target.value}))}/>
+                </div>
+                <div className="col-5">
+                  <label className="form-label fw-semibold small mb-1">Placa</label>
+                  <input className="form-control" placeholder="Ej: ABC123"
+                    value={formDom.placa}
+                    onChange={e=>setFormDom(f=>({...f,placa:e.target.value.toUpperCase()}))}/>
+                </div>
               </div>
-              <div className="mb-3">
-                <label className="form-label fw-semibold">Celular *</label>
-                <input className="form-control" placeholder="Ej: 3001234567"
-                  value={formDom.celular} onChange={e=>setFormDom(f=>({...f,celular:e.target.value}))}/>
+              <div className="alert alert-info py-2 small mb-0">
+                🖨️ Se imprimirá el comprobante de envío con el código de entrega automáticamente.
               </div>
-              <div className="alert alert-info py-2 small mb-0">📱 Se generará código de 4 dígitos para confirmar la entrega.</div>
             </div>
             <div style={{padding:'0 20px 20px',display:'flex',gap:10}}>
-              <button className="btn btn-outline-secondary flex-fill" onClick={()=>setModalDomiciliario(null)}>Cancelar</button>
-              <button className="btn btn-warning fw-bold flex-fill" onClick={asignarDomiciliarioS}>🛵 Asignar</button>
+              <button className="btn btn-outline-secondary flex-fill"
+                onClick={()=>{ setModalDomiciliario(null); setFormDom({nombre:'',celular:'',marca_moto:'',placa:''}); }}>
+                Cancelar
+              </button>
+              <button className="btn btn-warning fw-bold flex-fill" onClick={asignarDomiciliarioS}>
+                🛵 Enviar pedido
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal Confirmar Entrega */}
-      {modalCodigoS && (
-        <div className="modal d-block" style={{background:'rgba(0,0,0,0.6)',zIndex:9995,position:'fixed',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <div style={{background:'#fff',borderRadius:14,overflow:'hidden',maxWidth:380,width:'90%',boxShadow:'0 20px 60px rgba(0,0,0,0.4)'}}>
-            <div style={{background:'#16a34a',padding:'14px 20px'}}>
-              <h5 style={{margin:0,fontWeight:700,color:'#fff'}}>✅ Confirmar Entrega</h5>
-              <div style={{fontSize:12,color:'rgba(255,255,255,0.8)'}}>Pedido {modalCodigoS.numero_pedido}</div>
-            </div>
-            <div style={{padding:20,textAlign:'center'}}>
-              <p style={{color:'#475569',fontSize:14,marginBottom:16}}>Código de 4 dígitos que el cliente dio al domiciliario</p>
-              <input className="form-control form-control-lg text-center fw-bold"
-                style={{fontSize:32,letterSpacing:8,maxWidth:180,margin:'0 auto'}}
-                maxLength={4} placeholder="0000" value={codigoS} autoFocus
-                onChange={e=>setCodigoS(e.target.value.replace(/[^0-9]/g,''))}
-                onKeyDown={e=>e.key==='Enter'&&confirmarEntregaS()}/>
-            </div>
-            <div style={{padding:'0 20px 20px',display:'flex',gap:10}}>
-              <button className="btn btn-outline-secondary flex-fill" onClick={()=>setModalCodigoS(null)}>Cancelar</button>
-              <button className="btn btn-success fw-bold flex-fill" onClick={confirmarEntregaS}>✅ Confirmar</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+
+      </div>
   );
 };
 

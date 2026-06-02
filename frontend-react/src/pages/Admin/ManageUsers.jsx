@@ -25,6 +25,7 @@ const EMPTY = { name:'', email:'', password:'', role:'cajero', phone:'', address
 const ManageUsers = () => {
   const { token, user: me } = useAuth();
   const esAdminTecnico = me?.role === 'admin_tecnico' || me?.role === 'admin_tech';
+  const soloLectura     = me?.role === 'auditor'; // Auditor: solo puede ver, no editar
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -169,7 +170,8 @@ const ManageUsers = () => {
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft:240, background:'#f8fafc', minHeight:'100vh' }}>
         
-        <h4 className="fw-bold mb-1">👥 Gestión de Usuarios</h4>
+        <h4 className="fw-bold mb-1">👥 {soloLectura ? "Usuarios — Solo lectura" : "Gestión de Usuarios"}</h4>
+        {soloLectura && <div className="alert alert-info py-2 mb-3 small">🔒 Estás en modo lectura. El auditor puede ver usuarios pero no crear ni modificarlos.</div>}
         <p className="text-muted mb-4">Administra usuarios del sistema</p>
 
         {alert && (
@@ -213,9 +215,11 @@ const ManageUsers = () => {
             value={search}
             onChange={e=>setSearch(e.target.value)}
           />
-          <button className="btn btn-success ms-auto" onClick={openAdd}>
-            + Nuevo Usuario
-          </button>
+          {!soloLectura && (
+            <button className="btn btn-success ms-auto" onClick={openAdd}>
+              + Nuevo Usuario
+            </button>
+          )}
         </div>
 
         {/* Tabla */}
@@ -233,7 +237,7 @@ const ManageUsers = () => {
                   <th>Rol</th>
                   <th>Estado</th>
                   <th>Creado</th>
-                  <th>Acciones</th>
+                  {!soloLectura && <th>Acciones</th>}
                 </tr>
               </thead>
               <tbody>
@@ -264,6 +268,7 @@ const ManageUsers = () => {
                     <td className="text-muted small">
                       {u.created_at?.slice(0,10)}
                     </td>
+                    {!soloLectura && (
                     <td>
                       <div className="d-flex gap-1 flex-wrap">
                         <button
@@ -272,23 +277,19 @@ const ManageUsers = () => {
                         >
                           {u.is_active ? '❌' : '✅'}
                         </button>
-
                         <button
                           className="btn btn-primary btn-sm"
                           onClick={() => openEdit(u)}
                         > ✏️
-                          
                         </button>
-
                         <button
                           className="btn btn-danger btn-sm"
                           onClick={() => setConfirmDelete(u)}
-                        > 
-      🗑️
-                         
+                        > 🗑️
                         </button>
                       </div>
                     </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

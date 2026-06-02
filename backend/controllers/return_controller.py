@@ -21,12 +21,17 @@ def get_sale_for_return(sale_id):
 
 @jwt_required()
 def create_return():
-    user_id = int(get_jwt_identity())
-    data    = request.get_json()
-    sale_id = data.get('sale_id')
-    items   = data.get('items', [])
-    reason  = data.get('reason', '').strip()
-    mode    = data.get('mode') 
+    user_id          = int(get_jwt_identity())
+    data             = request.get_json()
+    sale_id          = data.get('sale_id')
+    items            = data.get('items', [])
+    reason           = data.get('reason', '').strip()
+    mode             = data.get('mode')
+    exchange_product    = data.get('exchange_product', '').strip()  # Nombre producto a cambio
+    exchange_product_id = data.get('exchange_product_id')           # ID producto a cambio
+    exchange_qty        = float(data.get('exchange_qty', 1))        # Cantidad del producto a cambio
+    exchange_price      = float(data.get('exchange_price', 0))      # Precio del producto a cambio
+    authorized_by       = data.get('authorized_by', '')             # Nombre del admin que autorizo con PIN
 
     if not sale_id or not items:
         return jsonify({'message': 'Venta e items son requeridos'}), 400
@@ -53,6 +58,26 @@ def create_return():
                     return jsonify({'message': f'La venta supera los {policy.return_max_days} días permitidos para devolución'}), 400
     # ─────────────────────────────────────────────────────────────────────────
 
+    # ── Validar si se necesita PIN ───────────────────────────────────────────
+    if policy:
+        pin_monto    = policy.return_pin_monto    or 30000
+        pin_multiple = policy.return_pin_multiple
+        total_items  = len(items)
+        total_monto  = sum(float(i.get('price', 0)) * float(i.get('quantity', 1)) for i in items)
+
+        requiere_pin = False
+        if mode in ('dinero', 'ambos') and total_monto > pin_monto:
+            requiere_pin = True
+        if pin_multiple and total_items > 1:
+            requiere_pin = True
+
+        if requiere_pin and not authorized_by:
+            return jsonify({
+                'message': 'Esta devolucion requiere autorizacion del administrador (PIN)',
+                'requiere_pin': True
+            }), 403
+    # ─────────────────────────────────────────────────────────────────────────
+
     sale = Sale.query.get_or_404(sale_id)
 
     # 🚫 Validar que ningún producto haya sido devuelto antes en esa venta
@@ -73,13 +98,26 @@ def create_return():
                 'message': f'El producto "{product_name}" ya fue devuelto en esta venta y no puede devolverse nuevamente.'
             }), 400
     total = 0
+    # Calcular diferencia de precio si es cambio de producto
+    diferencia = 0
+    if mode == 'cambio' and exchange_product_id:
+        total_devuelto  = sum(float(i.get('price',0)) * float(i.get('quantity',1)) for i in items)
+        total_entregado = exchange_price * exchange_qty
+        diferencia      = total_entregado - total_devuelto  # + cliente paga, - negocio devuelve
+
     return_order = ReturnOrder(
-        sale_id     = sale_id,
-        cashier_id  = user_id,
-        customer_id = sale.customer_id,
-        reason      = reason,
-        mode        = mode,
-        total       = 0
+        sale_id             = sale_id,
+        cashier_id          = user_id,
+        customer_id         = sale.customer_id,
+        reason              = reason,
+        mode                = mode,
+        exchange_product    = exchange_product if mode == 'cambio' else None,
+        exchange_product_id = exchange_product_id if mode == 'cambio' else None,
+        exchange_qty        = exchange_qty if mode == 'cambio' else 1,
+        exchange_price      = exchange_price if mode == 'cambio' else None,
+        diferencia          = diferencia,
+        authorized_by       = authorized_by or None,
+        total               = 0
     )
     db.session.add(return_order)
     db.session.flush()
@@ -92,7 +130,7 @@ def create_return():
         price = float(item['price'])
         total += price * qty
 
-        # Restaurar stock
+        # Restaurar stock del producto devuelto
         product.stock += qty
 
         # Eliminar o reducir la salida de venta correspondiente
@@ -118,6 +156,21 @@ def create_return():
         ))
 
     return_order.total = total
+
+    # Descontar stock del producto entregado a cambio
+    if mode == 'cambio' and exchange_product_id:
+        prod_cambio = Product.query.get(exchange_product_id)
+        if prod_cambio:
+            if prod_cambio.stock < exchange_qty:
+                db.session.rollback()
+                return jsonify({'message': f'Stock insuficiente de "{prod_cambio.name}" para el cambio'}), 400
+            prod_cambio.stock -= exchange_qty
+            db.session.add(InventoryMovement(
+                product_id = prod_cambio.id,
+                type       = 'salida',
+                quantity   = exchange_qty,
+                reason     = f'Cambio de producto — devolucion #{return_order.id}',
+            ))
 
     if sale.customer_id:
         customer = Customer.query.get(sale.customer_id)

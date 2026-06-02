@@ -61,6 +61,7 @@ const adminLinks = [
       { path: "/admin/etiquetas",  icon: "bi-tag",             label: "Etiquetas" },
       { path: "/admin/pin",        icon: "bi-shield-lock",     label: "Mi PIN" },
       { path: "/admin/politicas",  icon: "bi-clipboard-check", label: "Políticas" },
+      { path: "/admin/devoluciones", icon: "bi-arrow-return-left", label: "Devoluciones" },
     ]
   },
 
@@ -84,6 +85,7 @@ const cajeroLinks = [
   { path: "/cajero/historial",    icon: "bi-receipt",           label: "Historial Tickets" },
   { separator: true, label: "OPERACIONES" },
   { path: "/cajero/devoluciones", icon: "bi-arrow-return-left", label: "Devoluciones" },
+  { path: "/admin/etiquetas",       icon: "bi-tag",              label: "Etiquetas (F11)" },
   { path: "/cajero/turno",        icon: "bi-toggle-on",         label: "Mi Turno / Cierre" },
 ];
 
@@ -126,26 +128,31 @@ const supervisorLinks = [
   { path: "/supervisor/turnos",    icon: "bi-toggle-on",      label: "Turnos y Cierres" },
   { separator: true, label: "CLIENTES" },
   { path: "/supervisor/clientes",  icon: "bi-people",         label: "Clientes" },
+  { separator: true, label: "OPERACIONES" },
+  { path: "/admin/devoluciones",   icon: "bi-arrow-return-left", label: "Devoluciones" },
 ];
 
 const contadorLinks = [
-  { path: "/contador",             icon: "bi-speedometer2",    label: "Dashboard" },
+  { path: "/contador",             icon: "bi-speedometer2",      label: "Dashboard" },
   { separator: true, label: "FINANZAS" },
-  { path: "/contador/finanzas",    icon: "bi-cash-stack",      label: "Finanzas" },
-  { path: "/contador/ventas",      icon: "bi-receipt",         label: "Ventas" },
-  { path: "/contador/cuentas",     icon: "bi-credit-card",     label: "Cuentas por pagar" },
-  
+  { path: "/contador/finanzas",    icon: "bi-cash-stack",        label: "Finanzas" },
+  { path: "/contador/ventas",      icon: "bi-receipt",           label: "Ventas" },
+  { path: "/contador/cuentas",     icon: "bi-credit-card",       label: "Cuentas por pagar" },
+  { path: "/admin/cartera",        icon: "bi-wallet2",           label: "Cartera — Créditos" },
+  { path: "/admin/devoluciones",   icon: "bi-arrow-return-left", label: "Devoluciones" },
   { separator: true, label: "AUDITORÍA" },
-  { path: "/contador/auditoria",   icon: "bi-shield-check",    label: "Auditoría" },
+  { path: "/contador/auditoria",   icon: "bi-shield-check",      label: "Auditoría" },
 ];
 
 const auditorLinks = [
-  { path: "/auditor",              icon: "bi-speedometer2",   label: "Dashboard" },
+  { path: "/auditor",              icon: "bi-speedometer2",      label: "Dashboard" },
   { separator: true, label: "AUDITORÍA" },
-  { path: "/auditor/logs",         icon: "bi-shield-check",   label: "Logs del sistema" },
+  { path: "/auditor/logs",         icon: "bi-shield-check",      label: "Logs del sistema" },
+  { path: "/admin/devoluciones",   icon: "bi-arrow-return-left", label: "Devoluciones" },
+  { path: "/admin/usuarios",       icon: "bi-person-badge",      label: "Usuarios (lectura)" },
   { separator: true, label: "REPORTES" },
-  { path: "/auditor/ventas",       icon: "bi-receipt",        label: "Ventas (lectura)" },
-  { path: "/auditor/inventario", icon: "bi-archive", label: "Inventario" },
+  { path: "/auditor/ventas",       icon: "bi-receipt",           label: "Ventas (lectura)" },
+  { path: "/auditor/inventario",   icon: "bi-archive",           label: "Inventario" },
 ];
 
 const Navbar = () => {

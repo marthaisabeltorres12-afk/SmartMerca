@@ -143,6 +143,37 @@ const BusinessPolicy = () => {
               </div>
             </div>
 
+                  {/* PIN en devoluciones */}
+                  <hr className="my-3"/>
+                  <div className="fw-semibold mb-3">🔐 Autorización PIN en Devoluciones</div>
+
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">Monto límite para pedir PIN (devolución en dinero)</label>
+                    <div className="input-group" style={{ maxWidth:220 }}>
+                      <span className="input-group-text">$</span>
+                      <input type="number" className="form-control" min={0} step={1000}
+                        value={form.return_pin_monto ?? 30000}
+                        onChange={e => set('return_pin_monto', parseInt(e.target.value) || 0)} />
+                    </div>
+                    <div className="form-text">Si la devolución en dinero supera este monto se pide PIN. Poner 0 para no pedir PIN por monto.</div>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">Pedir PIN cuando se devuelven varios productos</label>
+                    <div className="d-flex gap-2">
+                      {[{val:true,lb:'✅ Sí, pedir PIN'},{val:false,lb:'❌ No requerir'}].map(opt => (
+                        <div key={String(opt.val)} className="flex-fill text-center p-2 rounded"
+                          style={{ border:`2px solid ${(form.return_pin_multiple??true)===opt.val?'#3b82f6':'#e2e8f0'}`, background:(form.return_pin_multiple??true)===opt.val?'#eff6ff':'#fff', cursor:'pointer', borderRadius:10 }}
+                          onClick={() => set('return_pin_multiple', opt.val)}>
+                          <input type="radio" name="return_pin_multiple" className="me-1"
+                            checked={(form.return_pin_multiple??true)===opt.val} onChange={()=>set('return_pin_multiple', opt.val)}/>
+                          <span className="small fw-semibold">{opt.lb}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="form-text">Si devuelven 2+ productos de una factura, se pide PIN sin importar el monto.</div>
+                  </div>
+
             {/* ── Alertas de inventario + Info negocio ── */}
             <div className="col-lg-6 d-flex flex-column gap-4">
 
