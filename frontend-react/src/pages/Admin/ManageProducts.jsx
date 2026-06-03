@@ -148,38 +148,19 @@ const ManageProducts = () => {
         <h4 className="fw-bold mb-4"><i className="bi bi-box-fill me-2"></i> Gestión de Productos</h4>
         {alert && <div className={`alert alert-${alert.type} alert-dismissible`}>{alert.msg}</div>}
         <div className="d-flex gap-2 mb-3 flex-wrap">
-<<<<<<< HEAD
           <input className="form-control" style={{ maxWidth: 300 }}
             placeholder=" Buscar por nombre, categoría o código..."
             value={search} onChange={e => setSearch(e.target.value)} />
          <select className="form-select" style={{ maxWidth: 200 }}
-=======
-<div style={{ maxWidth: 300 }} className="position-relative">
-    <i className="bi bi-search position-absolute"style={{ left: 12,top: '50%',transform: 'translateY(-50%)',color: '#6c757d'}}></i>
-
-    <input className="form-control ps-5"placeholder="Buscar por nombre, categoría o código..."value={search}onChange={e => setSearch(e.target.value)}/>
-  </div>
-
-  <select className="form-select" style={{ maxWidth: 200 }}
->>>>>>> 13096dafd9057de732686711665b6038a6efbbd7
   value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
   <option value="">Todas las categorías</option>
   {categorias.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
 </select>
-<<<<<<< HEAD
           {catFilter && (
             <button className="btn btn-outline-secondary" onClick={() => setCatFilter('')}>✕ Limpiar filtro</button>
           )}
          
         </div>
-=======
-
-  {catFilter && (
-    <button className="btn btn-outline-secondary" onClick={() => setCatFilter('')}><i className="bi bi-x-circle me-1"></i>Limpiar filtro</button>
-  )}
-
-</div>
->>>>>>> 13096dafd9057de732686711665b6038a6efbbd7
 
         <p className="text-muted small mb-2">
           Mostrando <strong>{filtered.length}</strong> de <strong>{products.length}</strong> productos
