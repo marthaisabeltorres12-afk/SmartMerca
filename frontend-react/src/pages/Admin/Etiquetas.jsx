@@ -124,12 +124,12 @@ const Etiquetas = () => {
       <main className="flex-grow-1 p-4" style={{marginLeft:240, background:'#f8fafc', minHeight:'100vh'}}>
         <div className="mb-4 d-flex justify-content-between align-items-center">
           <div>
-            <h4 className="fw-bold mb-0">🏷️ Etiquetas de código de barras</h4>
+            <h4 className="fw-bold mb-0"><i className="bi bi-upc-scan me-2"></i> Etiquetas de código de barras</h4>
             <small className="text-muted">Genera etiquetas para carnes y productos sin código</small>
           </div>
           <button className="btn btn-primary fw-bold px-4" onClick={handlePrint}
             disabled={seleccionados.length === 0}>
-            🖨️ Imprimir {todasEtiquetas.length > 0 ? `(${todasEtiquetas.length})` : ''}
+            <i className="bi bi-printer me-1"></i> Imprimir {todasEtiquetas.length > 0 ? `(${todasEtiquetas.length})` : ''}
           </button>
         </div>
 
@@ -139,7 +139,7 @@ const Etiquetas = () => {
 
             {/* Configuración */}
             <div className="card border-0 shadow-sm mb-3">
-              <div className="card-header fw-semibold">⚙️ Configuración</div>
+              <div className="card-header fw-semibold"><i className="bi bi-gear me-2"></i> Configuración</div>
               <div className="card-body">
                 <label className="form-label fw-semibold small">Tamaño de etiqueta</label>
                 <div className="row g-2 mb-3">
@@ -176,7 +176,7 @@ const Etiquetas = () => {
 
             {/* Buscar producto */}
             <div className="card border-0 shadow-sm mb-3">
-              <div className="card-header fw-semibold">🔍 Seleccionar productos</div>
+              <div className="card-header fw-semibold"><i className="bi bi-search me-2"></i> Seleccionar productos</div>
               <div className="card-body pb-0">
                 <input className="form-control form-control-sm mb-2"
                   placeholder="Buscar por nombre o código..."
@@ -195,7 +195,7 @@ const Etiquetas = () => {
                           <td className="text-success fw-bold">{fmt(p.price)}</td>
                           <td>
                             {ya
-                              ? <span className="badge bg-success">✓</span>
+                              ? <span className="badge bg-success"><i className="bi bi-check"></i></span>
                               : <span className="badge bg-outline-secondary" style={{border:'1px solid #ccc', color:'#666'}}>+</span>}
                           </td>
                         </tr>
@@ -213,7 +213,7 @@ const Etiquetas = () => {
             {seleccionados.length > 0 && (
               <div className="card border-0 shadow-sm">
                 <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
-                  <span>📋 Seleccionados ({seleccionados.length})</span>
+                  <span><i className="bi bi-list-check me-1"></i> Seleccionados ({seleccionados.length})</span>
                   <button className="btn btn-sm btn-outline-danger" onClick={() => setSeleccionados([])}>
                     Limpiar todo
                   </button>
@@ -235,7 +235,7 @@ const Etiquetas = () => {
                           </td>
                           <td>
                             <button className="btn btn-sm btn-outline-danger py-0"
-                              onClick={() => remover(producto.id)}>✕</button>
+                              onClick={() => remover(producto.id)}><i className="bi bi-x"></i></button>
                           </td>
                         </tr>
                       ))}
@@ -253,13 +253,13 @@ const Etiquetas = () => {
           <div className="col-md-7">
             <div className="card border-0 shadow-sm h-100">
               <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
-                <span>👁️ Vista previa</span>
+                <span><i className="bi bi-eye me-2"></i> Vista previa</span>
                 <span className="badge bg-secondary">{tam.label}</span>
               </div>
               <div className="card-body" style={{overflowY:'auto', maxHeight:600}}>
                 {todasEtiquetas.length === 0 ? (
                   <div className="text-center text-muted py-5">
-                    <div style={{fontSize:48}}>🏷️</div>
+                    <div style={{fontSize:48}}><i className="bi bi-tag me-2"></i></div>
                     <p className="mt-2">Selecciona productos de la lista</p>
                   </div>
                 ) : (

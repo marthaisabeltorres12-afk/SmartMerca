@@ -22,9 +22,9 @@ const TYPE_LABEL = {
 };
 
 const TYPE_ICON = {
-  descuento_pct:  '🏷️',
-  descuento_fijo: '💵',
-  lleva_gratis:   '🎁',
+  descuento_pct:  <i className="bi bi-percent"></i>,
+  descuento_fijo: <i className="bi bi-cash"></i>,
+  lleva_gratis:   <i className="bi bi-gift"></i>,
 };
 
 const fmt = n => new Intl.NumberFormat('es-CO', {
@@ -274,7 +274,7 @@ const Promotions = () => {
 
         <div className="d-flex align-items-center justify-content-between mb-4">
           <div>
-            <h4 className="fw-bold mb-0">🎁 Promociones y Precios</h4>
+            <h4 className="fw-bold mb-0"><i className="bi bi-gift me-2"></i>Promociones</h4>
             <small className="text-muted">Promociones, listas de precios y cupones</small>
           </div>
           {mainTab === 'promociones' && <button className="btn btn-primary" onClick={openAdd}><i className="bi bi-plus-lg me-1"></i> Nueva promoción</button>}
@@ -286,7 +286,11 @@ const Promotions = () => {
 
         {/* Tabs principales */}
         <ul className="nav nav-tabs mb-4">
-          {[['promociones','🎁 Promociones'],['listas','🏷️ Listas de Precios'],['cupones','🎟️ Cupones']].map(([k,l])=>(
+          {[
+  { k:'promociones', l: <><i className="bi bi-gift me-1"></i>Promociones</> },
+  { k:'listas',      l: <><i className="bi bi-tags me-1"></i>Listas de Precios</> },
+  { k:'cupones',     l: <><i className="bi bi-ticket-perforated me-1"></i>Cupones</> },
+].map(({k,l}) => (
             <li key={k} className="nav-item">
               <button className={`nav-link ${mainTab===k?'active':''}`} onClick={()=>setMainTab(k)}>{l}</button>
             </li>
@@ -320,10 +324,10 @@ const Promotions = () => {
 
         <div className="btn-group btn-group-sm mb-3">
           <button className={`btn ${tab==='activas'?'btn-dark':'btn-outline-secondary'}`} onClick={()=>setTab('activas')}>
-            ✅ Activas hoy ({activas.length})
+            <i className="bi bi-check-circle me-1"></i> Activas hoy ({activas.length})
           </button>
           <button className={`btn ${tab==='todas'?'btn-dark':'btn-outline-secondary'}`} onClick={()=>setTab('todas')}>
-            📋 Todas ({promos.length})
+            <i className="bi bi-list-ul me-1"></i> Todas ({promos.length})
           </button>
         </div>
 
@@ -411,7 +415,8 @@ const Promotions = () => {
             <div style={{ position:'fixed', top:'50%', left:'50%', transform:'translate(-50%,-50%)', background:'#fff', borderRadius:16, padding:28, zIndex:1050, width:530, maxHeight:'90vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.2)' }}>
 
               <div className="d-flex justify-content-between align-items-center mb-4">
-                <h5 className="fw-bold mb-0">{editing ? '✏️ Editar promoción' : '🎁 Nueva promoción'}</h5>
+                <h5 className="fw-bold mb-0">{editing  ? <><i className="bi bi-pencil me-2"></i>Editar promoción</>
+  : <><i className="bi bi-gift me-2"></i>Nueva promoción</>}</h5>
                 <button className="btn-close" onClick={()=>setShowModal(false)}></button>
               </div>
 
@@ -480,7 +485,7 @@ const Promotions = () => {
                       placeholder={form.type==='descuento_pct' ? '15' : '5000'} />
                     {selectedProduct && form.discount_value > 0 && (
                       <div className="mt-2 px-3 py-2 rounded" style={{ background:'#fef9c3', fontSize:12 }}>
-                        💰 Precio original: <strong>{fmt(selectedProduct.price)}</strong>
+                        <i className="bi bi-cash-stack me-1"></i> Precio original: <strong>{fmt(selectedProduct.price)}</strong>
                         {' → '}
                         Precio con descuento:{' '}
                         <strong className="text-success">
@@ -509,7 +514,7 @@ const Promotions = () => {
                     {form.buy_quantity > 0 && form.free_quantity > 0 && selectedProduct && (
                       <div className="col-12">
                         <div className="px-3 py-2 rounded" style={{ background:'#f0f9ff', fontSize:12, border:'1px solid #bae6fd' }}>
-                          🎁 Por cada <strong>{form.buy_quantity}</strong> {selectedProduct.display_name || selectedProduct.name} que compre el cliente,
+                          <i className="bi bi-gift me-1"></i> Por cada <strong>{form.buy_quantity}</strong> {selectedProduct.display_name || selectedProduct.name} que compre el cliente,
                           lleva <strong>{form.free_quantity}</strong> gratis
                           {selectedFreeProduct && selectedFreeProduct.id !== selectedProduct.id
                             ? <> de <strong>{selectedFreeProduct.display_name || selectedFreeProduct.name}</strong></>
@@ -621,7 +626,7 @@ const Promotions = () => {
             </div>
             <div className="col-md-8">
               {!selList ? (
-                <div className="text-center text-muted py-5"><div className="fs-2">👈</div><div>Selecciona una lista</div></div>
+                <div className="text-center text-muted py-5"><div className="fs-2"><i className="bi bi-arrow-left" style={{fontSize:40}}></i></div><div>Selecciona una lista</div></div>
               ) : (
                 <>
                   <div className="card border-0 shadow-sm mb-3">
@@ -678,7 +683,7 @@ const Promotions = () => {
                                 <td>{i.product_name}</td>
                                 <td className="text-end fw-bold text-success">${Number(i.precio_especial).toLocaleString('es-CO')}</td>
                                 <td className="text-end">
-                                  <button className="btn btn-sm btn-outline-danger py-0 px-1" onClick={()=>setConfirmDeleteItem(i)}>🗑</button>
+                                  <button className="btn btn-sm btn-outline-danger py-0 px-1" onClick={()=>setConfirmDeleteItem(i)}><i className="bi bi-trash"></i></button>
                                 </td>
                               </tr>
                             ))}
@@ -747,7 +752,7 @@ const Promotions = () => {
                             : <span className="badge bg-danger">Vencido</span>}
                         </td>
                         <td>
-                          {!c.usado && <button className="btn btn-sm btn-outline-danger py-0 px-1" onClick={()=>setConfirmDelCupon(c)}>🗑</button>}
+                          {!c.usado && <button className="btn btn-sm btn-outline-danger py-0 px-1" onClick={()=>setConfirmDelCupon(c)}><i className="bi bi-trash"></i></button>}
                         </td>
                       </tr>
                     ))}
@@ -764,7 +769,9 @@ const Promotions = () => {
             <div className="modal-dialog">
               <div className="modal-content">
                 <div className="modal-header" style={{background:'#1e3a5f',color:'#fff'}}>
-                  <h5 className="modal-title fw-bold">{editingList?'✏️ Editar':'🏷️ Nueva'} lista de precios</h5>
+                  <h5 className="modal-title fw-bold">
+  {editingList ? <><i className="bi bi-pencil me-2"></i>Editar</> : <><i className="bi bi-tags me-2"></i>Nueva</>} lista de precios
+</h5>
                   <button className="btn-close btn-close-white" onClick={()=>setShowListModal(false)} />
                 </div>
                 <form onSubmit={handleSaveList}>
@@ -793,7 +800,7 @@ const Promotions = () => {
                   </div>
                   <div className="modal-footer">
                     <button type="button" className="btn btn-secondary" onClick={()=>setShowListModal(false)}>Cancelar</button>
-                    <button type="submit" className="btn btn-primary fw-bold">✅ Guardar</button>
+                    <button type="submit" className="btn btn-primary fw-bold"><i className="bi bi-check-circle me-1"></i> Guardar</button>
                   </div>
                 </form>
               </div>
@@ -807,7 +814,7 @@ const Promotions = () => {
             <div className="modal-dialog">
               <div className="modal-content">
                 <div className="modal-header" style={{background:'#1e3a5f',color:'#fff'}}>
-                  <h5 className="modal-title fw-bold">🎟️ Nuevo cupón</h5>
+                  <h5 className="modal-title fw-bold"><i className="bi bi-ticket-perforated me-2"></i> Nuevo cupón</h5>
                   <button className="btn-close btn-close-white" onClick={()=>setShowCuponModal(false)} />
                 </div>
                 <form onSubmit={handleSaveCupon}>
@@ -858,7 +865,7 @@ const Promotions = () => {
                   </div>
                   <div className="modal-footer">
                     <button type="button" className="btn btn-secondary" onClick={()=>setShowCuponModal(false)}>Cancelar</button>
-                    <button type="submit" className="btn btn-primary fw-bold">✅ Crear cupón</button>
+                    <button type="submit" className="btn btn-primary fw-bold"><i className="bi bi-check-circle me-1"></i> Crear cupón</button>
                   </div>
                 </form>
               </div>

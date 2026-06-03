@@ -80,7 +80,7 @@ const CustomerReport = () => {
 
         {/* Título */}
         <div className="mb-4">
-          <h4 className="fw-bold mb-0">👥 Reporte de Clientes</h4>
+         <h4 className="fw-bold mb-0"><i className="bi bi-people-fill me-2"></i>Reporte de Clientes</h4>
           <small className="text-muted">Ranking por compras, puntos acumulados y frecuencia de visita</small>
         </div>
 
@@ -109,17 +109,21 @@ const CustomerReport = () => {
         </div>
 
         {/* Filtros y ordenamiento */}
-        <div className="card border-0 shadow-sm mb-3">
+      
           <div className="card-body d-flex flex-wrap gap-3 align-items-center py-2">
             <div style={{ flex: 1, minWidth: 200 }}>
-              <input className="form-control form-control-sm" placeholder="🔍 Buscar por nombre, documento o NID..."
+              <div className="input-group input-group-sm" style={{ minWidth: 200, flex: 1 }}>
+  <span className="input-group-text bg-white border-end-0">
+    <i className="bi bi-search text-muted"></i>
+  </span>
+  <input className="form-control border-start-0 ps-0" placeholder="Buscar por nombre, documento o NID..."
                 value={search} onChange={e => setSearch(e.target.value)} />
             </div>
-            <div className="d-flex gap-2">
+            <div className="d-flex gap-2 mt-4" style={{ flexWrap: 'wrap' }}>
               {[
-                { k: 'total',  lb: '💰 Mayor compra' },
-                { k: 'visits', lb: '🛒 Más visitas'  },
-                { k: 'points', lb: '⭐ Más puntos'   },
+                { k: 'total',  lb: <><i className="bi bi-cash-stack me-1 mt-5"></i>Mayor compra</> },
+                { k: 'visits', lb: <><i className="bi bi-cart-check me-1 mt-5"></i>Más visitas</>  },
+                { k: 'points', lb: <><i className="bi bi-star me-1 mt-5 "></i>Más puntos</>         },
               ].map(s => (
                 <button key={s.k}
                   className={`btn btn-sm ${sortBy === s.k ? 'btn-primary' : 'btn-outline-secondary'}`}
@@ -139,7 +143,7 @@ const CustomerReport = () => {
               <table className="table table-hover mb-0 align-middle">
                 <thead style={{ background: '#f1f5f9' }}>
                   <tr>
-                    {['#', 'Cliente', 'Documento', 'Visitas', 'Últ. 90 días', 'Total compras', 'Puntos ⭐', 'Última visita', 'Frecuencia'].map(h => (
+                    {['#', 'Cliente', 'Documento', 'Visitas', 'Últ. 90 días', 'Total compras', 'Puntos ', 'Última visita', 'Frecuencia'].map(h => (
                       <th key={h} style={{ padding: '11px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
@@ -151,13 +155,18 @@ const CustomerReport = () => {
                   {enriched.map((c, i) => {
                     // Etiqueta de frecuencia según compras en 90 días
                     let freq, freqColor, freqBg;
-                    if      (c.recent90 >= 8) { freq = '🔥 Frecuente';  freqColor = '#065f46'; freqBg = '#d1fae5'; }
-                    else if (c.recent90 >= 3) { freq = '✅ Regular';    freqColor = '#1e40af'; freqBg = '#dbeafe'; }
-                    else if (c.recent90 >= 1) { freq = '⚡ Ocasional';  freqColor = '#92400e'; freqBg = '#fef3c7'; }
-                    else if (c.visits   >  0) { freq = '😴 Inactivo';   freqColor = '#991b1b'; freqBg = '#fee2e2'; }
-                    else                      { freq = 'Sin compras';   freqColor = '#64748b'; freqBg = '#f1f5f9'; }
+                  if      (c.recent90 >= 8) { freq = <><i className="bi bi-lightning-charge-fill me-1"></i>Frecuente</>; freqColor = '#065f46'; freqBg = '#d1fae5'; }
+                  else if (c.recent90 >= 3) { freq = <><i className="bi bi-check-circle-fill me-1"></i>Regular</>;      freqColor = '#1e40af'; freqBg = '#dbeafe'; }
+                  else if (c.recent90 >= 1) { freq = <><i className="bi bi-activity me-1"></i>Ocasional</>;             freqColor = '#92400e'; freqBg = '#fef3c7'; }
+                  else if (c.visits   >  0) { freq = <><i className="bi bi-moon-fill me-1"></i>Inactivo</>;             freqColor = '#991b1b'; freqBg = '#fee2e2'; }
+                  else                      { freq = <><i className="bi bi-dash-circle me-1"></i>Sin compras</>;        freqColor = '#64748b'; freqBg = '#f1f5f9'; }
 
-                    const medal = ['🥇','🥈','🥉'][i];
+                   const medalIcons = [
+  <i className="bi bi-trophy-fill" style={{ color: '#f59e0b', fontSize: 16 }}></i>,
+  <i className="bi bi-trophy-fill" style={{ color: '#94a3b8', fontSize: 16 }}></i>,
+  <i className="bi bi-trophy-fill" style={{ color: '#b45309', fontSize: 16 }}></i>,
+];
+const medal = medalIcons[i];
 
                     return (
                       <tr key={c.id}>
@@ -185,7 +194,7 @@ const CustomerReport = () => {
                         </td>
                         <td style={{ padding: '11px 14px' }}>
                           <span style={{ background: '#fef9c3', color: '#854d0e', fontWeight: 600, fontSize: 12, padding: '2px 8px', borderRadius: 99 }}>
-                            ⭐ {c.points}
+                           <i className="bi bi-star-fill me-1" style={{ color: '#f59e0b' }}></i>{c.points}
                           </span>
                         </td>
                         <td style={{ padding: '11px 14px', fontSize: 12, color: '#64748b' }}>

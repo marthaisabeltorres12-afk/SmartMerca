@@ -8,9 +8,9 @@ const fmt = (n) => Number(n||0).toLocaleString('es-CO', { style:'currency', curr
 const fmtDate = (s) => s ? new Date(s + 'T12:00:00').toLocaleDateString('es-CO') : '—';
 
 const ESTADO_BADGE = {
-  pagada:    { cls: 'bg-success',           label: '✅ Pagada'    },
-  parcial:   { cls: 'bg-warning text-dark', label: '⚠️ Parcial'  },
-  pendiente: { cls: 'bg-danger',            label: '🔴 Pendiente' },
+  pagada:    { cls: 'bg-success',           label: <><i className="bi bi-check-circle-fill me-1"></i>Pagada</>    },
+  parcial:   { cls: 'bg-warning text-dark', label: <><i className="bi bi-exclamation-circle-fill me-1"></i>Parcial</>  },
+  pendiente: { cls: 'bg-danger',            label: <><i className="bi bi-x-circle-fill me-1"></i>Pendiente</> },
 };
 
 // ── Comprobante imprimible ────────────────────────────────────────────────
@@ -33,7 +33,7 @@ const Comprobante = ({ data, onClose }) => {
       <div className="modal-dialog">
         <div className="modal-content">
           <div className="modal-header">
-            <h6 className="modal-title fw-bold">🧾 Comprobante de pago</h6>
+            <h6 className="modal-title fw-bold"><i className="bi bi-receipt me-2"></i>Comprobante de pago</h6>
             <button className="btn-close" onClick={onClose} />
           </div>
           <div className="modal-body" style={{ background:'#fafafa' }}>
@@ -70,7 +70,7 @@ const Comprobante = ({ data, onClose }) => {
                 return f ? (
                   <div style={{ display:'flex', justifyContent:'space-between', color: f.pendiente === 0 ? 'green' : '#888' }}>
                     <span>Saldo factura #{f.sale_id}:</span>
-                    <span>{fmt(f.pendiente)} {f.estado === 'pagada' ? '✅' : ''}</span>
+                    <span>{fmt(f.pendiente)} {f.estado === 'pagada' ? <i className="bi bi-check-circle-fill me-1" style={{ color: 'green' }}></i> : ''}</span>
                   </div>
                 ) : null;
               })()}
@@ -78,7 +78,7 @@ const Comprobante = ({ data, onClose }) => {
           </div>
           <div className="modal-footer">
             <button className="btn btn-secondary" onClick={onClose}>Cerrar</button>
-            <button className="btn btn-dark fw-bold" onClick={print}>🖨️ Imprimir</button>
+            <button className="btn btn-dark fw-bold" onClick={print}><i className="bi bi-printer-fill me-1"></i>Imprimir</button>
           </div>
         </div>
       </div>
@@ -212,7 +212,8 @@ const Cartera = () => {
     <div className="d-flex">
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft:240 }}>
-        <h4 className="fw-bold mb-1">💰 Cartera de Clientes</h4>
+        <h4 className="fw-bold mb-1"><i className="bi bi-wallet2 me-2"></i>Cartera de Clientes</h4>
+
         <p className="text-muted mb-4">Gestión de créditos, deudas y abonos</p>
 
         {alert && <div className={`alert alert-${alert.type} alert-dismissible`}>{alert.msg}</div>}
@@ -223,7 +224,7 @@ const Cartera = () => {
             <div className="card border-danger border-2 text-center">
               <div className="card-body">
                 <div className="fs-3 fw-bold text-danger">{fmt(totalDeuda)}</div>
-                <div className="text-muted small">💸 Total en cartera</div>
+                <div className="text-muted small"><i className="bi bi-cash-stack me-1"></i>Total en cartera</div>
               </div>
             </div>
           </div>
@@ -231,7 +232,7 @@ const Cartera = () => {
             <div className="card border-warning border-2 text-center">
               <div className="card-body">
                 <div className="fs-3 fw-bold text-warning">{cartera.length}</div>
-                <div className="text-muted small">👤 Clientes con deuda</div>
+                <div className="text-muted small"><i className="bi bi-person-fill me-1"></i>Clientes con deuda</div>
               </div>
             </div>
           </div>
@@ -239,7 +240,7 @@ const Cartera = () => {
             <div className="card border-success border-2 text-center">
               <div className="card-body">
                 <div className="fs-3 fw-bold text-success">{conCredito.length}</div>
-                <div className="text-muted small">✅ Con crédito habilitado</div>
+                <div className="text-muted small"><i className="bi bi-check-circle me-1"></i>Con crédito habilitado</div>
               </div>
             </div>
           </div>
@@ -247,7 +248,8 @@ const Cartera = () => {
 
         {/* Tabs */}
         <ul className="nav nav-tabs mb-3">
-          {[['cartera','💸 Deudas activas'],['limites','⚙️ Configurar créditos']].map(([k,l]) => (
+          {[['cartera', <><i className="bi bi-cash-stack me-1"></i>Deudas activas</>],
+  ['limites', <><i className="bi bi-gear-fill me-1"></i>Configurar créditos</>]].map(([k,l]) => (
             <li key={k} className="nav-item">
               <button className={`nav-link ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</button>
             </li>
@@ -257,11 +259,14 @@ const Cartera = () => {
         {/* ── DEUDAS ACTIVAS ── */}
         {tab === 'cartera' && (
           <>
-            <div className="mb-3">
-              <input className="form-control" style={{ maxWidth:320 }}
-                placeholder="🔍 Buscar por nombre o documento..."
-                value={search} onChange={e => setSearch(e.target.value)} />
-            </div>
+           <div className="input-group" style={{ maxWidth: 320 }}>
+  <span className="input-group-text bg-white border-end-0">
+    <i className="bi bi-search text-muted"></i>
+  </span>
+  <input className="form-control border-start-0 ps-0"
+    placeholder="Buscar por nombre o documento..."
+    value={search} onChange={e => setSearch(e.target.value)} />
+</div>
             <div className="card border-0 shadow-sm">
               <div className="table-responsive">
                 <table className="table table-hover align-middle mb-0">
@@ -278,8 +283,8 @@ const Cartera = () => {
                   <tbody>
                     {!filtered.length ? (
                       <tr><td colSpan="6" className="text-center text-muted py-5">
-                        <div className="fs-2">✅</div>
-                        <div>Ningún cliente tiene deuda pendiente</div>
+                        <div><i className="bi bi-check-circle-fill text-success" style={{fontSize:40}}></i></div>
+<div>Ningún cliente tiene deuda pendiente</div>
                       </td></tr>
                     ) : filtered.map(c => {
                       const pct = c.credit_limit > 0
@@ -305,18 +310,9 @@ const Cartera = () => {
                           </td>
                           <td>
                             <div className="d-flex gap-1 flex-wrap">
-                              <button className="btn btn-success btn-sm"
-                                onClick={() => { setAbonoModal(c); setAbonoFactura(null); setAbonoMonto(''); setAbonoNota(''); }}>
-                                💵 Abono
-                              </button>
-                              <button className="btn btn-warning btn-sm text-dark"
-                                onClick={() => openFacturas(c)}>
-                                🧾 Facturas
-                              </button>
-                              <button className="btn btn-outline-primary btn-sm"
-                                onClick={() => openHist(c)}>
-                                📋 Historial
-                              </button>
+                             <button className="btn btn-success btn-sm"><i className="bi bi-cash me-1"></i>Abono</button>
+<button className="btn btn-warning btn-sm text-dark"><i className="bi bi-receipt me-1"></i>Facturas</button>
+<button className="btn btn-outline-primary btn-sm"><i className="bi bi-clock-history me-1"></i>Historial</button>
                             </div>
                           </td>
                         </tr>
@@ -363,7 +359,7 @@ const Cartera = () => {
                       <td>
                         <button className="btn btn-sm btn-outline-primary"
                           onClick={() => { setTopeModal(c); setTopeValor(String(c.credit_limit||'')); }}>
-                          ✏️ Configurar
+                         <><i className="bi bi-pencil me-1"></i>Configurar</>
                         </button>
                       </td>
                     </tr>
@@ -380,7 +376,7 @@ const Cartera = () => {
             <div className="modal-dialog modal-lg">
               <div className="modal-content">
                 <div className="modal-header" style={{background:'#1e3a5f', color:'#fff'}}>
-                  <h5 className="modal-title fw-bold">🧾 Facturas — {facturasModal.full_name}</h5>
+                 <h5 className="modal-title fw-bold"><i className="bi bi-receipt me-2"></i>Facturas — {facturasModal.full_name}</h5>
                   <div className="ms-3 badge bg-danger fs-6">{fmt(facturasModal.credit_balance)} pendiente</div>
                   <button className="btn-close btn-close-white ms-auto" onClick={() => setFacturasModal(null)} />
                 </div>
@@ -389,7 +385,8 @@ const Cartera = () => {
                     <div className="text-center py-4"><div className="spinner-border"/></div>
                   ) : !facturas.length ? (
                     <div className="text-center text-muted py-5">
-                      <div className="fs-2">✅</div><div>No hay facturas registradas</div>
+                      <div className="fs-2"><i className="bi bi-check-circle-fill text-success"></i></div>
+                      <div>No hay facturas registradas</div>
                     </div>
                   ) : (
                     <table className="table table-hover align-middle mb-0" style={{fontSize:13}}>
@@ -423,7 +420,7 @@ const Cartera = () => {
                                       setAbonoNota(`Pago factura #${f.sale_id}`);
                                       setFacturasModal(null);
                                     }}>
-                                    💵 Pagar
+                                   <i className="bi bi-cash me-1"></i> Pagar
                                   </button>
                                 )}
                               </td>
@@ -452,7 +449,7 @@ const Cartera = () => {
                       setAbonoNota('Abono general');
                       setFacturasModal(null);
                     }}>
-                    💵 Abono general (FIFO)
+                    <i className="bi bi-cash me-1"></i>  Abono general (FIFO)
                   </button>
                   <button className="btn btn-secondary" onClick={() => setFacturasModal(null)}>Cerrar</button>
                 </div>
@@ -468,8 +465,9 @@ const Cartera = () => {
               <div className="modal-content">
                 <div className="modal-header" style={{background:'#059669', color:'#fff'}}>
                   <h5 className="modal-title fw-bold">
-                    {abonoFactura ? `🧾 Pago factura #${abonoFactura.sale_id}` : '💵 Abono general'}
-                  </h5>
+                    {abonoFactura
+  ? <><i className="bi bi-receipt me-2"></i>Pago factura #{abonoFactura.sale_id}</>
+  : <><i className="bi bi-cash me-2"></i>Abono general</>}</h5>
                   <button className="btn-close btn-close-white" onClick={() => { setAbonoModal(null); setAbonoFactura(null); }} />
                 </div>
                 <form onSubmit={handleAbono}>
@@ -498,7 +496,7 @@ const Cartera = () => {
                     {/* Info FIFO */}
                     {!abonoFactura && (
                       <div className="alert alert-info py-2 mb-3" style={{fontSize:12}}>
-                        💡 El abono se aplicará automáticamente a las facturas más antiguas primero (FIFO).
+                        <i className="bi bi-info-circle me-2"></i> El abono se aplicará automáticamente a las facturas más antiguas primero (FIFO).
                       </div>
                     )}
 
@@ -542,7 +540,7 @@ const Cartera = () => {
                     <button type="button" className="btn btn-secondary"
                       onClick={() => { setAbonoModal(null); setAbonoFactura(null); }}>Cancelar</button>
                     <button type="submit" className="btn btn-success fw-bold" disabled={loading}>
-                      {loading ? 'Guardando...' : `✅ Registrar ${abonoFactura ? 'pago' : 'abono'}`}
+                      {loading ? 'Guardando...' : <><i className="bi bi-check-circle me-1"></i>Registrar {abonoFactura ? 'pago' : 'abono'}</>}
                     </button>
                   </div>
                 </form>
@@ -557,7 +555,7 @@ const Cartera = () => {
             <div className="modal-dialog modal-lg">
               <div className="modal-content">
                 <div className="modal-header">
-                  <h5 className="modal-title fw-bold">📋 Historial — {histModal.full_name}</h5>
+                  <h5 className="modal-title fw-bold"><i className="bi bi-clock-history me-2"></i>Historial — {histModal.full_name}</h5>
                   <button className="btn-close" onClick={() => setHistModal(null)} />
                 </div>
                 <div className="modal-body p-0">
@@ -573,8 +571,8 @@ const Cartera = () => {
                             <td className="text-muted">{tx.created_at?.slice(0,16).replace('T',' ')}</td>
                             <td>
                               {tx.type === 'credito'
-                                ? <span className="badge bg-danger">💸 Crédito</span>
-                                : <span className="badge bg-success">💵 Abono</span>}
+                                ? <span className="badge bg-danger"><i className="bi bi-arrow-up-circle me-1"></i>Crédito</span>
+                                : <span className="badge bg-success"><i className="bi bi-arrow-down-circle me-1"></i>Abono</span>}
                             </td>
                             <td className={`text-end fw-bold ${tx.type==='credito'?'text-danger':'text-success'}`}>
                               {tx.type==='credito'?'+':'-'}{fmt(tx.amount)}
@@ -600,7 +598,7 @@ const Cartera = () => {
             <div className="modal-dialog">
               <div className="modal-content">
                 <div className="modal-header">
-                  <h5 className="modal-title fw-bold">⚙️ Tope de crédito — {topeModal.full_name}</h5>
+                  <h5 className="modal-title fw-bold"><i className="bi bi-gear me-2"></i> Tope de crédito — {topeModal.full_name}</h5>
                   <button className="btn-close" onClick={() => setTopeModal(null)} />
                 </div>
                 <form onSubmit={handleTope}>
@@ -619,14 +617,14 @@ const Cartera = () => {
                     </div>
                     {topeModal.credit_balance > 0 && (
                       <div className="alert alert-warning py-2" style={{fontSize:12}}>
-                        ⚠️ Este cliente tiene deuda activa de {fmt(topeModal.credit_balance)}
+                        <i className="bi bi-exclamation-triangle-fill me-1"></i>Este cliente tiene deuda activa de {fmt(topeModal.credit_balance)}
                       </div>
                     )}
                   </div>
                   <div className="modal-footer">
                     <button type="button" className="btn btn-secondary" onClick={() => setTopeModal(null)}>Cancelar</button>
                     <button type="submit" className="btn btn-primary fw-bold" disabled={loading}>
-                      {loading ? 'Guardando...' : '✅ Guardar tope'}
+                      {loading ? 'Guardando...' : <><i className="bi bi-check-circle me-1"></i>Guardar tope</>}
                     </button>
                   </div>
                 </form>

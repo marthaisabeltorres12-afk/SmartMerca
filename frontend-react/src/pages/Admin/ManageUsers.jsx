@@ -148,14 +148,14 @@ const ManageUsers = () => {
     role === 'auditor'       ? 'badge bg-dark' :
     'badge bg-light text-dark border';
 
-  const roleLabel = (role) =>
-    role === 'admin_tecnico' ? '🛠️ Adm. Técnico' :
-    role === 'admin'         ? '⚙️ Administrador' :
-    role === 'bodeguero'     ? '📦 Bodeguero' :
-    role === 'supervisor'    ? '👁️ Supervisor' :
-    role === 'contador'      ? '📊 Contador' :
-    role === 'auditor'       ? '🔍 Auditor' :
-    '🧾 Cajero';
+ const roleLabel = (role) =>
+  role === 'admin_tecnico' ? <><i className="bi bi-wrench-adjustable me-1"></i>Adm. Técnico</> :
+  role === 'admin'         ? <><i className="bi bi-gear-fill me-1"></i>Administrador</> :
+  role === 'bodeguero'     ? <><i className="bi bi-box-seam me-1"></i>Bodeguero</> :
+  role === 'supervisor'    ? <><i className="bi bi-eye-fill me-1"></i>Supervisor</> :
+  role === 'contador'      ? <><i className="bi bi-bar-chart-fill me-1"></i>Contador</> :
+  role === 'auditor'       ? <><i className="bi bi-search me-1"></i>Auditor</> :
+  <><i className="bi bi-receipt me-1"></i>Cajero</>;
 
   const filtered = users.filter(u => {
     if (!esAdminTecnico && u.role === 'admin_tecnico') return false;
@@ -170,8 +170,12 @@ const ManageUsers = () => {
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft:240, background:'#f8fafc', minHeight:'100vh' }}>
         
-        <h4 className="fw-bold mb-1">👥 {soloLectura ? "Usuarios — Solo lectura" : "Gestión de Usuarios"}</h4>
-        {soloLectura && <div className="alert alert-info py-2 mb-3 small">🔒 Estás en modo lectura. El auditor puede ver usuarios pero no crear ni modificarlos.</div>}
+       <h4 className="fw-bold mb-1">
+  <i className="bi bi-people-fill me-2"></i>
+  {soloLectura ? "Usuarios — Solo lectura" : "Gestión de Usuarios"}
+</h4>
+        {soloLectura && <div className="alert alert-info py-2 mb-3 small"><i className="bi bi-lock-fill me-1"></i>Estás en modo lectura. El auditor puede ver usuarios pero no crear ni modificarlos.</div>}
+
         <p className="text-muted mb-4">Administra usuarios del sistema</p>
 
         {alert && (
@@ -207,17 +211,16 @@ const ManageUsers = () => {
         </div>
 
         {/* Buscador + botón */}
-        <div className="d-flex gap-2 mb-3 align-items-center">
-          <input
-            className="form-control"
-            style={{ maxWidth:280 }}
-            placeholder="🔍 Buscar usuario..."
-            value={search}
-            onChange={e=>setSearch(e.target.value)}
-          />
+        <div className="input-group" style={{ maxWidth: 400 }}>
+  <span className="input-group-text bg-white border-end-0">
+    <i className="bi bi-search text-muted"></i>
+  </span>
+  <input className="form-control border-start-5 ps-0 me-7 ms-auto"
+    placeholder="Buscar usuario..."
+    value={search} onChange={e=>setSearch(e.target.value)} />
           {!soloLectura && (
             <button className="btn btn-success ms-auto" onClick={openAdd}>
-              + Nuevo Usuario
+              <i className="bi bi-plus-circle me-1"></i> Nuevo Usuario
             </button>
           )}
         </div>
@@ -272,21 +275,17 @@ const ManageUsers = () => {
                     <td>
                       <div className="d-flex gap-1 flex-wrap">
                         <button
-                          className={`btn btn-sm ${u.is_active ? 'btn-outline-secondary' : 'btn-outline-success'}`}
-                          onClick={() => handleToggleActive(u)}
-                        >
-                          {u.is_active ? '❌' : '✅'}
-                        </button>
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => openEdit(u)}
-                        > ✏️
-                        </button>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => setConfirmDelete(u)}
-                        > 🗑️
-                        </button>
+  className={`btn btn-sm ${u.is_active ? 'btn-outline-secondary' : 'btn-outline-success'}`}
+  onClick={() => handleToggleActive(u)}
+  title={u.is_active ? 'Desactivar' : 'Activar'}>
+  <i className={`bi ${u.is_active ? 'bi-x-circle' : 'bi-check-circle'}`}></i>
+</button>
+<button className="btn btn-warning btn-sm" onClick={() => openEdit(u)} title="Editar">
+  <i className="bi bi-pencil"></i>
+</button>
+<button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(u)} title="Eliminar">
+  <i className="bi bi-trash"></i>
+</button>
                       </div>
                     </td>
                     )}
@@ -368,15 +367,15 @@ const ManageUsers = () => {
                       <select className="form-select mb-1"
                         value={form.role}
                         onChange={e=>setForm({...form,role:e.target.value})}>
-                        <option value="cajero">🧾 Cajero — Registra ventas y devoluciones</option>
-                        <option value="bodeguero">📦 Bodeguero — Recibe mercancía, traslados y conteo</option>
-                        <option value="supervisor">👁️ Supervisor — Ve reportes y aprueba descuentos</option>
-                        <option value="contador">📊 Contador — Acceso a finanzas, nómina y reportes</option>
-                        <option value="auditor">🔍 Auditor externo — Solo lectura, auditoría y reportes</option>
-                        <option value="admin">⚙️ Administrador de tienda — Gestión completa</option>
-                        {esAdminTecnico && (
-                          <option value="admin_tecnico">🛠️ Administrador técnico — Acceso total al sistema</option>
-                        )}
+                        <option value="cajero">Cajero — Registra ventas y devoluciones</option>
+<option value="bodeguero">Bodeguero — Recibe mercancía, traslados y conteo</option>
+<option value="supervisor">Supervisor — Ve reportes y aprueba descuentos</option>
+<option value="contador">Contador — Acceso a finanzas, nómina y reportes</option>
+<option value="auditor">Auditor externo — Solo lectura, auditoría y reportes</option>
+<option value="admin">Administrador de tienda — Gestión completa</option>
+{esAdminTecnico && (
+  <option value="admin_tecnico">Administrador técnico — Acceso total al sistema</option>
+)}
                       </select>
                       <div className="form-text small text-muted">
                         {form.role === 'bodeguero'   && '📦 Puede recibir pedidos, trasladar stock y hacer conteo físico. No ve finanzas ni ventas.'}

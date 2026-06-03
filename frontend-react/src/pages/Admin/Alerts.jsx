@@ -36,35 +36,35 @@ const Alerts = () => {
 
   const stockLabel = (p) => {
     const threshold = p.min_stock ?? 5;
-    if (p.stock === 0)        return <span className="badge bg-danger">❌ Agotado</span>;
-    if (p.stock <= threshold) return <span className="badge bg-danger">⚠️ Bajo (≤ {threshold})</span>;
-    return                           <span className="badge bg-success">✅ Normal</span>;
+    if (p.stock === 0)        return <span className="badge bg-danger"><i className="bi bi-x-circle"></i> Agotado</span>;
+    if (p.stock <= threshold) return <span className="badge bg-danger"><i className="bi bi-exclamation-triangle"></i> Bajo (≤ {threshold})</span>;
+    return                           <span className="badge bg-success"><i className="bi bi-check-circle"></i> Normal</span>;
   };
 
   const expiryBadge = (exp) => {
-    if (!exp)           return <span className="badge bg-secondary">Sin fecha</span>;
-    if (exp < today)    return <span className="badge bg-danger">❌ Vencido</span>;
-    if (exp <= in7days) return <span className="badge bg-danger">🔴 Vence en días</span>;
-    if (exp <= in30d)   return <span className="badge bg-warning text-dark">🟡 Vence pronto</span>;
-    return                     <span className="badge bg-success">✅ Vigente</span>;
+    if (!exp)           return <span className="badge bg-secondary"><i className="bi bi-clock"></i> Sin fecha</span>;
+    if (exp < today)    return <span className="badge bg-danger"><i className="bi bi-x-circle"></i>  Vencido</span>;
+    if (exp <= in7days) return <span className="badge bg-danger"><i className="bi bi-exclamation-triangle"></i>  Vence en días</span>;
+    if (exp <= in30d)   return <span className="badge bg-warning text-dark"><i className="bi bi-exclamation-triangle"></i>  Vence pronto</span>;
+    return                     <span className="badge bg-success"><i className="bi bi-check-circle"></i>  Vigente</span>;
   };
 
   return (
     <div className="d-flex">
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft: 240 }}>
-        <h4 className="fw-bold mb-4">⚠️ Alertas de Inventario</h4>
+        <h4 className="fw-bold mb-4"><i className="bi bi-exclamation-triangle"></i> Alertas de Inventario</h4>
 
         {/* ══ TARJETAS STOCK ══ */}
         <h6 className="text-muted fw-semibold mb-2 text-uppercase" style={{ fontSize: '0.75rem', letterSpacing: 1 }}>
-          📦 Estado de Stock
+          <i className="bi bi-box"></i> Estado de Stock
         </h6>
         <div className="row g-3 mb-4">
           <div className="col-md-4">
             <div className="card border-danger border-2 text-center">
               <div className="card-body">
                 <div className="fs-2 fw-bold text-danger">{agotados.length}</div>
-                <div className="text-muted">❌ Productos Agotados</div>
+                <div className="text-muted"><i className="bi bi-x-circle"></i> Productos Agotados</div>
               </div>
             </div>
           </div>
@@ -72,7 +72,7 @@ const Alerts = () => {
             <div className="card border-warning border-2 text-center">
               <div className="card-body">
                 <div className="fs-2 fw-bold text-warning">{bajos.length}</div>
-                <div className="text-muted">⚠️ Stock Bajo (≤ mínimo por producto)</div>
+                <div className="text-muted"><i className="bi bi-exclamation-triangle"></i> Stock Bajo (≤ mínimo por producto)</div>
               </div>
             </div>
           </div>
@@ -80,7 +80,7 @@ const Alerts = () => {
             <div className="card border-success border-2 text-center">
               <div className="card-body">
                 <div className="fs-2 fw-bold text-success">{ok.length}</div>
-                <div className="text-muted">✅ Stock Normal</div>
+                <div className="text-muted"><i className="bi bi-check-circle"></i> Stock Normal</div>
               </div>
             </div>
           </div>
@@ -90,7 +90,7 @@ const Alerts = () => {
         {(agotados.length > 0 || bajos.length > 0) && (
           <div className="card mb-4 border-danger">
             <div className="card-header fw-semibold text-danger bg-danger bg-opacity-10">
-              🚨 Productos con stock bajo o agotado
+              <i className="bi bi-exclamation-triangle"></i> Productos con stock bajo o agotado
             </div>
             <div className="table-responsive">
               <table className="table table-hover align-middle mb-0">
@@ -125,14 +125,14 @@ const Alerts = () => {
 
         {/* ══ TARJETAS VENCIMIENTO ══ */}
         <h6 className="text-muted fw-semibold mb-2 text-uppercase" style={{ fontSize: '0.75rem', letterSpacing: 1 }}>
-          📅 Estado de Vencimiento
+          <i className="bi bi-calendar-event"></i> Estado de Vencimiento
         </h6>
         <div className="row g-3 mb-4">
           <div className="col-md-3">
             <div className="card border-danger border-2 text-center">
               <div className="card-body">
                 <div className="fs-2 fw-bold text-danger">{vencidos.length}</div>
-                <div className="text-muted">❌ Vencidos</div>
+                <div className="text-muted"><i className="bi bi-x-circle"></i> Vencidos</div>
               </div>
             </div>
           </div>
@@ -140,7 +140,7 @@ const Alerts = () => {
             <div className="card border-danger border-2 text-center" style={{ borderStyle: 'dashed' }}>
               <div className="card-body">
                 <div className="fs-2 fw-bold text-danger">{vence7dias.length}</div>
-                <div className="text-muted">🔴 Vencen en 7 días</div>
+                <div className="text-muted"><i className="bi bi-exclamation-triangle"></i> Vencen en 7 días</div>
               </div>
             </div>
           </div>
@@ -148,7 +148,7 @@ const Alerts = () => {
             <div className="card border-warning border-2 text-center">
               <div className="card-body">
                 <div className="fs-2 fw-bold text-warning">{vence30dias.length}</div>
-                <div className="text-muted">🟡 Vencen en 30 días</div>
+                <div className="text-muted"><i className="bi bi-exclamation-triangle"></i> Vencen en 30 días</div>
               </div>
             </div>
           </div>
@@ -156,7 +156,7 @@ const Alerts = () => {
             <div className="card border-success border-2 text-center">
               <div className="card-body">
                 <div className="fs-2 fw-bold text-success">{vigentes.length}</div>
-                <div className="text-muted">✅ Vigentes</div>
+                <div className="text-muted"><i className="bi bi-check-circle"></i> Vigentes</div>
               </div>
             </div>
           </div>
@@ -198,7 +198,7 @@ const Alerts = () => {
 
         {/* Tabla stock — todos los productos */}
         <div className="card mb-4">
-          <div className="card-header fw-semibold">📋 Estado de Stock — todos los productos</div>
+          <div className="card-header fw-semibold"><i className="bi bi-box"></i> Estado de Stock — todos los productos</div>
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0">
               <thead className="table-light">
@@ -231,7 +231,7 @@ const Alerts = () => {
 
         {/* Tabla vencimiento — todos los productos */}
         <div className="card">
-          <div className="card-header fw-semibold">📅 Estado de Vencimiento — todos los productos</div>
+          <div className="card-header fw-semibold"><i className="bi bi-calendar-event"></i> Estado de Vencimiento — todos los productos</div>
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0">
               <thead className="table-light">

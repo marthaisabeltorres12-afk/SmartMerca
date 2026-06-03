@@ -42,7 +42,7 @@ const Catalogo = () => {
       <main className="flex-grow-1 p-4" style={{ marginLeft:240, background:'#f8fafc', minHeight:'100vh' }}>
 
         <div className="mb-4">
-          <h4 className="fw-bold mb-0">🛒 Catálogo en línea</h4>
+          <h4 className="fw-bold mb-0"><i className="bi bi-cart me-2"></i> Catálogo en línea</h4>
           <small className="text-muted">Los clientes escanean el QR y ven tus productos desde su celular</small>
         </div>
 
@@ -51,7 +51,7 @@ const Catalogo = () => {
           <div className="col-md-5">
             <div className="card border-0 shadow-sm text-center">
               <div className="card-body py-4">
-                <h5 className="fw-bold mb-3">📱 Código QR para clientes</h5>
+                <h5 className="fw-bold mb-3"><i className="bi bi-qr-code me-2"></i> Código QR para clientes</h5>
                 <div className="p-3 d-inline-block rounded" style={{background:'#fff', border:'3px solid #1e3a5f'}}>
                   <img src={qrUrl} alt="QR Catálogo" style={{width:200, height:200}} />
                 </div>
@@ -62,15 +62,15 @@ const Catalogo = () => {
                   <input type="text" className="form-control form-control-sm text-muted"
                     value={catalogUrl} readOnly style={{fontSize:12}} />
                   <button className="btn btn-outline-secondary btn-sm" onClick={copyUrl}>
-                    {copied ? '✅ Copiado' : '📋 Copiar'}
+                    {copied ? <><i className="bi bi-check me-1"></i>Copiado</> : <><i className="bi bi-clipboard me-1"></i>Copiar</>}
                   </button>
                 </div>
                 <div className="d-flex gap-2 justify-content-center">
                   <button className="btn btn-primary fw-bold" onClick={openCatalog}>
-                    🔗 Abrir catálogo
+                    <i className="bi bi-box-arrow-up-right me-1"></i> Abrir catálogo
                   </button>
                   <button className="btn btn-outline-secondary" onClick={() => window.print()}>
-                    🖨️ Imprimir QR
+                    <i className="bi bi-printer me-1"></i> Imprimir QR
                   </button>
                 </div>
               </div>
@@ -79,7 +79,7 @@ const Catalogo = () => {
             {/* Instrucciones */}
             <div className="card border-0 shadow-sm mt-3">
               <div className="card-body">
-                <h6 className="fw-bold mb-3">📋 ¿Cómo funciona?</h6>
+                <h6 className="fw-bold mb-3"><i className="bi bi-question-circle me-2"></i> ¿Cómo funciona?</h6>
                 <div className="d-flex gap-3 mb-3">
                   <div className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
                     style={{width:32,height:32,background:'#1e3a5f',fontSize:14}}>1</div>
@@ -121,14 +121,14 @@ const Catalogo = () => {
             <div className="card border-0 shadow-sm mb-3">
               <div className="card-body">
                 <div className="d-flex justify-content-between align-items-center">
-                  <h6 className="fw-bold mb-0">📊 Estadísticas del catálogo</h6>
+                  <h6 className="fw-bold mb-0"><i className="bi bi-bar-chart me-2"></i> Estadísticas del catálogo</h6>
                 </div>
                 <div className="row g-3 mt-1">
                   {[
-                    ['🛒 Productos activos', products.length, 'primary'],
-                    ['📦 Con stock', products.filter(p=>p.stock>0).length, 'success'],
-                    ['⚠️ Sin stock', products.filter(p=>p.stock<=0).length, 'warning'],
-                    ['🏷️ Categorías', new Set(products.map(p=>p.category).filter(Boolean)).size, 'info'],
+                   ['Productos activos', products.length,                                     'primary'],
+['Con stock',         products.filter(p=>p.stock>0).length,                'success'],
+['Sin stock',         products.filter(p=>p.stock<=0).length,               'warning'],
+['Categorías',        new Set(products.map(p=>p.category).filter(Boolean)).size, 'info'],
                   ].map(([label, val, color])=>(
                     <div key={label} className="col-6">
                       <div className={`card border-${color} border-1 text-center py-2`}>
@@ -144,7 +144,7 @@ const Catalogo = () => {
             {/* Config IP */}
             <div className="card border-0 shadow-sm mb-3">
               <div className="card-body">
-                <h6 className="fw-bold mb-2">⚙️ Configuración de red</h6>
+                <h6 className="fw-bold mb-2"><i className="bi bi-gear me-2"></i> Configuración de red</h6>
                 <p className="text-muted small mb-2">
                   Para que los clientes accedan desde sus celulares, deben estar en la misma WiFi del negocio.
                   Ingresa la IP del computador donde está instalado SmartMerca:
@@ -164,7 +164,7 @@ const Catalogo = () => {
             {/* Lista de productos */}
             <div className="card border-0 shadow-sm">
               <div className="card-header fw-semibold py-2 small" style={{background:'#f8fafc'}}>
-                📋 Productos en el catálogo ({products.filter(p=>p.stock>0).length} disponibles)
+                <i className="bi bi-list me-2"></i> Productos en el catálogo ({products.filter(p=>p.stock>0).length} disponibles)
               </div>
               <div style={{maxHeight:280, overflowY:'auto'}}>
                 <table className="table table-sm mb-0" style={{fontSize:12}}>

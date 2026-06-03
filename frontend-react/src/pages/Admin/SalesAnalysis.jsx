@@ -121,7 +121,7 @@ const SalesAnalysis = () => {
   const ticketProm    = totalVentas > 0 ? totalRevenue / totalVentas : 0;
   const mejorPeriodo  = labels[totals.indexOf(Math.max(...totals))] || '—';
   const tendencia     = totals.length >= 2
-    ? totals[totals.length-1] > totals[totals.length-2] ? '📈 Al alza' : '📉 A la baja'
+    ? totals[totals.length-1] > totals[totals.length-2] ? ' Al alza' : ' A la baja'
     : '—';
 
   const chartOpts = { responsive: true, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => fmt(v) } } } };
@@ -150,13 +150,13 @@ const SalesAnalysis = () => {
       .sort((a, b) => (b.diasSinVenta ?? 0) - (a.diasSinVenta ?? 0));
   }, [products, vendidosIds, sinSearch, sinCatFilter]);
 
-  const urgenciaTag = (dias) => {
-    if (dias === null) return { lb: '—',             bg: '#f1f5f9', c: '#64748b' };
-    if (dias >= 90)    return { lb: '🔴 +90 días',   bg: '#fee2e2', c: '#991b1b' };
-    if (dias >= 30)    return { lb: '🟠 +30 días',   bg: '#ffedd5', c: '#9a3412' };
-    if (dias >= 7)     return { lb: '🟡 +7 días',    bg: '#fef9c3', c: '#854d0e' };
-    return               { lb: '⚪ Reciente',        bg: '#f1f5f9', c: '#64748b' };
-  };
+const urgenciaTag = (dias) => {
+  if (dias === null) return { lb: '—',         icon: 'bi-dash-circle',      bg: '#f1f5f9', c: '#64748b' };
+  if (dias >= 90)    return { lb: '+90 días',  icon: 'bi-exclamation-octagon-fill', bg: '#fee2e2', c: '#991b1b' };
+  if (dias >= 30)    return { lb: '+30 días',  icon: 'bi-exclamation-triangle-fill', bg: '#ffedd5', c: '#9a3412' };
+  if (dias >= 7)     return { lb: '+7 días',   icon: 'bi-exclamation-circle-fill',   bg: '#fef9c3', c: '#854d0e' };
+  return               { lb: 'Reciente', icon: 'bi-check-circle-fill',     bg: '#f1f5f9', c: '#64748b' };
+};
 
   if (loading) return (
     <div className="d-flex">
@@ -176,7 +176,7 @@ const SalesAnalysis = () => {
 
         <div className="d-flex align-items-center justify-content-between mb-4">
           <div>
-            <h4 className="fw-bold mb-0">📊 Análisis de Ventas</h4>
+            <h4 className="fw-bold mb-0"><i className="bi bi-graph-up"></i> Análisis de Ventas</h4>
             <small className="text-muted">Tendencias, productos más/menos vendidos y proyección futura</small>
           </div>
           <div className="btn-group btn-group-sm">
@@ -222,7 +222,7 @@ const SalesAnalysis = () => {
           <div className="col-lg-8">
             <div className="card border-0 shadow-sm">
               <div className="card-header border-0 bg-white pt-3 d-flex justify-content-between align-items-center">
-                <span className="fw-bold">💰 Ingresos por período</span>
+                <span className="fw-bold"><i className="bi bi-cash-coin"></i> Ingresos por período</span>
                 <span className="badge bg-secondary" style={{ fontSize: 11 }}>{labels.length} períodos</span>
               </div>
               <div className="card-body" style={{ maxHeight: 280 }}>
@@ -245,7 +245,7 @@ const SalesAnalysis = () => {
           <div className="col-lg-4">
             <div className="card border-0 shadow-sm h-100">
               <div className="card-header border-0 bg-white pt-3">
-                <span className="fw-bold">🛒 Cantidad de ventas</span>
+                <span className="fw-bold"><i className="bi bi-cart-check"></i> Cantidad de ventas</span>
               </div>
               <div className="card-body" style={{ maxHeight: 280 }}>
                 {labels.length === 0 ? (
@@ -268,7 +268,7 @@ const SalesAnalysis = () => {
 
         <div className="card border-0 shadow-sm mb-4">
           <div className="card-header border-0 bg-white pt-3 d-flex align-items-center gap-2">
-            <span className="fw-bold">🔮 Proyección de ventas futuras</span>
+            <span className="fw-bold"><i className="bi bi-graph-up-arrow"></i> Proyección de ventas futuras</span>
             <span className="badge" style={{ background: '#ede9fe', color: '#7c3aed', fontSize: 11 }}>
               Basada en regresión lineal del historial
             </span>
@@ -314,7 +314,7 @@ const SalesAnalysis = () => {
           <div className="col-lg-6">
             <div className="card border-0 shadow-sm">
               <div className="card-header border-0 bg-white pt-3">
-                <span className="fw-bold">🏆 Top 10 productos más vendidos</span>
+                <span className="fw-bold"><i className="bi bi-trophy"></i> Top 10 productos más vendidos</span>
               </div>
               <div className="card-body p-0">
                 <table className="table table-hover mb-0 align-middle">
@@ -332,7 +332,13 @@ const SalesAnalysis = () => {
                       : top10.map((p, i) => (
                         <tr key={i}>
                           <td style={{ padding: '9px 14px', fontSize: 14 }}>
-                            {['🥇','🥈','🥉'][i] || <span className="text-muted">{i+1}</span>}
+                            {
+  [
+    <i className="bi bi-trophy-fill text-warning"></i>,
+    <i className="bi bi-award-fill text-secondary"></i>,
+    <i className="bi bi-award-fill" style={{ color: '#cd7f32' }}></i>
+  ][i] || <span className="text-muted">{i + 1}</span>
+}
                           </td>
                           <td style={{ padding: '9px 14px', fontSize: 13, fontWeight: 500 }}>{p.name}</td>
                           <td style={{ padding: '9px 14px', fontSize: 13 }} className="text-end">
@@ -356,7 +362,7 @@ const SalesAnalysis = () => {
           <div className="col-lg-6">
             <div className="card border-0 shadow-sm">
               <div className="card-header border-0 bg-white pt-3">
-                <span className="fw-bold">⚠️ Productos que menos se venden</span>
+                <span className="fw-bold"><i className="bi bi-arrow-down-circle"></i> Productos que menos se venden</span>
               </div>
               <div className="card-body p-0">
                 <table className="table table-hover mb-0 align-middle">
@@ -380,7 +386,7 @@ const SalesAnalysis = () => {
                               </span>
                             </td>
                             <td className="text-center" style={{ padding: '9px 14px' }}>
-                              <span style={{ background: '#fef9c3', color: '#854d0e', fontSize: 11, padding: '2px 8px', borderRadius: 99 }}>🐢 Lento</span>
+                              <span style={{ background: '#fef9c3', color: '#854d0e', fontSize: 11, padding: '2px 8px', borderRadius: 99 }}> Lento </span>
                             </td>
                           </tr>
                         ))}
@@ -391,7 +397,7 @@ const SalesAnalysis = () => {
                               <span style={{ background: '#fee2e2', color: '#991b1b', padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 700 }}>0 und.</span>
                             </td>
                             <td className="text-center" style={{ padding: '9px 14px' }}>
-                              <span style={{ background: '#fee2e2', color: '#991b1b', fontSize: 11, padding: '2px 8px', borderRadius: 99 }}>❌ Sin ventas</span>
+                              <span style={{ background: '#fee2e2', color: '#991b1b', fontSize: 11, padding: '2px 8px', borderRadius: 99 }}> Sin ventas</span>
                             </td>
                           </tr>
                         ))}
@@ -413,17 +419,22 @@ const SalesAnalysis = () => {
         <div className="card border-0 shadow-sm">
           <div className="card-header border-0 bg-white pt-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div className="d-flex align-items-center gap-2">
-              <span className="fw-bold">🚫 Productos sin ninguna venta</span>
+              <span className="fw-bold">
+  <i className="bi bi-slash-circle-fill text-danger me-2"></i>Productos sin ninguna venta</span>
               <span className="badge bg-danger" style={{ fontSize: 11 }}>{sinVentasDetalle.length}</span>
             </div>
             <div className="d-flex gap-2 flex-wrap">
-              <input
-                className="form-control form-control-sm"
-                style={{ width: 200 }}
-                placeholder="🔍 Buscar producto..."
-                value={sinSearch}
-                onChange={e => setSinSearch(e.target.value)}
-              />
+              <div className="input-group input-group-sm" style={{ width: 200 }}>
+  <span className="input-group-text">
+    <i className="bi bi-search"></i>
+  </span>
+  <input
+    className="form-control"
+    placeholder="Buscar producto..."
+    value={sinSearch}
+    onChange={e => setSinSearch(e.target.value)}
+  />
+</div>
               <select
                 className="form-select form-select-sm"
                 style={{ width: 180 }}
@@ -438,10 +449,12 @@ const SalesAnalysis = () => {
 
           <div className="px-3 pt-2 pb-1 d-flex gap-2 flex-wrap border-bottom">
             {[
-              { bg: '#fee2e2', c: '#991b1b', lb: '🔴 +90 días sin venderse' },
-              { bg: '#ffedd5', c: '#9a3412', lb: '🟠 +30 días' },
-              { bg: '#fef9c3', c: '#854d0e', lb: '🟡 +7 días' },
-              { bg: '#f1f5f9', c: '#64748b', lb: '⚪ Reciente (< 7 días)' },
+              [
+  { bg: '#fee2e2', c: '#991b1b', icon: 'bi-exclamation-octagon-fill', lb: '+90 días sin venderse' },
+  { bg: '#ffedd5', c: '#9a3412', icon: 'bi-exclamation-triangle-fill', lb: '+30 días' },
+  { bg: '#fef9c3', c: '#854d0e', icon: 'bi-exclamation-circle-fill', lb: '+7 días' },
+  { bg: '#f1f5f9', c: '#64748b', icon: 'bi-check-circle-fill', lb: 'Reciente (< 7 días)' },
+]
             ].map((l, i) => (
               <span key={i} style={{ background: l.bg, color: l.c, fontSize: 11, padding: '2px 10px', borderRadius: 99, fontWeight: 600 }}>
                 {l.lb}
@@ -477,11 +490,15 @@ const SalesAnalysis = () => {
                                 : p.diasSinVenta >= 30 ? '#fff8f5'
                                 : p.diasSinVenta >= 7  ? '#fffef0'
                                 : '';
-                    const recomendacion = p.diasSinVenta === null  ? '—'
-                                        : p.diasSinVenta >= 90    ? '🛑 Considerar descontinuar'
-                                        : p.diasSinVenta >= 30    ? '📢 Aplicar descuento o promoción'
-                                        : p.diasSinVenta >= 7     ? '👀 Monitorear'
-                                        : '✅ Producto nuevo';
+                   const recomendacion = p.diasSinVenta === null
+  ? <><i className="bi bi-dash-circle me-1"></i>—</>
+  : p.diasSinVenta >= 90
+    ? <><i className="bi bi-stop-circle-fill text-danger me-1"></i>Considerar descontinuar</>
+    : p.diasSinVenta >= 30
+      ? <><i className="bi bi-megaphone-fill text-warning me-1"></i>Aplicar descuento o promoción</>
+      : p.diasSinVenta >= 7
+        ? <><i className="bi bi-eye-fill text-info me-1"></i>Monitorear</>
+        : <><i className="bi bi-check-circle-fill text-success me-1"></i>Producto nuevo</>;
                     return (
                       <tr key={p.id} style={{ background: rowBg }}>
                         <td style={{ padding: '10px 14px', fontWeight: 600 }}>
@@ -523,7 +540,7 @@ const SalesAnalysis = () => {
             </div>
             {sinVentasDetalle.length > 0 && (
               <div className="px-3 py-2 border-top" style={{ fontSize: 11, color: '#64748b', background: '#f8fafc' }}>
-                💡 Los días se cuentan desde que el producto fue creado en el sistema.
+                 Los días se cuentan desde que el producto fue creado en el sistema.
                 Usa Promociones o descuentos para impulsar los productos con mayor urgencia.
               </div>
             )}

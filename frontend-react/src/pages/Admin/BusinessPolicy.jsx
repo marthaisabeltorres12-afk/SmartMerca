@@ -34,7 +34,7 @@ const BusinessPolicy = () => {
       if (!res.ok) throw new Error('Error al guardar');
       const updated = await res.json();
       setForm(updated);
-      setMsg({ type: 'success', text: '✅ Políticas guardadas correctamente' });
+      setMsg({ type: 'success', text: ' Políticas guardadas correctamente' });
     } catch (e) {
       setMsg({ type: 'danger', text: e.message });
     } finally {
@@ -60,7 +60,7 @@ const BusinessPolicy = () => {
       <main style={{ marginLeft: 240, padding: 28, background: '#f8fafc', minHeight: '100vh', width: '100%' }}>
 
         <div className="mb-4">
-          <h4 className="fw-bold mb-0">📋 Políticas del Negocio</h4>
+          <h4 className="fw-bold mb-0"><i className="bi bi-file-earmark-text me-2"></i> Políticas del Negocio</h4>
           <small className="text-muted">Configura las reglas de devoluciones, alertas e información del negocio</small>
         </div>
 
@@ -77,7 +77,7 @@ const BusinessPolicy = () => {
             <div className="col-lg-6">
               <div className="card border-0 shadow-sm h-100">
                 <div className="card-header border-0 bg-white fw-bold pt-3">
-                  ↩️ Política de Devoluciones
+                  Política de Devoluciones
                 </div>
                 <div className="card-body">
 
@@ -85,9 +85,9 @@ const BusinessPolicy = () => {
                     <label className="form-label fw-semibold">Tipo de devolución permitida</label>
                     <div className="d-flex flex-column gap-2 mt-1">
                       {[
-                        { val: 'ambos',  label: '✅ Dinero en efectivo O cambio por otro producto', desc: 'El cajero puede elegir según el caso' },
-                        { val: 'dinero', label: '💵 Solo devolución en dinero',                     desc: 'El cliente siempre recibe dinero en efectivo' },
-                        { val: 'cambio', label: '🔄 Solo cambio por otro producto',                  desc: 'No se devuelve dinero, solo se cambia el producto' },
+                        { val: 'ambos',  label: <><i className="bi bi-check-circle me-1"></i>Dinero en efectivo O cambio por otro producto</>, desc: 'El cajero puede elegir según el caso' },
+                        { val: 'dinero', label: <><i className="bi bi-cash me-1"></i>Solo devolución en dinero</>,                    desc: 'El cliente siempre recibe dinero en efectivo' },
+                        { val: 'cambio', label: <><i className="bi bi-arrow-repeat me-1"></i>Solo cambio por otro producto</>,                  desc: 'No se devuelve dinero, solo se cambia el producto' },
                       ].map(opt => (
                         <label key={opt.val}
                           className="d-flex align-items-start gap-3 p-3 rounded cursor-pointer"
@@ -109,8 +109,8 @@ const BusinessPolicy = () => {
                     <label className="form-label fw-semibold">Motivo de devolución</label>
                     <div className="d-flex flex-column gap-2 mt-1">
                       {[
-                        { val: true,  label: '🔒 Obligatorio',  desc: 'El cajero debe escribir el motivo antes de procesar' },
-                        { val: false, label: '📝 Opcional',     desc: 'El motivo es opcional, puede dejarse en blanco' },
+                        { val: true,   label: <><i className="bi bi-lock-fill me-1"></i>Obligatorio</>,  desc: 'El cajero debe escribir el motivo antes de procesar' },
+                        { val: false, label: <><i className="bi bi-pencil me-1"></i>Opcional</>,     desc: 'El motivo es opcional, puede dejarse en blanco' },
                       ].map(opt => (
                         <label key={String(opt.val)}
                           className="d-flex align-items-start gap-3 p-3 rounded"
@@ -145,7 +145,7 @@ const BusinessPolicy = () => {
 
                   {/* PIN en devoluciones */}
                   <hr className="my-3"/>
-                  <div className="fw-semibold mb-3">🔐 Autorización PIN en Devoluciones</div>
+                  <div className="fw-semibold mb-3"><i className="bi bi-lock-fill me-2"></i> Autorización PIN en Devoluciones</div>
 
                   <div className="mb-3">
                     <label className="form-label fw-semibold">Monto límite para pedir PIN (devolución en dinero)</label>
@@ -161,7 +161,8 @@ const BusinessPolicy = () => {
                   <div className="mb-3">
                     <label className="form-label fw-semibold">Pedir PIN cuando se devuelven varios productos</label>
                     <div className="d-flex gap-2">
-                      {[{val:true,lb:'✅ Sí, pedir PIN'},{val:false,lb:'❌ No requerir'}].map(opt => (
+                      {[{val:true,  lb: <><i className="bi bi-check-circle me-1"></i>Sí, pedir PIN</>},
+{val:false, lb: <><i className="bi bi-x-circle me-1"></i>No requerir</>}].map(opt => (
                         <div key={String(opt.val)} className="flex-fill text-center p-2 rounded"
                           style={{ border:`2px solid ${(form.return_pin_multiple??true)===opt.val?'#3b82f6':'#e2e8f0'}`, background:(form.return_pin_multiple??true)===opt.val?'#eff6ff':'#fff', cursor:'pointer', borderRadius:10 }}
                           onClick={() => set('return_pin_multiple', opt.val)}>
@@ -179,7 +180,7 @@ const BusinessPolicy = () => {
 
               <div className="card border-0 shadow-sm">
                 <div className="card-header border-0 bg-white fw-bold pt-3">
-                  ⚠️ Umbrales de Alertas
+                  <i className="bi bi-exclamation-triangle me-2"></i> Umbrales de Alertas
                 </div>
                 <div className="card-body">
                   <div className="mb-3">
@@ -207,7 +208,7 @@ const BusinessPolicy = () => {
 
               <div className="card border-0 shadow-sm">
                 <div className="card-header border-0 bg-white fw-bold pt-3">
-                  🏪 Información del Negocio
+                  <i className="bi bi-shop me-2"></i> Información del Negocio
                 </div>
                 <div className="card-body">
                   <div className="mb-3">

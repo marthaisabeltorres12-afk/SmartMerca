@@ -68,7 +68,7 @@ const AdminPinSetup = () => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      setMsg({ type:'success', text:'✅ PIN configurado correctamente' });
+      setMsg({ type:'success', text:' PIN configurado correctamente' });
       setPin(''); setConfirm('');
     } catch(e) {
       setMsg({ type:'danger', text: e.message });
@@ -85,7 +85,7 @@ const AdminPinSetup = () => {
     try {
       const data = await apiFetch('/auth-admin/tarjeta', { method: 'POST' }, token);
       setTarjeta(data.card);
-      setMsgTarjeta({ type:'success', text:'✅ Tarjeta generada correctamente' });
+      setMsgTarjeta({ type:'success', text:' Tarjeta generada correctamente' });
     } catch(e) {
       setMsgTarjeta({ type:'danger', text: e.message });
     } finally {
@@ -99,7 +99,7 @@ const AdminPinSetup = () => {
     try {
       await apiFetch('/auth-admin/tarjeta/revocar', { method: 'POST' }, token);
       setTarjeta(null);
-      setMsgTarjeta({ type:'warning', text:'⚠️ Tarjeta revocada' });
+      setMsgTarjeta({ type:'warning', text:' Tarjeta revocada' });
     } catch(e) {
       setMsgTarjeta({ type:'danger', text: e.message });
     }
@@ -143,7 +143,7 @@ const AdminPinSetup = () => {
     <div className="d-flex">
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft: 240, background:'#f8fafc', minHeight:'100vh' }}>
-        <h4 className="fw-bold mb-1">🔒 Mi PIN de autorización</h4>
+        <h4 className="fw-bold mb-1"><i className="bi bi-lock-fill me-2"></i> Mi PIN de autorización</h4>
         <p className="text-muted mb-4">
           Hola, <strong>{user?.name}</strong>. Este PIN lo usarán los cajeros para pedir tu
           autorización cuando quieran eliminar un producto, reducir cantidad o aplicar
@@ -157,7 +157,7 @@ const AdminPinSetup = () => {
             <div className="card border-0 shadow-sm mb-4">
               <div className="card-header fw-semibold py-3"
                 style={{ background:'#1e3a5f', color:'#fff', borderRadius:'8px 8px 0 0' }}>
-                🔑 Configurar / Cambiar PIN
+                <i className="bi bi-key me-2"></i> Configurar / Cambiar PIN
               </div>
               <div className="card-body">
                 {msg && <div className={`alert alert-${msg.type} py-2 mb-3`}>{msg.text}</div>}
@@ -170,7 +170,7 @@ const AdminPinSetup = () => {
                         onChange={e=>{ setPin(e.target.value.replace(/\D/g,'')); setMsg(null); }}
                         style={{ letterSpacing:10, fontSize:24 }}/>
                       <button type="button" className="btn btn-outline-secondary" onClick={()=>setShow(!show)}>
-                        {show?'🙈':'👁️'}
+                        <i className={`bi ${show?'bi-eye-slash':'bi-eye'}`}></i>
                       </button>
                     </div>
                     <div className="form-text">Solo números · 4 a 6 dígitos</div>
@@ -187,7 +187,7 @@ const AdminPinSetup = () => {
                   </div>
                   <button type="submit" className="btn btn-dark w-100 fw-bold py-2"
                     disabled={loading||pin.length<4||pin!==confirm}>
-                    {loading?<><span className="spinner-border spinner-border-sm me-2"/>Guardando...</>:'🔒 Guardar PIN'}
+                    {loading?<><span className="spinner-border spinner-border-sm me-2"/>Guardando...</>:' Guardar PIN'}
                   </button>
                 </form>
               </div>
@@ -197,7 +197,7 @@ const AdminPinSetup = () => {
             <div className="card border-0 shadow-sm">
               <div className="card-header fw-semibold py-3"
                 style={{ background:'#1e3a5f', color:'#fff', borderRadius:'8px 8px 0 0' }}>
-                💳 Tarjeta de autorización
+                <i className="bi bi-credit-card me-2"></i> Tarjeta de autorización
               </div>
               <div className="card-body">
                 <p className="text-muted small mb-3">
@@ -216,7 +216,7 @@ const AdminPinSetup = () => {
                     {/* Vista previa de la tarjeta */}
                     <div className="p-3 rounded mb-3 text-center"
                       style={{ background:'#f8fafc', border:'2px solid #1e3a5f' }}>
-                      <div className="fw-bold text-muted small mb-2">🛒 SmartMerca — Autorización Admin</div>
+                      <div className="fw-bold text-muted small mb-2"> SmartMerca — Autorización Admin</div>
                       <div className="fw-bold mb-1">{user?.name}</div>
                       <svg ref={barcodeRef} style={{maxWidth:'100%'}}></svg>
                       <div className="text-muted" style={{fontSize:11, fontFamily:'monospace', marginTop:4}}>
@@ -225,35 +225,35 @@ const AdminPinSetup = () => {
                     </div>
 
                     <div className="text-muted small mb-3">
-                      <span className="badge bg-success me-2">✅ Activa</span>
+                      <span className="badge bg-success me-2"><i className="bi bi-check-circle me-1"></i> Activa</span>
                       Creada: {tarjeta.created_at?.slice(0,10)}
                     </div>
 
                     <div className="d-flex gap-2">
                       <button className="btn btn-primary fw-bold flex-fill" onClick={handleImprimir}>
-                        🖨️ Imprimir tarjeta
+                        <i className="bi bi-printer me-2"></i> Imprimir tarjeta
                       </button>
                       <button className="btn btn-outline-warning" onClick={handleGenerarTarjeta}
                         disabled={loadingTarjeta} title="Generar nueva tarjeta">
-                        🔄
+                        <i className="bi bi-arrow-repeat me-2"></i>
                       </button>
                       <button className="btn btn-outline-danger" onClick={handleRevocar}
                         title="Revocar tarjeta">
-                        🗑️
+                        <i className="bi bi-x-circle me-2"></i>
                       </button>
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="text-center py-3 text-muted">
-                      <div style={{fontSize:40}}>💳</div>
+                      <div style={{fontSize:40}}><i className="bi bi-credit-card"></i></div>
                       <div className="small mt-2">No tienes tarjeta activa</div>
                     </div>
                     <button className="btn btn-primary fw-bold w-100"
                       onClick={handleGenerarTarjeta} disabled={loadingTarjeta}>
                       {loadingTarjeta
                         ? <><span className="spinner-border spinner-border-sm me-2"/>Generando...</>
-                        : '💳 Generar tarjeta de autorización'}
+                        : ' Generar tarjeta de autorización'}
                     </button>
                   </>
                 )}
@@ -265,7 +265,7 @@ const AdminPinSetup = () => {
           <div className="col-md-6">
             <div className="card border-0 shadow-sm">
               <div className="card-header fw-semibold py-3" style={{ background:'#f8fafc' }}>
-                ℹ️ ¿Cómo funciona el PIN?
+                <i className="bi bi-info-circle me-2"></i> ¿Cómo funciona el PIN?
               </div>
               <div className="card-body">
                 <div className="d-flex flex-column gap-3">
@@ -288,22 +288,22 @@ const AdminPinSetup = () => {
                   ))}
 
                   <div className="p-3 rounded mt-1" style={{ background:'#fff5f5', border:'1px solid #fca5a5', fontSize:12 }}>
-                    <strong>⚠️ Importante:</strong><br/>
+                    <strong> <i className="bi bi-exclamation-triangle me-2"></i> Importante:</strong><br/>
                     Guarda tu PIN en un lugar seguro. Si lo olvidas puedes configurar uno nuevo aquí.
                     Cada admin puede tener su propio PIN — el sistema acepta el PIN de cualquier admin activo.
                   </div>
 
                   <div className="p-3 rounded" style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', fontSize:12 }}>
-                    <strong>✅ Acciones que requieren PIN o tarjeta:</strong><br/>
-                    • 🗑️ Eliminar un producto del carrito<br/>
-                    • ⬇️ Reducir la cantidad de un producto<br/>
-                    • 🏷️ Aplicar descuento manual a un ítem<br/>
-                    • ❌ Cancelar una venta completa<br/>
-                    • ✏️ Editar precio en el POS
+                    <strong> <i className="bi bi-check-circle me-2"></i> Acciones que requieren PIN o tarjeta:</strong><br/>
+                    •  Eliminar un producto del carrito<br/>
+                    •  Reducir la cantidad de un producto<br/>
+                    •  Aplicar descuento manual a un ítem<br/>
+                    •  Cancelar una venta completa<br/>
+                    •  Editar precio en el POS
                   </div>
 
                   <div className="p-3 rounded" style={{ background:'#eff6ff', border:'1px solid #bfdbfe', fontSize:12 }}>
-                    <strong>💳 Tarjeta de autorización:</strong><br/>
+                    <strong> <i className="bi bi-credit-card me-2"></i> Tarjeta de autorización:</strong><br/>
                     Alternativa al PIN — el cajero escanea la tarjeta con el lector de código de barras.
                     Para <strong>restablecer contraseñas</strong> se requieren <strong>ambos</strong>: PIN + tarjeta.
                   </div>

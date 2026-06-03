@@ -7,7 +7,7 @@ const fmt = n => Number(n||0).toLocaleString('es-CO',{style:'currency',currency:
 
 const PLANES = [
   {
-    key: 'basico', nombre: 'Básico', icono: '🔵',
+    key: 'basico', nombre: 'Básico', icono: '',
     precio: 80000, precioReal: 150000,
     color: '#2563EB', bg: '#EFF6FF', borde: '#2563EB',
     features: [
@@ -21,7 +21,7 @@ const PLANES = [
     ]
   },
   {
-    key: 'estandar', nombre: 'Estándar', icono: '🟢',
+    key: 'estandar', nombre: 'Estándar', icono: '',
     precio: 150000, precioReal: 300000,
     color: '#16A34A', bg: '#F0FDF4', borde: '#16A34A',
     popular: true,
@@ -37,14 +37,14 @@ const PLANES = [
     ]
   },
   {
-    key: 'premium', nombre: 'Premium', icono: '🟣',
+    key: 'premium', nombre: 'Premium', icono: '',
     precio: 250000, precioReal: 500000,
     color: '#7C3AED', bg: '#F5F3FF', borde: '#7C3AED',
     features: [
       'Cajas · usuarios · sucursales ilimitadas',
       'Todo lo del plan Estándar +',
-      '🤖 Cámara IA identifica productos',
-      '⚖️ Báscula digital integrada',
+      ' Cámara IA identifica productos',
+      ' Báscula digital integrada',
       'Catálogo online con pago Wompi',
       'Domicilios con rastreo',
       'Modo offline ilimitado',
@@ -75,7 +75,7 @@ export default function MiPlan() {
       await apiFetch('/config/', { method:'PUT', body: JSON.stringify({ plan_actual: planKey }) }, token);
       setPlanActual(planKey);
       setConfirm(null);
-      showAlert('success', `✅ Plan actualizado a ${PLANES.find(p=>p.key===planKey)?.nombre}`);
+      showAlert('success', ` Plan actualizado a ${PLANES.find(p=>p.key===planKey)?.nombre}`);
     } catch(e) {
       showAlert('danger', 'Error actualizando el plan');
     }
@@ -97,7 +97,7 @@ export default function MiPlan() {
         )}
 
         <div className="mb-4">
-          <h4 className="fw-bold mb-0">💎 Mi Plan</h4>
+          <h4 className="fw-bold mb-0"><i className="bi bi-tag"></i> Mi Plan</h4>
           <small className="text-muted">Gestiona el plan de SmartMerca para tu negocio</small>
         </div>
 
@@ -119,7 +119,7 @@ export default function MiPlan() {
                   <div className="ms-auto">
                     <div className="small text-muted mb-1">Precio de lanzamiento — solo 8 cupos</div>
                     <span className="badge" style={{ background:'#f59e0b', fontSize:11 }}>
-                      🔥 Actualiza antes del 31 de mayo 2026
+                      <i className="bi bi-exclamation-triangle"></i> Actualiza antes del 31 de mayo 2026
                     </span>
                   </div>
                 )}
@@ -129,7 +129,7 @@ export default function MiPlan() {
             {/* Características del plan actual */}
             <div className="card border-0 shadow-sm mb-4">
               <div className="card-header fw-bold" style={{ background:'#1e3a5f', color:'#fff' }}>
-                ✅ Lo que incluye tu plan {planInfo.nombre}
+                <i className="bi bi-check2-circle"></i> Lo que incluye tu plan {planInfo.nombre}
               </div>
               <div className="card-body">
                 <div className="row g-2">
@@ -147,7 +147,7 @@ export default function MiPlan() {
 
             {/* Planes disponibles */}
             <div className="mb-3 fw-bold" style={{ fontSize:18 }}>
-              {planActual === 'premium' ? '🏆 Ya tienes el plan máximo' : '🚀 Sube de plan y desbloquea más funciones'}
+              {planActual === 'premium' ? ' Ya tienes el plan máximo' : ' Sube de plan y desbloquea más funciones'}
             </div>
 
             <div className="row g-3">
@@ -170,13 +170,13 @@ export default function MiPlan() {
                       {p.popular && !esPlanActual && (
                         <div className="text-center py-1 fw-bold small"
                           style={{ background: p.color, color:'#fff' }}>
-                          ⭐ El más elegido
+                          <i className="bi bi-star"></i> El más elegido
                         </div>
                       )}
                       {esPlanActual && (
                         <div className="text-center py-1 fw-bold small"
                           style={{ background: p.color, color:'#fff' }}>
-                          ✅ Tu plan actual
+                          <i className="bi bi-check2-circle"></i> Tu plan actual
                         </div>
                       )}
 
@@ -200,17 +200,17 @@ export default function MiPlan() {
                       <div className="card-footer border-0 bg-transparent pb-3">
                         {esPlanActual ? (
                           <button className="btn w-100 fw-bold" style={{ background: p.color, color:'#fff' }} disabled>
-                            ✅ Plan actual
+                            <i className="bi bi-check2-circle"></i> Plan actual
                           </button>
                         ) : esInferior ? (
                           <button className="btn btn-outline-secondary w-100" disabled>
-                            Plan inferior
+                            <i className="bi bi-arrow-down"></i> Plan inferior
                           </button>
                         ) : (
                           <button className="btn w-100 fw-bold"
                             style={{ background: p.color, color:'#fff' }}
                             onClick={() => setConfirm(p)}>
-                            🚀 Subir a {p.nombre}
+                            <i className="bi bi-arrow-up"></i> Subir a {p.nombre}
                           </button>
                         )}
                       </div>
@@ -223,7 +223,7 @@ export default function MiPlan() {
             {/* Contacto */}
             <div className="card border-0 shadow-sm mt-4" style={{ background:'#1e3a5f' }}>
               <div className="card-body d-flex align-items-center gap-3 py-3">
-                <div style={{ fontSize:32 }}>💬</div>
+                <div style={{ fontSize:32 }}><i className="bi bi-envelope"></i></div>
                 <div>
                   <div className="fw-bold text-white">¿Necesitas ayuda para elegir tu plan?</div>
                   <div className="text-white-50 small">Escríbenos y te asesoramos sin costo</div>
@@ -232,7 +232,7 @@ export default function MiPlan() {
                   target="_blank" rel="noreferrer"
                   className="btn fw-bold ms-auto"
                   style={{ background:'#22c55e', color:'#fff' }}>
-                  📱 WhatsApp
+                  <i className="bi bi-whatsapp"></i> WhatsApp
                 </a>
               </div>
             </div>
@@ -264,7 +264,7 @@ export default function MiPlan() {
                 <button className="btn btn-secondary" onClick={()=>setConfirm(null)}>Cancelar</button>
                 <button className="btn fw-bold" style={{ background: confirm.color, color:'#fff' }}
                   onClick={() => cambiarPlan(confirm.key)}>
-                  🚀 Confirmar subida de plan
+                  <i className="bi bi-check2-circle"></i> Confirmar subida de plan
                 </button>
               </div>
             </div>

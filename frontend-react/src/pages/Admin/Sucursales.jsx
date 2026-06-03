@@ -6,7 +6,7 @@ import { apiFetch } from '../../services/api';
 const fmt = n => Number(n||0).toLocaleString('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
 
 const EMPTY = { nombre:'', direccion:'', ciudad:'', telefono:'', meta_ventas_mensual:'' };
-const MEDALLAS = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
+
 
 const Sucursales = () => {
   const { token } = useAuth();
@@ -69,7 +69,7 @@ const Sucursales = () => {
       <main className="flex-grow-1 p-4" style={{ marginLeft:240 }}>
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <h4 className="fw-bold mb-0">🏪 Sucursales y Ranking</h4>
+            <h4 className="fw-bold mb-0"><i className="bi bi-shop me-2"></i> Sucursales y Ranking</h4>
             <p className="text-muted small mb-0">Gestión de puntos de venta y desempeño de cajeros</p>
           </div>
           <button className="btn btn-primary fw-bold"
@@ -81,7 +81,11 @@ const Sucursales = () => {
         {alert && <div className={`alert alert-${alert.type} py-2`}>{alert.msg}</div>}
 
         <ul className="nav nav-tabs mb-4">
-          {[['sucursales','🏪 Sucursales'],['ranking','🏆 Ranking cajeros'],['rentabilidad','📈 Rentabilidad']].map(([k,l])=>(
+          {[
+  { k:'sucursales',  l: <><i className="bi bi-shop me-1"></i>Sucursales</> },
+  { k:'ranking',     l: <><i className="bi bi-trophy me-1"></i>Ranking cajeros</> },
+  { k:'rentabilidad',l: <><i className="bi bi-graph-up me-1"></i>Rentabilidad</> },
+].map(({k,l}) => (
             <li key={k} className="nav-item">
               <button className={`nav-link ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</button>
             </li>
@@ -93,7 +97,7 @@ const Sucursales = () => {
           <div className="row g-3">
             {!branches.length ? (
               <div className="col-12 text-center text-muted py-5">
-                <div className="fs-2">🏪</div>
+                <div className="fs-2"><i className="bi bi-shop me-2"></i></div>
                 <div>No hay sucursales registradas</div>
               </div>
             ) : branches.map(b=>(
@@ -101,15 +105,15 @@ const Sucursales = () => {
                 <div className="card border-0 shadow-sm h-100">
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-start">
-                      <h5 className="fw-bold mb-1">🏪 {b.nombre}</h5>
+                      <h5 className="fw-bold mb-1"><i className="bi bi-shop me-2"></i> {b.nombre}</h5>
                       <button className="btn btn-sm btn-outline-secondary py-0"
                         onClick={()=>{ setEditing(b); setForm({nombre:b.nombre,direccion:b.direccion||'',ciudad:b.ciudad||'',telefono:b.telefono||'',meta_ventas_mensual:b.meta_ventas_mensual||''}); setShowModal(true); }}>
-                        ✏️
+                        <i className="bi bi-pencil"></i>
                       </button>
                     </div>
-                    {b.ciudad && <div className="text-muted small">📍 {b.ciudad}</div>}
-                    {b.direccion && <div className="text-muted small">{b.direccion}</div>}
-                    {b.telefono && <div className="text-muted small">📞 {b.telefono}</div>}
+                    {b.ciudad && <div className="text-muted small"><i className="bi bi-geo-alt me-1"></i> {b.ciudad}</div>}
+                    {b.direccion && <div className="text-muted small"><i className="bi bi-house me-1"></i> {b.direccion}</div>}
+                    {b.telefono && <div className="text-muted small"><i className="bi bi-telephone me-1"></i> {b.telefono}</div>}
                     {b.meta_ventas_mensual && (
                       <div className="mt-2 p-2 rounded" style={{background:'#f0fff4',fontSize:12}}>
                         Meta mensual: <strong>{fmt(b.meta_ventas_mensual)}</strong>
@@ -138,7 +142,7 @@ const Sucursales = () => {
 
             {!ranking.length ? (
               <div className="text-center text-muted py-5">
-                <div className="fs-2">🏆</div>
+                <div className="fs-2"><i className="bi bi-trophy" style={{fontSize:40}}></i></div>
                 <div>Sin datos de ranking para este período</div>
               </div>
             ) : (
@@ -153,14 +157,19 @@ const Sucursales = () => {
                         <th className="text-center">Turnos</th>
                         <th className="text-end">Ventas</th>
                         <th className="text-end">Ticket prom.</th>
-                        <th className="text-center fw-bold">⭐ Puntos</th>
+                        <th className="text-center fw-bold"><i className="bi bi-star-fill me-1"></i> Puntos</th>
                       </tr>
                     </thead>
                     <tbody>
                       {ranking.map((r,i)=>(
                         <tr key={r.id} style={{background: i<3?['#fffbeb','#f8fafc','#fff8f1'][i]:''}}>
-                          <td className="text-center fs-5">{MEDALLAS[i] || (i+1)}</td>
-                          <td className="fw-semibold">👤 {r.user_name}</td>
+                          <td className="text-center fs-5">
+  {i === 0 ? <i className="bi bi-trophy-fill" style={{color:'#f59e0b'}}></i>
+  : i === 1 ? <i className="bi bi-trophy-fill" style={{color:'#94a3b8'}}></i>
+  : i === 2 ? <i className="bi bi-trophy-fill" style={{color:'#b45309'}}></i>
+  : (i+1)}
+</td>
+                          <i className="bi bi-person me-1"></i>
                           <td className="text-muted">{r.branch_name||'—'}</td>
                           <td className="text-center">{r.total_sales}</td>
                           <td className="text-end">{fmt(r.total_amount)}</td>
@@ -195,8 +204,8 @@ const Sucursales = () => {
                     <div className={`card border-0 shadow-sm h-100 ${i===0?'border-success border-2':''}`}>
                       <div className="card-body">
                         <div className="d-flex justify-content-between mb-2">
-                          <h6 className="fw-bold mb-0">🏪 {b.branch_name}</h6>
-                          {i===0 && <span className="badge bg-success">🥇 Top</span>}
+                          <h6 className="fw-bold mb-0"><i className="bi bi-shop me-2"></i> {b.branch_name}</h6>
+                          {i===0 && <span className="badge bg-success"><i className="bi bi-trophy-fill me-1"></i> Top</span>}
                         </div>
                         <div className="fs-4 fw-bold text-primary">{fmt(b.ventas)}</div>
                         {b.meta > 0 && (
@@ -234,7 +243,7 @@ const Sucursales = () => {
             {profit && (
               <div className="card border-0 shadow-sm">
                 <div className="card-header fw-semibold py-2" style={{background:'#1e3a5f',color:'#fff'}}>
-                  📋 Estado de resultados — {profit.branch?.nombre} · {profit.period}
+                  <i className="bi bi-graph-up me-2"></i> Estado de resultados — {profit.branch?.nombre} · {profit.period}
                 </div>
                 <div className="card-body">
                   <div className="row g-3">
@@ -264,7 +273,9 @@ const Sucursales = () => {
             <div className="modal-dialog">
               <div className="modal-content">
                 <div className="modal-header" style={{background:'#1e3a5f',color:'#fff'}}>
-                  <h5 className="modal-title fw-bold">{editing?'✏️ Editar':'🏪 Nueva'} sucursal</h5>
+                  <h5 className="modal-title fw-bold">
+  {editing ? <><i className="bi bi-pencil me-2"></i>Editar</> : <><i className="bi bi-shop me-2"></i>Nueva</>} sucursal
+</h5>
                   <button className="btn-close btn-close-white" onClick={()=>setShowModal(false)} />
                 </div>
                 <form onSubmit={handleSave}>
@@ -305,7 +316,7 @@ const Sucursales = () => {
                   <div className="modal-footer">
                     <button type="button" className="btn btn-secondary" onClick={()=>setShowModal(false)}>Cancelar</button>
                     <button type="submit" className="btn btn-primary fw-bold" disabled={loading}>
-                      {loading?'Guardando...':'✅ Guardar'}
+                      {loading?'Guardando...':'<i className="bi bi-save me-2"></i> Guardar'}
                     </button>
                   </div>
                 </form>

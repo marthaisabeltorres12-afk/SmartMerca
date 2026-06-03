@@ -103,7 +103,10 @@ const ManageCustomers = () => {
     <div className="d-flex">
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft:240, background:'#f8fafc', minHeight:'100vh' }}>
-        <h4 className="fw-bold mb-1">👥 Clientes</h4>
+        <h4 className="fw-bold mb-1">
+  <i className="bi bi-people me-2"></i>
+  Clientes
+</h4>
         <p className="text-muted mb-4">Gestión de clientes y puntos de fidelidad</p>
 
         {alert && (
@@ -124,10 +127,10 @@ const ManageCustomers = () => {
         {/* KPIs */}
         <div className="row g-3 mb-4">
           {[
-            { icon:'👥', label:'Total clientes',  value: customers.length,                       color:'primary' },
-            { icon:'✅', label:'Activos',          value: customers.filter(c=>c.is_active).length, color:'success' },
-            { icon:'⭐', label:'Puntos totales',   value: totalPoints.toLocaleString('es-CO'),    color:'warning' },
-            { icon:'💰', label:'Valor en puntos',  value: `$${((totalPoints/100)*1000).toLocaleString('es-CO')}`, color:'info' },
+            { icon: <i className="bi bi-people"></i>, label:'Total clientes',  value: customers.length,                       color:'primary' },
+            { icon: <i className="bi bi-person-check"></i>, label:'Activos',          value: customers.filter(c=>c.is_active).length, color:'success' },
+            {  icon: <i className="bi-star-fill" style={{ color: '#f59e0b' }}></i>, label:'Puntos totales',   value: totalPoints.toLocaleString('es-CO'),    color:'warning' },
+            {icon: <i className="bi bi-cash-stack"></i>, label:'Valor en puntos',  value: `$${((totalPoints/100)*1000).toLocaleString('es-CO')}`, color:'info' },
           ].map((k,i) => (
             <div key={i} className="col-md-3">
               <div className={`card border-${k.color} border-2 text-center`}>
@@ -141,17 +144,29 @@ const ManageCustomers = () => {
           ))}
         </div>
 
-        <div className="d-flex gap-2 mb-3">
-          <input className="form-control" style={{ maxWidth:340 }}
-            placeholder="🔍 Nombre, cédula, teléfono o correo..."
-            value={search} onChange={e=>setSearch(e.target.value)} />
-          <button className="btn btn-success ms-auto" onClick={openAdd}>+ Nuevo Cliente</button>
-        </div>
-
+    <div className="d-flex gap-2 mb-3 align-items-center">
+  <div className="input-group flex-grow-1" style={{ maxWidth: 420 }}>
+    <span className="input-group-text bg-white border-end-0">
+      <i className="bi bi-search text-muted"></i>
+    </span>
+    <input
+      className="form-control border-start-0 ps-0"
+      style={{ fontSize: 15 }}
+      placeholder="Nombre, cédula, teléfono o correo..."
+      value={search}
+      onChange={e => setSearch(e.target.value)}
+    />
+  </div>
+  <div className="ms-auto d-flex gap-2">
+    <button className="btn btn-success fw-bold" onClick={openAdd}>
+      + Nuevo Cliente
+    </button>
+  </div>
+</div>
         {/* Tabla */}
         <div className="card border-0 shadow-sm" style={{ borderRadius:12 }}>
           <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0" style={{fontSize:13}}>
+            <table className="table table-hover align-middle mb-0" style={{fontSize:16}}>
               <thead className="table-light">
                 <tr>
                   <th>Tipo Doc</th>
@@ -177,24 +192,33 @@ const ManageCustomers = () => {
                       <td className="text-muted small">{c.email || '—'}</td>
                       <td className="text-muted small" style={{maxWidth:140,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c.address || '—'}</td>
                       <td className="text-center">
-                        <span className="badge bg-warning text-dark">⭐ {c.points||0}</span>
+                        <span  className="badge bg-warning text-dark"> <i className="bi bi-star"></i>,  {c.points||0}</span>
                       </td>
                       <td>
-                        <span className={`badge ${c.is_active ? 'bg-success' : 'bg-secondary'}`}>
-                          {c.is_active ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="d-flex gap-1">
-                          <button className="btn btn-warning btn-sm" onClick={() => openEdit(c)} title="Editar">✏️</button>
-                          <button className="btn btn-info btn-sm text-white" onClick={() => { setPointsModal(c); setPointsInput(''); }} title="Puntos">⭐</button>
-                          <button className={`btn btn-sm ${c.is_active ? 'btn-outline-secondary' : 'btn-outline-success'}`}
-                            onClick={() => handleToggle(c)}>
-                            {c.is_active ? '❌' : '✅'}
-                          </button>
-                          <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(c)} title="Eliminar">🗑️</button>
-                        </div>
-                      </td>
+  <span className={`badge ${c.is_active ? 'bg-success' : 'bg-secondary'}`}>
+    {c.is_active ? 'Activo' : 'Inactivo'}
+  </span>
+</td>
+
+<td>
+  <div className="d-flex gap-1">
+    <button className="btn btn-warning btn-sm" onClick={() => openEdit(c)} title="Editar"><i className="bi bi-pencil"></i></button>
+    <button className="btn btn-info btn-sm text-white" onClick={() => { setPointsModal(c); setPointsInput('');}}title="Puntos">
+      <i className="bi bi-star"></i>
+    </button>
+    <button className={`btn btn-sm ${c.is_active
+          ? 'btn-outline-secondary'
+          : 'btn-outline-success'
+      }`}
+      onClick={() => handleToggle(c)}
+      title={c.is_active ? 'Desactivar' : 'Activar'}>
+      <i className={`bi ${c.is_active ? 'bi-x-circle' : 'bi-check-circle'}`}></i></button>
+     <button className="btn btn-danger btn-sm"
+      onClick={() => setConfirmDelete(c)}
+      title="Eliminar">
+      <i className="bi bi-trash"></i></button>
+                 </div>
+                   </td>
                     </tr>
                   ))
                 }
@@ -209,7 +233,7 @@ const ManageCustomers = () => {
             <div className="modal-dialog modal-lg">
               <div className="modal-content">
                 <div className="modal-header" style={{background:'#1e3a5f'}}>
-                  <h5 className="modal-title text-white">{editing ? '✏️ Editar Cliente' : '+ Nuevo Cliente'}</h5>
+                  <h5 className="modal-title text-white ">{editing ? ' Editar Cliente' : '+ Nuevo Cliente'}</h5>
                   <button className="btn-close btn-close-white" onClick={() => setShowModal(false)} />
                 </div>
                 <form onSubmit={handleSave}>
@@ -280,7 +304,7 @@ const ManageCustomers = () => {
             <div className="modal-dialog modal-sm">
               <div className="modal-content">
                 <div className="modal-header">
-                  <h5 className="modal-title">⭐ Agregar Puntos</h5>
+                  <h5 className="modal-title"><i className="bi bi-star"></i>,  Agregar Puntos</h5>
                   <button className="btn-close" onClick={() => setPointsModal(null)} />
                 </div>
                 <div className="modal-body">
@@ -292,7 +316,7 @@ const ManageCustomers = () => {
                 </div>
                 <div className="modal-footer">
                   <button className="btn btn-secondary" onClick={() => setPointsModal(null)}>Cancelar</button>
-                  <button className="btn btn-warning fw-bold" onClick={handleAddPoints}>⭐ Agregar</button>
+                  <button className="btn btn-warning fw-bold" onClick={handleAddPoints}><i className="bi bi-star"></i>,  Agregar</button>
                 </div>
               </div>
             </div>

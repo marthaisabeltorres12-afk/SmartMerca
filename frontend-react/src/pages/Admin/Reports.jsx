@@ -20,8 +20,13 @@ const dname = (p) => {
 
 const fmtMoney = n => Number(n || 0).toLocaleString('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
 
-const PAGO_LABEL = { efectivo:'💵 Efectivo', tarjeta:'💳 Tarjeta', nequi:'📱 Nequi', transferencia:'🏦 Transferencia', credito:'📒 Crédito' };
-
+const PAGO_LABEL = {efectivo: (<>
+      <i className="bi bi-cash me-1"></i>Efectivo</>),
+  tarjeta: ( <>   <i className="bi bi-credit-card me-1"></i>  Tarjeta</>),
+  nequi: (<>  <i className="bi bi-phone me-1"></i>  Nequi</>),
+  transferencia: (<>  <i className="bi bi-bank me-1"></i>  Transferencia</>),
+  credito: (<>  <i className="bi bi-journal-text me-1"></i>  Crédito</>),
+};
 const Reports = () => {
   const { token } = useAuth();
 
@@ -238,24 +243,23 @@ const Reports = () => {
     URL.revokeObjectURL(url);
   };
 
-  const TABS = [
-    ['diarias',    '📅 Diarias'],
-    ['mensual',    '📆 Mensual'],
-    ['financiero', '💹 Rentabilidad'],
-    ['top',        '📈 Más Vendidos'],
-    ['productos',  '📋 Por Producto'],
-    ['proveedores','🚚 Proveedores'],
-    ['stock',      '⚠️ Stock'],
-    ['vencidos',   '📅 Vencimientos'],
-    ['cajeros',    '💰 Por Cajero'],
-  ];
+const TABS = [
+  ['diarias', (<><i className="bi bi-calendar-day me-1"></i>Diarias</>)],
+  ['mensual', (<><i className="bi bi-calendar-month me-1"></i>Mensual</>)],
+  ['financiero', (<>  <i className="bi bi-graph-up-arrow me-1"></i>   Rentabilidad </>)],
+  ['top', (<>  <i className="bi bi-bar-chart-line me-1"></i>  Más Vendidos </>)],
+  ['productos', (<>  <i className="bi bi-box-seam me-1"></i>  Por Producto</>)],
+  ['proveedores', (<>  <i className="bi bi-truck me-1"></i>  Proveedores</>)],
+  ['stock', (<>  <i className="bi bi-exclamation-triangle me-1"></i>  Stock </>)],
+  ['vencidos', (<>  <i className="bi bi-calendar-x me-1"></i>  Vencimientos</>)],
+  ['cajeros', (<>  <i className="bi bi-cash-coin me-1"></i>  Por Cajero </> )],
+];
 
   return (
     <div className="d-flex">
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft:240 }}>
-        <h4 className="fw-bold mb-4">📊 Reportes</h4>
-
+<h4 className="fw-bold mb-4"><i className="bi bi-bar-chart-fill me-2"></i>Reportes</h4>
         {/* Filtro global de fechas con atajos de período */}
         <div className="card mb-4">
           <div className="card-body">
@@ -300,7 +304,7 @@ const Reports = () => {
                     </button>
                   ))}
                   <button className="btn btn-sm btn-outline-danger py-0"
-                    onClick={() => { setDateFrom(''); setDateTo(''); setTimeFrom(''); setTimeTo(''); }}>✕ Limpiar</button>
+                    onClick={() => { setDateFrom(''); setDateTo(''); setTimeFrom(''); setTimeTo(''); }}>Limpiar</button>
                 </div>
               </div>
               {/* Fechas manuales */}
@@ -324,8 +328,8 @@ const Reports = () => {
                 <span className="badge bg-primary py-2">{dateFrom} → {dateTo || 'hoy'} · {filtered.length} ventas</span>
               </div>}
               <div className="col-auto align-self-end d-flex gap-2">
-                <button className="btn btn-danger"  onClick={() => exportVentasPDF(filtered, dateFrom, dateTo)}   disabled={!filtered.length}>📄 PDF</button>
-                <button className="btn btn-success" onClick={() => exportVentasExcel(filtered, dateFrom, dateTo)} disabled={!filtered.length}>📊 Excel</button>
+                <button className="btn btn-danger"  onClick={() => exportVentasPDF(filtered, dateFrom, dateTo)}   disabled={!filtered.length}><i className="bi bi-file-pdf"></i> PDF</button>
+                <button className="btn btn-success" onClick={() => exportVentasExcel(filtered, dateFrom, dateTo)} disabled={!filtered.length}><i className="bi bi-file-earmark-excel"></i> Excel</button>
               </div>
             </div>
           </div>
@@ -333,25 +337,33 @@ const Reports = () => {
 
         {/* KPIs */}
         <div className="row g-3 mb-4">
-          {[
-            { icon:'🧾', value: filtered.length,       label:'Total Ventas',         color:'primary' },
-            { icon:'💰', value: fmtMoney(totalRev),    label:'Ingresos totales',     color:'success' },
-            { icon:'⚠️', value: lowStock.length,       label:'Stock bajo',           color:'warning' },
-            { icon:'📅', value: totalVenc,             label:'Vencidos/Por vencer',  color:'danger'  },
-          ].map((s,i) => (
-            <div key={i} className="col-md-3">
-              <div className={`card border-${s.color} border-2`}>
-                <div className="card-body d-flex align-items-center gap-3">
-                  <span style={{ fontSize:'1.8rem' }}>{s.icon}</span>
-                  <div>
-                    <div className={`fs-4 fw-bold text-${s.color}`}>{s.value}</div>
-                    <div className="text-muted small">{s.label}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+  {[
+    { icon: 'bi bi-receipt', value: filtered.length, label: 'Total Ventas', color: 'primary' },
+    { icon: 'bi bi-cash-coin', value: fmtMoney(totalRev), label: 'Ingresos totales', color: 'success' },
+    { icon: 'bi bi-exclamation-triangle', value: lowStock.length, label: 'Stock bajo', color: 'warning' },
+    { icon: 'bi bi-calendar-x', value: totalVenc, label: 'Vencidos/Por vencer', color: 'danger' },
+  ].map((s, i) => (
+    <div key={i} className="col-md-3">
+      <div className={`card border-0 shadow-sm bg-${s.color}-subtle h-100`}>
+        <div className="card-body d-flex align-items-center gap-3">
+
+          {/* Icono */}
+          <div className={`rounded-circle bg-${s.color} text-white d-flex align-items-center justify-content-center`}
+               style={{ width: 45, height: 45 }}>
+            <i className={`${s.icon} fs-5`}></i>
+          </div>
+
+          {/* Texto */}
+          <div>
+            <h5 className="mb-0 fw-bold">{s.value}</h5>
+            <small className="text-muted">{s.label}</small>
+          </div>
+
         </div>
+      </div>
+    </div>
+  ))}
+</div>
 
         {/* Pestañas */}
         <ul className="nav nav-tabs mb-3" style={{ flexWrap:'nowrap', overflowX:'auto' }}>
@@ -369,7 +381,7 @@ const Reports = () => {
         {/* ── VENTAS DIARIAS ── */}
         {tab === 'diarias' && (
           <div className="card">
-            <div className="card-header fw-semibold">📅 Ventas por día</div>
+            <div className="card-header fw-semibold bi bi-calendar-event"> Ventas por día</div>
             <div className="table-responsive">
               <table className="table table-hover mb-0">
                 <thead className="table-light"><tr><th>Fecha</th><th>N° Ventas</th><th>Total</th></tr></thead>
@@ -392,7 +404,7 @@ const Reports = () => {
         {/* ── MENSUAL ── */}
         {tab === 'mensual' && (
           <div className="card">
-            <div className="card-header fw-semibold">📆 Ventas por mes</div>
+            <div className="card-header fw-semibold bi bi-calendar-event"> Ventas por mes</div>
             <div className="table-responsive">
               <table className="table table-hover mb-0">
                 <thead className="table-light"><tr><th>Mes</th><th>Ventas</th><th>Total</th></tr></thead>
@@ -459,7 +471,7 @@ const Reports = () => {
               <div className="card border-0 shadow-sm">
                 <div className="card-body">
                   <div className="row g-2 align-items-end">
-                    <div className="col-12"><span className="fw-semibold small">📅 Filtrar rentabilidad por rango</span></div>
+                    <div className="col-12"><span className="fw-semibold small bi bi-calendar-event"> Filtrar rentabilidad por rango</span></div>
                     <div className="col-md-2">
                       <label className="form-label small">Fecha inicio</label>
                       <input type="date" className="form-control form-control-sm" value={rentDesde} onChange={e => setRentDesde(e.target.value)} />
@@ -493,43 +505,60 @@ const Reports = () => {
                     </small>
                   </div>
                   {[
-                    { icon:'💰', label:'Ventas del rango',   value: rentTotalVentas,   color:'success' },
-                    { icon:'📈', label:'Ganancia estimada del rango', value: rentTotalGanancia, color: rentTotalGanancia>=0?'success':'danger' },
-                  ].map((k,i) => (
-                    <div key={i} className="col-md-6">
-                      <div className={`card border-${k.color} border-2`}>
-                        <div className="card-body d-flex align-items-center gap-3">
-                          <span style={{ fontSize:'2rem' }}>{k.icon}</span>
-                          <div>
-                            <div className={`fs-4 fw-bold text-${k.color}`}>{fmtMoney(k.value)}</div>
-                            <div className="text-muted small">{k.label}</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+  {icon: 'bi bi-cash-stack',label: 'Ventas del rango',value: rentTotalVentas,color: 'success'},
+  { icon: 'bi bi-graph-up-arrow', label: 'Ganancia estimada del rango', value: rentTotalGanancia,color: rentTotalGanancia >= 0 ? 'primary' : 'danger' },
+].map((k, i) => (
+  <div key={i} className="col-md-6">
+    <div className={`card border-${k.color} border-2`}>
+      <div className="card-body d-flex align-items-center gap-3">
+
+        <i className={`${k.icon} text-${k.color}`} style={{ fontSize: '2rem' }} ></i>
+
+        <div>
+          <div className={`fs-4 fw-bold text-${k.color}`}>
+            {fmtMoney(k.value)}
+          </div>
+          <div className="text-muted small">
+            {k.label}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+))}
                 </div>
               )}
 
               {/* ── Tarjetas del mes actual (siempre visibles) ── */}
               <div className="row g-3">
                 {[
-                  { icon:'📦', label:'Inversión del mes',  value: actual.inversion, color:'danger'  },
-                  { icon:'💰', label:'Ventas del mes',     value: actual.ventas,    color:'success' },
-                  { icon:'📈', label:'Ganancia del mes',   value: ganAct,           color: ganAct>=0?'success':'danger' },
-                ].map((k,i) => (
-                  <div key={i} className="col-md-4">
-                    <div className={`card border-${k.color} border-2`}>
-                      <div className="card-body d-flex align-items-center gap-3">
-                        <span style={{ fontSize:'2rem' }}>{k.icon}</span>
-                        <div>
-                          <div className={`fs-4 fw-bold text-${k.color}`}>{fmtMoney(k.value)}</div>
-                          <div className="text-muted small">{k.label} ({mesActual})</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+  { icon: 'bi bi-box-seam', label: 'Inversión del mes', value: actual.inversion, color: 'danger' },
+  {icon: 'bi bi-cash-stack',label: 'Ventas del mes',value: actual.ventas,color: 'success' },
+  { icon: 'bi bi-graph-up-arrow', label: 'Ganancia del mes', value: ganAct, color: ganAct >= 0 ? 'primary' : 'danger'},
+].map((k, i) => (
+  <div key={i} className="col-md-4">
+    <div className={`card border-${k.color} border-2`}>
+      <div className="card-body d-flex align-items-center gap-3">
+
+        <i
+          className={`${k.icon} text-${k.color}`}
+          style={{ fontSize: '2rem' }}
+        ></i>
+
+        <div>
+          <div className={`fs-4 fw-bold text-${k.color}`}>
+            {fmtMoney(k.value)}
+          </div>
+          <div className="text-muted small">
+            {k.label} ({mesActual})
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+))}
               </div>
               <div className="card">
                 <div className="card-header fw-semibold">Inversión, Ventas y Ganancias por Mes</div>
@@ -565,7 +594,7 @@ const Reports = () => {
         {/* ── MÁS VENDIDOS ── */}
         {tab === 'top' && (
           <div className="card">
-            <div className="card-header fw-semibold">📈 Productos más vendidos</div>
+            <div className="card-header fw-semibold bi bi-graph-up-arrow text-primary"> Productos más vendidos</div>
             <div className="table-responsive">
               <table className="table table-hover mb-0">
                 <thead className="table-light"><tr><th>#</th><th>Producto</th><th>Unidades</th><th className="text-end">Total vendido</th></tr></thead>
@@ -576,7 +605,17 @@ const Reports = () => {
                       const totalVendido = allRows.filter(r => r.producto === name).reduce((a,r) => a + r.subtotal, 0);
                       return (
                         <tr key={name}>
-                          <td>{i===0?'🥇':i===1?'🥈':i===2?'🥉':<span className="badge bg-secondary">{i+1}</span>}</td>
+                          <td>
+  {i === 0 ? (
+    <i className="bi bi-trophy-fill text-warning fs-5"></i>
+  ) : i === 1 ? (
+    <i className="bi bi-award-fill text-secondary fs-5"></i>
+  ) : i === 2 ? (
+    <i className="bi bi-award-fill text-bronze fs-5"></i>
+  ) : (
+    <span className="badge bg-secondary">{i + 1}</span>
+  )}
+</td>
                           <td className="fw-semibold">{name}</td>
                           <td><span className="badge bg-success">{qty}</span></td>
                           <td className="text-end fw-semibold text-success">{fmtMoney(totalVendido)}</td>
@@ -589,7 +628,7 @@ const Reports = () => {
           </div>
         )}
 
-        {/* ── 📋 POR PRODUCTO ── */}
+        {/* ──  POR PRODUCTO ── */}
         {tab === 'productos' && (
           <div>
             {/* Filtros */}
@@ -599,9 +638,9 @@ const Reports = () => {
 
                   {/* Búsqueda unificada nombre + código de barras */}
                   <div className="col-md-4">
-                    <label className="form-label small fw-semibold">🔍 Nombre o código de barras</label>
+                    <label className="form-label small fw-semibold"><i className="bi bi-search"></i> Nombre o código de barras</label>
                     <div className="input-group">
-                      <span className="input-group-text bg-dark text-white" style={{ fontSize:12 }}>🔍</span>
+                      <span className="input-group-text bg-dark text-white" style={{ fontSize:12 }}><i className="bi bi-search"></i></span>
                       <input className="form-control" placeholder="Escribe nombre o escanea código..."
                         value={prodQuery}
                         onChange={e => { setProdQuery(e.target.value); setProdPage(1); }} />
@@ -616,7 +655,7 @@ const Reports = () => {
                   </div>
 
                   <div className="col-md-2">
-                    <label className="form-label small fw-semibold">📂 Categoría</label>
+                    <label className="form-label small fw-semibold"><i className="bi bi-folder2-open"></i> Categoría</label>
                     <select className="form-select" value={prodCat}
                       onChange={e => { setProdCat(e.target.value); setProdPage(1); }}>
                       <option value="">Todas</option>
@@ -625,7 +664,7 @@ const Reports = () => {
                   </div>
 
                   <div className="col-md-2">
-                    <label className="form-label small fw-semibold">👤 Cajero</label>
+                    <label className="form-label small fw-semibold"><i className="bi bi-person"></i> Cajero</label>
                     <select className="form-select" value={prodCajero}
                       onChange={e => { setProdCajero(e.target.value); setProdPage(1); }}>
                       <option value="">Todos</option>
@@ -634,7 +673,7 @@ const Reports = () => {
                   </div>
 
                   <div className="col-md-2">
-                    <label className="form-label small fw-semibold">💳 Pago</label>
+                    <label className="form-label small fw-semibold"><i className="bi bi-credit-card"></i> Pago</label>
                     <select className="form-select" value={prodPago}
                       onChange={e => { setProdPago(e.target.value); setProdPage(1); }}>
                       <option value="">Todos</option>
@@ -643,7 +682,7 @@ const Reports = () => {
                   </div>
 
                   <div className="col-md-2">
-                    <label className="form-label small fw-semibold">Ordenar</label>
+                    <label className="form-label small fw-semibold"><i className="bi bi-sort-amount-down"></i> Ordenar</label>
                     <select className="form-select" value={prodSort}
                       onChange={e => { setProdSort(e.target.value); setProdPage(1); }}>
                       <option value="fecha_desc">Fecha (reciente)</option>
@@ -659,7 +698,7 @@ const Reports = () => {
                       Limpiar filtros
                     </button>
                     <button className="btn btn-success btn-sm" onClick={exportProdCSV} disabled={!prodFiltered.length}>
-                      ⬇️ Exportar CSV
+                      <i className="bi bi-filetype-csv"></i> Exportar CSV
                     </button>
                   </div>
                 </div>
@@ -703,7 +742,7 @@ const Reports = () => {
                     {!prodPageRows.length ? (
                       <tr>
                         <td colSpan="10" className="text-center text-muted py-5">
-                          <div className="fs-3">🔍</div>
+                          <div className="fs-3"><i className="bi bi-search"></i></div>
                           <div>Sin resultados para los filtros aplicados</div>
                         </td>
                       </tr>
@@ -766,8 +805,8 @@ const Reports = () => {
                     Página {prodPage} de {prodTotalPages} · {prodFiltered.length} registros
                   </span>
                   <div className="d-flex gap-1">
-                    <button className="btn btn-sm btn-outline-secondary" disabled={prodPage===1} onClick={() => setProdPage(1)}>«</button>
-                    <button className="btn btn-sm btn-outline-secondary" disabled={prodPage===1} onClick={() => setProdPage(p=>p-1)}>‹</button>
+                    <button className="btn btn-sm btn-outline-secondary" disabled={prodPage===1} onClick={() => setProdPage(1)}><i className="bi bi-chevron-double-left"></i></button>
+                    <button className="btn btn-sm btn-outline-secondary" disabled={prodPage===1} onClick={() => setProdPage(p=>p-1)}><i className="bi bi-chevron-left"></i></button>
                     {Array.from({ length: Math.min(5, prodTotalPages) }, (_,i) => {
                       const start = Math.max(1, Math.min(prodPage-2, prodTotalPages-4));
                       const page  = start + i;
@@ -777,8 +816,8 @@ const Reports = () => {
                           onClick={() => setProdPage(page)}>{page}</button>
                       ) : null;
                     })}
-                    <button className="btn btn-sm btn-outline-secondary" disabled={prodPage===prodTotalPages} onClick={() => setProdPage(p=>p+1)}>›</button>
-                    <button className="btn btn-sm btn-outline-secondary" disabled={prodPage===prodTotalPages} onClick={() => setProdPage(prodTotalPages)}>»</button>
+                    <button className="btn btn-sm btn-outline-secondary" disabled={prodPage===prodTotalPages} onClick={() => setProdPage(p=>p+1)}><i className="bi bi-chevron-right"></i></button>
+                    <button className="btn btn-sm btn-outline-secondary" disabled={prodPage===prodTotalPages} onClick={() => setProdPage(prodTotalPages)}><i className="bi bi-chevron-double-right"></i></button>
                   </div>
                 </div>
               )}
@@ -805,7 +844,7 @@ const Reports = () => {
           const totalGen = ranking.reduce((a,r)=>a+r.total,0);
           return (
             <div className="card">
-              <div className="card-header fw-semibold">🚚 Ranking de Proveedores</div>
+              <div className="card-header fw-semibold"><i className="bi bi-truck"></i> Ranking de Proveedores</div>
               <div className="table-responsive">
                 <table className="table table-hover align-middle mb-0">
                   <thead className="table-light">
@@ -818,7 +857,17 @@ const Reports = () => {
                         const pct = totalGen>0?((s.total/totalGen)*100).toFixed(1):0;
                         return (
                           <tr key={s.display_name || s.company_name || s.name} style={{ background: i===0?'#fffbeb':'' }}>
-                            <td>{i===0?'🥇':i===1?'🥈':i===2?'🥉':<span className="badge bg-secondary">{i+1}</span>}</td>
+                            <td>
+  {i === 0 ? (
+    <i className="bi bi-trophy-fill text-warning"></i>
+  ) : i === 1 ? (
+    <i className="bi bi-award-fill text-secondary"></i>
+  ) : i === 2 ? (
+    <i className="bi bi-award-fill" style={{ color: '#cd7f32' }}></i>
+  ) : (
+    <span className="badge bg-secondary">{i + 1}</span>
+  )}
+</td>
                             <td className="fw-semibold">{s.display_name || s.company_name || s.name}</td>
                             <td className="text-end text-success fw-bold">{fmtMoney(s.total)}</td>
                             <td className="text-muted small">{s.topProd?`${s.topProd[0]} (${s.topProd[1]} uds)`:'—'}</td>
@@ -843,7 +892,7 @@ const Reports = () => {
         {/* ── STOCK BAJO ── */}
         {tab === 'stock' && (
           <div className="card">
-            <div className="card-header fw-semibold">⚠️ Productos con stock bajo</div>
+            <div className="card-header fw-semibold"><i className="bi bi-exclamation-triangle"></i> Productos con stock bajo</div>
             <div className="table-responsive">
               <table className="table table-hover mb-0">
                 <thead className="table-light">
@@ -851,7 +900,7 @@ const Reports = () => {
                 </thead>
                 <tbody>
                   {!lowStock.length
-                    ? <tr><td colSpan="6" className="text-center text-muted py-3">Todo bien ✅</td></tr>
+                    ? <tr><td colSpan="6" className="text-center text-muted py-3">Todo bien </td></tr>
                     : lowStock.map(p => (
                       <tr key={p.id}>
                         <td className="fw-semibold">{dname(p)}</td>
@@ -888,7 +937,7 @@ const Reports = () => {
               ))}
             </div>
             {!totalVenc && (
-              <div className="card"><div className="card-body text-center text-success py-5"><div className="fs-1">✅</div><div>Todos los productos están vigentes</div></div></div>
+              <div className="card"><div className="card-body text-center text-success py-5"><div className="fs-1"><i className="bi bi-check-circle-fill"></i></div><div>Todos los productos están vigentes</div></div></div>
             )}
             {[...vencidos, ...vence7, ...vence30].length > 0 && (
               <div className="card">
@@ -919,7 +968,7 @@ const Reports = () => {
         {/* ── POR CAJERO ── */}
         {tab === 'cajeros' && (
           <div className="card">
-            <div className="card-header fw-semibold">💰 Ventas por Cajero</div>
+            <div className="card-header fw-semibold"><i className="bi bi-cash-coin"></i> Ventas por Cajero</div>
             <div className="table-responsive">
               <table className="table table-hover align-middle mb-0">
                 <thead className="table-light"><tr><th>Cajero</th><th>Ventas</th><th>Total</th><th>Productos</th></tr></thead>
@@ -929,7 +978,7 @@ const Reports = () => {
                     : byCashier.map((c,i) => (
                       <React.Fragment key={i}>
                         <tr style={{ cursor:'pointer' }} onClick={() => setExpandedCashier(expandedCashier===i?null:i)}>
-                          <td className="fw-semibold">👤 {c.cashier}</td>
+                          <td className="fw-semibold"><i className="bi bi-person"></i> {c.cashier}</td>
                           <td><span className="badge bg-primary">{c.ventas}</span></td>
                           <td className="text-success fw-bold">{fmtMoney(parseFloat(c.total))}</td>
                           <td className="text-muted small">
