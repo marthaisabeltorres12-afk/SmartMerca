@@ -51,7 +51,7 @@ export default function AuditLogs() {
     <div className="d-flex">
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft: 240 }}>
-        <h4 className="fw-bold mb-1">🕵️ Logs de Auditoría</h4>
+        <h4 className="fw-bold mb-1"><i className="bi bi-file-earmark-medical"></i> Logs de Auditoría</h4>
         <p className="text-muted mb-4">Registro de acciones importantes del sistema</p>
 
         {error && <div className="alert alert-danger">{error}</div>}
@@ -61,7 +61,7 @@ export default function AuditLogs() {
           <div className="card-body py-3">
             <div className="row g-2 align-items-end">
               <div className="col-md-5">
-                <label className="form-label small fw-semibold">🔍 Buscar</label>
+                <label className="form-label small fw-semibold"><i className="bi bi-search"></i> Buscar</label>
                 <input className="form-control"
                   placeholder="Usuario, rol, acción o descripción..."
                   value={search} onChange={e => setSearch(e.target.value)} />

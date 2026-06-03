@@ -227,7 +227,7 @@ export default function DomiciliosAdmin() {
     {
       val: "",
       label: "Todos",
-      icon: "bi-card-list"
+      icon: "bi-card-list "
     },
     {
       val: "pendiente",

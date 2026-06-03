@@ -6,12 +6,11 @@ import { apiFetch } from '../../services/api';
 const fmt = n => Number(n||0).toLocaleString('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
 
 const statusBadge = s => {
-  if (s === 'pagado')   return <span className="badge bg-success">✅ Pagado</span>;
-  if (s === 'parcial')  return <span className="badge bg-warning text-dark">⏳ Parcial</span>;
-  if (s === 'vencido')  return <span className="badge bg-danger">🔴 Vencido</span>;
-  return <span className="badge bg-secondary">⏱ Pendiente</span>;
+  if (s === 'pagado')   return <span className="badge bg-success"><i className="bi bi-check-circle-fill me-1"></i>Pagado</span>;
+  if (s === 'parcial')  return <span className="badge bg-warning text-dark"><i className="bi bi-hourglass-split me-1"></i>Parcial</span>;
+  if (s === 'vencido')  return <span className="badge bg-danger"><i className="bi bi-x-circle-fill me-1"></i>Vencido</span>;
+  return <span className="badge bg-secondary"><i className="bi bi-clock me-1"></i>Pendiente</span>;
 };
-
 const diasVencimiento = (fecha) => {
   const hoy  = new Date(); hoy.setHours(0,0,0,0);
   const venc = new Date(fecha + 'T00:00:00');
@@ -92,7 +91,7 @@ const CuentasPagar = () => {
       <main className="flex-grow-1 p-4" style={{ marginLeft:240 }}>
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <h4 className="fw-bold mb-0">📋 Cuentas por Pagar</h4>
+            <h4 className="fw-bold mb-0"><i className="bi bi-file-earmark-text-fill me-2"></i>Cuentas por Pagar</h4>
             <p className="text-muted small mb-0">
               Las facturas se agregan automáticamente desde <strong>Inventario → Registrar Pedido</strong> cuando marcas "Factura quedó pendiente de pago".
             </p>
@@ -122,11 +121,14 @@ const CuentasPagar = () => {
 
         {/* Tabs */}
         <ul className="nav nav-tabs mb-4">
-          {[['facturas','📄 Facturas'],['cartera','🏦 Cartera por proveedor']].map(([k,l])=>(
-            <li key={k} className="nav-item">
-              <button className={`nav-link ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</button>
-            </li>
-          ))}
+          {[
+  { k:'facturas', l: <><i className="bi bi-receipt me-1"></i>Facturas</> },
+  { k:'cartera',  l: <><i className="bi bi-bank me-1"></i>Cartera por proveedor</> },
+].map(({k,l})=>(
+  <li key={k} className="nav-item">
+    <button className={`nav-link ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</button>
+  </li>
+))}
         </ul>
 
         {/* Tab facturas */}
@@ -169,12 +171,12 @@ const CuentasPagar = () => {
                             <div className="d-flex gap-1">
                               <button className="btn btn-sm btn-outline-secondary py-0 px-2"
                                 onClick={()=>setExpanded(expanded===f.id?null:f.id)}>
-                                {expanded===f.id?'▲':'▼'}
+                                <i className={`bi ${expanded===f.id ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
                               </button>
                               {f.status !== 'pagado' && (
                                 <button className="btn btn-sm btn-outline-success py-0 px-2"
                                   onClick={()=>{ setPaymentModal(f); setPaymentForm({...EMPTY_PAYMENT, monto: f.saldo}); }}>
-                                  💳 Pagar
+                                 <i className="bi bi-credit-card me-1"></i>Pagar
                                 </button>
                               )}
                             </div>
@@ -183,7 +185,7 @@ const CuentasPagar = () => {
                         {expanded===f.id && (
                           <tr><td colSpan="9" className="p-0">
                             <div className="bg-light p-3">
-                              {f.notas && <div className="text-muted small mb-2">📝 {f.notas}</div>}
+                              {f.notas && <div className="text-muted small mb-2"><i className="bi bi-sticky me-1"></i>{f.notas}</div>}
                               {!f.payments?.length ? (
                                 <div className="text-muted small">Sin pagos registrados</div>
                               ) : (
@@ -227,7 +229,7 @@ const CuentasPagar = () => {
                     <tr><td colSpan="4" className="text-center text-muted py-4">Sin deudas pendientes</td></tr>
                   ) : cartera.map(c=>(
                     <tr key={c.supplier_id}>
-                      <td className="fw-semibold">🏭 {c.supplier_name}</td>
+                      <td className="fw-semibold"><i className="bi bi-building me-1 text-muted"></i> {c.supplier_name}</td>
                       <td className="text-center">{c.facturas}</td>
                       <td className="text-center">
                         {c.vencidas > 0
@@ -257,7 +259,7 @@ const CuentasPagar = () => {
             <div className="modal-dialog">
               <div className="modal-content">
                 <div className="modal-header" style={{background:'#1e3a5f',color:'#fff'}}>
-                  <h5 className="modal-title fw-bold">📄 Registrar Factura de Proveedor</h5>
+                  <h5 className="modal-title fw-bold"><i className="bi bi-receipt me-2"></i> Registrar Factura de Proveedor</h5>
                   <button className="btn-close btn-close-white" onClick={()=>setShowInvoiceModal(false)} />
                 </div>
                 <form onSubmit={handleCreateInvoice}>
@@ -307,7 +309,7 @@ const CuentasPagar = () => {
                   <div className="modal-footer">
                     <button type="button" className="btn btn-secondary" onClick={()=>setShowInvoiceModal(false)}>Cancelar</button>
                     <button type="submit" className="btn btn-primary fw-bold" disabled={loading}>
-                      {loading?'Guardando...':'✅ Registrar factura'}
+                      {loading ? 'Guardando...' : <><i className="bi bi-check-circle me-1"></i>Registrar factura</>}
                     </button>
                   </div>
                 </form>
@@ -322,7 +324,7 @@ const CuentasPagar = () => {
             <div className="modal-dialog">
               <div className="modal-content">
                 <div className="modal-header" style={{background:'#166534',color:'#fff'}}>
-                  <h5 className="modal-title fw-bold">💳 Registrar Pago</h5>
+                  <h5 className="modal-title fw-bold"><i className="bi bi-credit-card me-2"></i> Registrar Pago</h5>
                   <button className="btn-close btn-close-white" onClick={()=>setPaymentModal(null)} />
                 </div>
                 <form onSubmit={handlePayment}>
@@ -366,7 +368,7 @@ const CuentasPagar = () => {
                   <div className="modal-footer">
                     <button type="button" className="btn btn-secondary" onClick={()=>setPaymentModal(null)}>Cancelar</button>
                     <button type="submit" className="btn btn-success fw-bold" disabled={loading}>
-                      {loading?'Guardando...':'✅ Registrar pago'}
+                      {loading ? 'Guardando...' : <><i className="bi bi-check-circle me-1"></i>Registrar pago</>}
                     </button>
                   </div>
                 </form>

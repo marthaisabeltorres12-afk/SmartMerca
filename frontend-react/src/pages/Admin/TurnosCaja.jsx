@@ -51,7 +51,7 @@ const CashierView = ({ token, user }) => {
         {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
         {!shift ? (
           <div className="card border-0 shadow-sm text-center py-5">
-            <div className="fs-2 mb-2">⏳</div>
+            <div className="fs-2 mb-2"><i className="bi bi-clock-history me-2"></i></div>
             <div className="fw-semibold">No tienes turno activo</div>
             <div className="text-muted small mt-1">El administrador abrirá tu turno</div>
           </div>
@@ -59,10 +59,10 @@ const CashierView = ({ token, user }) => {
           <>
             <div className="card border-success border-2 mb-4">
               <div className="card-body text-center py-4">
-                <div className="fs-1 mb-1">🟢</div>
+                <div className="fs-1 mb-1"><i className="bi bi-check-circle-fill text-success"></i></div>
                 <div className="fw-bold fs-5">Turno activo</div>
                 {shift.cash_register && (
-                  <div className="badge bg-primary mb-1">🖥️ {shift.cash_register}</div>
+                  <div className="badge bg-primary mb-1"><i className="bi bi-display me-1"></i>{shift.cash_register}</div>
                 )}
                 <div className="text-muted small">Desde: {fmtDt(shift.opened_at)}</div>
               </div>
@@ -70,7 +70,7 @@ const CashierView = ({ token, user }) => {
             {shift.cashier_count_requested && !shift.cash_counted_by_cashier && !submitted && (
               <div className="card border-warning border-2">
                 <div className="card-header fw-semibold py-3" style={{ background:'#92400e', color:'#fff' }}>
-                  📋 El admin solicita el conteo de caja
+                  <i className="bi bi-clipboard-data me-2"></i> El admin solicita el conteo de caja
                 </div>
                 <div className="card-body">
                   <p className="text-muted small mb-3">
@@ -79,7 +79,7 @@ const CashierView = ({ token, user }) => {
                   </p>
                   <form onSubmit={handleSubmitCount}>
                     <div className="mb-4">
-                      <label className="form-label fw-semibold">💵 Total efectivo en caja</label>
+                      <label className="form-label fw-semibold"><i className="bi bi-currency-dollar me-2"></i> Total efectivo en caja</label>
                       <div className="input-group input-group-lg">
                         <span className="input-group-text">$</span>
                         <input type="number" className="form-control" min="0" step="1"
@@ -88,7 +88,7 @@ const CashierView = ({ token, user }) => {
                       </div>
                     </div>
                     <button type="submit" className="btn btn-warning w-100 fw-bold btn-lg">
-                      ✅ Enviar conteo al admin
+                      <i className="bi bi-send me-2"></i> Enviar conteo al admin
                     </button>
                   </form>
                 </div>
@@ -97,7 +97,7 @@ const CashierView = ({ token, user }) => {
             {(submitted || shift.cash_counted_by_cashier) && (
               <div className="card border-success">
                 <div className="card-body text-center py-4">
-                  <div className="fs-2 mb-2">✅</div>
+                  <div className="fs-2 mb-2"><i className="bi bi-check-circle-fill text-success"></i></div>
                   <div className="fw-bold">Conteo enviado</div>
                   <div className="text-muted small">El administrador revisará y cerrará el turno</div>
                 </div>
@@ -204,10 +204,10 @@ const PanelCajas = ({ token, cajas, users, onRefresh }) => {
       {/* Resumen */}
       <div className="row g-3 mb-4">
         {[
-          ['🖥️ Total cajas',   cajas.length,                                             'primary'],
-          ['🟢 Abiertas',      cajas.filter(c=>c.status==='ocupada').length,              'success'],
-          ['⚪ Disponibles',   cajas.filter(c=>c.status==='disponible').length,           'secondary'],
-          ['💰 Total del día', fmt(totalDia),                                             'warning'],
+          ['Total cajas',  cajas.length,                                    'primary'],
+['Abiertas',     cajas.filter(c=>c.status==='ocupada').length,    'success'],
+['Disponibles',  cajas.filter(c=>c.status==='disponible').length, 'secondary'],
+['Total del día',fmt(totalDia),                                    'warning'],
         ].map(([l,v,c]) => (
           <div key={l} className="col-md-3 col-6">
             <div className={`card border-0 shadow-sm border-start border-${c} border-3`}>
@@ -234,9 +234,12 @@ const PanelCajas = ({ token, cajas, users, onRefresh }) => {
             <div className={`card border-0 shadow-sm h-100 ${status==='ocupada'?'border-success border-2':''}`}>
               <div className={`card-header d-flex justify-content-between align-items-center
                 ${status==='ocupada'?'bg-success text-white':'bg-light'}`}>
-                <span className="fw-bold">🖥️ {caja.nombre}</span>
+                <span className="fw-bold"><i className="bi bi-display" style={{fontSize:28}}></i> {caja.nombre}</span>
                 <span className={`badge ${status==='ocupada'?'bg-white text-success':'bg-secondary'}`}>
-                  {status==='ocupada'?'🟢 Abierta':'⚪ Libre'}
+                  {status==='ocupada'
+  ? <><i className="bi bi-circle-fill me-1" style={{fontSize:8}}></i>Abierta</>
+  : <><i className="bi bi-circle me-1" style={{fontSize:8}}></i>Libre</>}
+
                 </span>
               </div>
               <div className="card-body">
@@ -268,13 +271,13 @@ const PanelCajas = ({ token, cajas, users, onRefresh }) => {
                     </div>
                     <div className="mt-2 text-center">
                       <span className={`badge ${turno_activo.status==='abierto'?'bg-success':turno_activo.status==='pendiente_cierre'?'bg-warning text-dark':'bg-secondary'}`}>
-                        {turno_activo.status==='abierto'?'En turno':turno_activo.status==='pendiente_cierre'?'⏳ Pendiente cierre':'Cerrado'}
+                        {turno_activo.status==='abierto'?'En turno':turno_activo.status==='pendiente_cierre'?' Pendiente cierre':'Cerrado'}
                       </span>
                     </div>
                   </>
                 ) : (
                   <div className="text-center text-muted py-2">
-                    <div style={{fontSize:28}}>🖥️</div>
+                    <div style={{fontSize:28}}><i className="bi bi-display" style={{fontSize:48}}></i></div>
                     <div className="small mt-1">Sin turno activo</div>
                     {cajeros_auth?.length > 0 && (
                       <div className="mt-2">
@@ -303,12 +306,12 @@ const PanelCajas = ({ token, cajas, users, onRefresh }) => {
                     cajero_ids:  caja.cajero_ids||[],
                     base_amount: caja.base_amount||0
                   })}>
-                  ✏️ Editar
+                  <i className="bi bi-pencil"></i> Editar
                 </button>
                 <button className="btn btn-sm btn-outline-danger py-0"
                   disabled={status==='ocupada'}
                   onClick={()=>handleDesactivar(caja.id, caja.nombre)}>
-                  Desactivar
+                  <i className="bi bi-trash"></i> Desactivar
                 </button>
               </div>
             </div>
@@ -316,10 +319,10 @@ const PanelCajas = ({ token, cajas, users, onRefresh }) => {
         ))}
         {!cajas.length && (
           <div className="col-12 text-center py-5 text-muted">
-            <div style={{fontSize:48}}>🖥️</div>
+            <div style={{fontSize:48}}><i className="bi bi-display" style={{fontSize:48}}></i></div>
             <div className="mt-2">No hay cajas configuradas</div>
             <button className="btn btn-primary mt-3" onClick={()=>setModalNueva(true)}>
-              + Crear primera caja
+              <i className="bi bi-plus"></i> Crear primera caja
             </button>
           </div>
         )}
@@ -330,7 +333,7 @@ const PanelCajas = ({ token, cajas, users, onRefresh }) => {
           <div className="modal-dialog modal-sm">
             <div className="modal-content">
               <div className="modal-header" style={{background:'#1e3a5f',color:'#fff'}}>
-                <h5 className="modal-title fw-bold">🖥️ Nueva caja</h5>
+                <h5 className="modal-title fw-bold"><i className="bi bi-display" style={{fontSize:28}}></i> Nueva caja</h5>
                 <button className="btn-close btn-close-white" onClick={()=>setModalNueva(false)}/>
               </div>
               <form onSubmit={handleCrear}>
@@ -615,9 +618,9 @@ const AdminView = ({ token }) => {
   };
 
   const statusBadge = s => {
-    if (s==='aprobado')  return <span className="badge bg-success">✅ Aprobado</span>;
-    if (s==='rechazado') return <span className="badge bg-danger">❌ Rechazado</span>;
-    return <span className="badge bg-warning text-dark">⏳ Pendiente</span>;
+    if (s==='aprobado')  return <span className="badge bg-success"><i className="bi bi-check-circle-fill"></i> Aprobado</span>;
+    if (s==='rechazado') return <span className="badge bg-danger"><i className="bi bi-x-circle"></i> Rechazado</span>;
+    return <span className="badge bg-warning text-dark"><i className="bi bi-hourglass-split"></i> Pendiente</span>;
   };
 
   const cajeros   = [...new Set(shifts.map(s=>s.cashier).filter(Boolean))].sort();
@@ -632,10 +635,10 @@ const AdminView = ({ token }) => {
       {/* KPIs */}
       <div className="row g-3 mb-4">
         {[
-          { icon:'🖥️', value: cajas.filter(c=>c.status==='ocupada').length + '/' + cajas.length, label:'Cajas abiertas', color:'success' },
-          { icon:'🟢', value: openShifts.length,                              label:'Turnos activos',    color:'primary' },
-          { icon:'⏳', value: pendientes,                                      label:'Cierres pendientes',color:'warning' },
-          { icon:'✅', value: closes.filter(c=>c.status==='aprobado').length,  label:'Cierres aprobados', color:'secondary' },
+          { icon:<i className="bi bi-display"></i>,            value: cajas.filter(c=>c.status==='ocupada').length + '/' + cajas.length, label:'Cajas abiertas', color:'success' },
+          { icon:<i className="bi bi-circle-fill"></i>, value: openShifts.length,                              label:'Turnos activos',    color:'primary' },
+          { icon:<i className="bi bi-hourglass-split"></i>, value: pendientes,                                      label:'Cierres pendientes',color:'warning' },
+          { icon:<i className="bi bi-check-circle fill"></i>, value: closes.filter(c=>c.status==='aprobado').length,  label:'Cierres aprobados', color:'secondary' },
         ].map((k,i) => (
           <div key={i} className="col-6 col-md-3">
             <div className={`card border-${k.color} border-2 text-center`}>
@@ -651,11 +654,11 @@ const AdminView = ({ token }) => {
 
       {/* Tabs */}
       <ul className="nav nav-tabs mb-4">
-        {[
-          ['cajas',    '🖥️ Cajas',         cajas.filter(c=>c.status==='ocupada').length],
-          ['activos',  '🟢 Turnos activos', openShifts.length],
-          ['historial','📋 Historial',      0],
-        ].map(([k,l,badge]) => (
+       {[
+  { k:'cajas',     l: <><i className="bi bi-display me-1"></i>Cajas</>,        badge: cajas.filter(c=>c.status==='ocupada').length },
+  { k:'activos',   l: <><i className="bi bi-circle-fill me-1" style={{fontSize:10,color:'#22c55e'}}></i>Turnos activos</>, badge: openShifts.length },
+  { k:'historial', l: <><i className="bi bi-clock-history me-1"></i>Historial</>, badge: 0 },
+].map(({k,l,badge}) => (
           <li key={k} className="nav-item">
             <button className={`nav-link ${tab===k?'active fw-bold':''}`} onClick={()=>setTab(k)}>
               {l}
@@ -675,7 +678,7 @@ const AdminView = ({ token }) => {
         <div>
           {!openShifts.length ? (
             <div className="text-center text-muted py-5">
-              <div className="fs-2">📭</div>
+              <div className="fs-2"><i className="bi bi-inbox" style={{fontSize:40}}></i></div>
               <div>No hay turnos abiertos</div>
               <div className="small mt-1">Los cajeros abren turno automáticamente al iniciar sesión</div>
             </div>
@@ -686,24 +689,24 @@ const AdminView = ({ token }) => {
                 <div className="card-header d-flex align-items-center justify-content-between py-3"
                   style={{ background:'#f0fdf4', borderLeft:'4px solid #22c55e' }}>
                   <div>
-                    <span className="fw-bold fs-6">👤 {s.cashier}</span>
-                    {s.cash_register && <span className="badge bg-primary ms-2">🖥️ {s.cash_register}</span>}
+                    <span className="fw-bold fs-6"><i className="bi bi-person me-1"></i> {s.cashier}</span>
+                    {s.cash_register && <span className="badge bg-primary ms-2"><i className="bi bi-display me-1"></i> {s.cash_register}</span>}
                     <span className="text-muted small ms-3">Desde: {fmtDt(s.opened_at)}</span>
                     <span className="badge bg-success ms-2">Activo</span>
                   </div>
                   <div className="d-flex gap-2 flex-wrap">
                     <button className="btn btn-sm btn-outline-warning"
                       onClick={()=>{ setWdModal(s); setWdAmount(''); setWdReason(''); setPinValue(''); setPinError(''); }}>
-                      📤 Retiro
+                      <i className="bi bi-box-arrow-up me-1"></i> Retiro
                     </button>
                     {!s.cashier_count_requested
                       ? <button className="btn btn-sm btn-outline-info" onClick={()=>handleRequestCount(s)}>
-                          📋 Pedir conteo
+                          <i className="bi bi-clipboard-check me-1"></i> Pedir conteo
                         </button>
                       : !s.cash_counted_by_cashier
-                        ? <span className="badge bg-warning text-dark align-self-center">⏳ Esperando conteo del cajero</span>
+                        ? <span className="badge bg-warning text-dark align-self-center"><i className="bi bi-hourglass-split me-1"></i> Esperando conteo del cajero</span>
                         : <button className="btn btn-sm btn-danger fw-bold" onClick={()=>setCloseModal(s)}>
-                            🔴 Cerrar turno
+                           <i className="bi bi-stop-circle me-1"></i>
                           </button>
                     }
                   </div>
@@ -797,8 +800,9 @@ const AdminView = ({ token }) => {
                         <React.Fragment key={s.id}>
                           <tr style={{background: isOpen?'#f0fdf4': diff<0&&saldado?'#fefce8': diff<0?'#fff5f5':''}}>
                             <td className="text-muted">{s.id}</td>
-                            <td className="fw-semibold">👤 {s.cashier}</td>
-                            <td className="text-muted">{s.cash_register ? `🖥️ ${s.cash_register}` : '—'}</td>
+                            <td className="fw-semibold"><i className="bi bi-person me-1"></i>{s.cashier}</td>
+<td className="text-muted">{s.cash_register ? <><i className="bi bi-display me-1"></i>{s.cash_register}</> : '—'}</td>
+
                             <td className="text-muted">{fmtDt(s.opened_at)}</td>
                             <td className="text-muted">{s.closed_at ? fmtDt(s.closed_at) : <span className="badge bg-success">Abierto</span>}</td>
                             <td className="text-end">{fmt(s.base_amount)}</td>
@@ -816,7 +820,7 @@ const AdminView = ({ token }) => {
                                 {!isOpen && s.difference!=null && (
                                   <button className="btn btn-sm btn-outline-success py-0 px-2"
                                     onClick={()=>openAdjModal({ id:s.id, cashier:s.cashier, date:s.closed_at?s.closed_at.slice(0,10):s.opened_at.slice(0,10), system_total:s.total_sales, cash_counted:s.cash_counted, difference:s.difference, status:s.status, _from_shift:true })}>
-                                    ⚖️
+                                    <i className="bi bi-sliders"></i>
                                   </button>
                                 )}
                               </div>
@@ -858,7 +862,7 @@ const AdminView = ({ token }) => {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header" style={{background:'#92400e',color:'#fff'}}>
-                <h5 className="modal-title fw-bold">📤 Retiro — {wdModal.cashier}</h5>
+                <h5 className="modal-title fw-bold"><i className="bi bi-arrow-down-circle me-2"></i> Retiro — {wdModal.cashier}</h5>
                 <button className="btn-close btn-close-white" onClick={()=>setWdModal(null)} />
               </div>
               <div className="modal-body">
@@ -875,7 +879,7 @@ const AdminView = ({ token }) => {
                     value={wdReason} onChange={e=>setWdReason(e.target.value)} />
                 </div>
                 <div className="mb-2 p-3 rounded" style={{background:'#fef9c3',border:'1px solid #fde68a'}}>
-                  <label className="form-label fw-semibold small">🔒 PIN del administrador *</label>
+                  <label className="form-label fw-semibold small"><i className="bi bi-lock-fill me-1"></i> PIN del administrador *</label>
                   <input type="password"
                     className={`form-control form-control-lg text-center ${pinError?'is-invalid':''}`}
                     placeholder="• • • •" maxLength={6}
@@ -888,7 +892,7 @@ const AdminView = ({ token }) => {
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={()=>setWdModal(null)}>Cancelar</button>
                 <button className="btn btn-warning fw-bold" onClick={handleWithdrawal} disabled={pinLoading}>
-                  {pinLoading?'Verificando...':'✅ Registrar retiro'}
+                  {pinLoading ? 'Verificando...' : <><i className="bi bi-check-circle me-1"></i>Registrar retiro</>}
                 </button>
               </div>
             </div>
@@ -901,7 +905,7 @@ const AdminView = ({ token }) => {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header" style={{background:'#7f1d1d',color:'#fff'}}>
-                <h5 className="modal-title fw-bold">🔴 Cerrar turno — {closeModal.cashier}</h5>
+                <h5 className="modal-title fw-bold"><i className="bi bi-stop-circle me-2"></i>Cerrar turno — {closeModal.cashier}</h5>
                 <button className="btn-close btn-close-white" onClick={()=>setCloseModal(null)} />
               </div>
               <div className="modal-body">
@@ -929,9 +933,9 @@ const AdminView = ({ token }) => {
                       <div className={`p-3 rounded text-center ${diff===0?'bg-success bg-opacity-10':diff>0?'bg-success bg-opacity-10':'bg-danger bg-opacity-10'}`}>
                         <div className="text-muted small">Diferencia</div>
                         <div className={`fs-3 fw-bold ${diff>=0?'text-success':'text-danger'}`}>{diff>=0?'+':''}{fmt(diff)}</div>
-                        {diff<0 && <div className="text-danger small fw-semibold">⚠️ Faltante de {fmt(Math.abs(diff))}</div>}
-                        {diff>0 && <div className="text-success small">✅ Sobrante de {fmt(diff)}</div>}
-                        {diff===0 && <div className="text-success small">✅ Cuadrado perfectamente</div>}
+                        {diff<0 && <div className="text-danger small fw-semibold"><i className="bi bi-exclamation-triangle me-1"></i>Faltante de {fmt(Math.abs(diff))}</div>}
+{diff>0 && <div className="text-success small"><i className="bi bi-check-circle me-1"></i>Sobrante de {fmt(diff)}</div>}
+{diff===0 && <div className="text-success small"><i className="bi bi-check-circle me-1"></i>Cuadrado perfectamente</div>}
                       </div>
                     </div>
                   );
@@ -940,7 +944,7 @@ const AdminView = ({ token }) => {
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={()=>setCloseModal(null)}>Cancelar</button>
                 <button className="btn btn-danger fw-bold" onClick={handleClose} disabled={loading}>
-                  {loading?'Cerrando...':'🔴 Confirmar cierre'}
+                  {loading ? 'Cerrando...' : <><i className="bi bi-stop-circle me-1"></i>Confirmar cierre</>}
                 </button>
               </div>
             </div>
@@ -953,7 +957,7 @@ const AdminView = ({ token }) => {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">🏧 Cierre — {selected.cashier} · {selected.date}</h5>
+                <h5 className="modal-title"><i className="bi bi-cash me-2"></i> Cierre — {selected.cashier} · {selected.date}</h5>
                 <button className="btn-close" onClick={()=>setSelected(null)} />
               </div>
               <div className="modal-body">
@@ -1001,7 +1005,7 @@ const AdminView = ({ token }) => {
                 )}
                 <button className="btn btn-outline-primary ms-auto"
                   onClick={()=>{ const c = selected; setSelected(null); openAdjModal(c); }}>
-                  ⚖️ Registrar ajuste
+                  <i className="bi bi-scale me-1"></i> Registrar ajuste
                 </button>
               </div>
             </div>
@@ -1015,13 +1019,13 @@ const AdminView = ({ token }) => {
             <div className="modal-content">
               <div className="modal-header" style={{background:'#1e3a5f',color:'#fff'}}>
                 <h5 className="modal-title fw-bold">
-                  ⚖️ Ajuste — {adjModal._from_shift?'Turno':'Cierre'} #{adjModal.id} · {adjModal.cashier}
+                  <i className="bi bi-scale me-2"></i> Ajuste — {adjModal._from_shift?'Turno':'Cierre'} #{adjModal.id} · {adjModal.cashier}
                 </h5>
                 <button className="btn-close btn-close-white" onClick={()=>setAdjModal(null)} />
               </div>
               <div className="modal-body">
                 <div className="alert alert-info d-flex flex-wrap gap-3 align-items-center py-2 mb-3" style={{fontSize:13}}>
-                  <span>🔒 <strong>Histórico intacto:</strong></span>
+                  <span><i className="bi bi-info-circle me-1"></i> <strong>Histórico intacto:</strong></span>
                   <span>Ventas: <strong>{fmt(adjModal.system_total)}</strong></span>
                   <span>Cajero contó: <strong>{adjModal.cash_counted!=null?fmt(adjModal.cash_counted):'—'}</strong></span>
                   <span className={parseFloat(adjModal.difference)<0?'text-danger fw-bold':'text-success fw-bold'}>
@@ -1029,7 +1033,7 @@ const AdminView = ({ token }) => {
                   </span>
                 </div>
                 <div className="card border-0 bg-light p-3 mb-4">
-                  <div className="fw-semibold mb-3 small">➕ Registrar nuevo ajuste</div>
+                  <div className="fw-semibold mb-3 small"><i className="bi bi-plus-circle me-1"></i> Registrar nuevo ajuste</div>
                   <div className="row g-3">
                     <div className="col-md-4">
                       <label className="form-label fw-semibold small">Tipo</label>
@@ -1038,7 +1042,9 @@ const AdminView = ({ token }) => {
                           <button key={t} type="button"
                             className={`btn flex-fill fw-semibold ${adjTipo===t?(t==='ingreso'?'btn-success':'btn-danger'):'btn-outline-secondary'}`}
                             onClick={()=>setAdjTipo(t)}>
-                            {t==='ingreso'?'📥 Ingreso':'📤 Egreso'}
+                            {t==='ingreso'
+  ? <><i className="bi bi-box-arrow-in-down me-1"></i>Ingreso</>
+  : <><i className="bi bi-box-arrow-up me-1"></i>Egreso</>}
                           </button>
                         ))}
                       </div>
@@ -1053,7 +1059,7 @@ const AdminView = ({ token }) => {
                     </div>
                     <div className="col-md-4 d-flex align-items-end">
                       <button className="btn btn-primary fw-bold w-100" onClick={handleAdjustment} disabled={adjLoading}>
-                        {adjLoading?'⏳ Guardando...':'✅ Registrar'}
+                        {adjLoading ? <><i className="bi bi-hourglass-split me-1"></i>Guardando...</> : <><i className="bi bi-check-circle me-1"></i>Registrar</>}
                       </button>
                     </div>
                     <div className="col-12">
@@ -1076,7 +1082,7 @@ const AdminView = ({ token }) => {
                       {adjList.map(a => (
                         <tr key={a.id}>
                           <td className="text-muted">{new Date(a.created_at).toLocaleString('es-CO',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
-                          <td><span className={`badge ${a.tipo==='ingreso'?'bg-success':'bg-danger'}`}>{a.tipo==='ingreso'?'📥':'📤'} {a.tipo}</span></td>
+                          <td><span className={`badge ${a.tipo==='ingreso'?'bg-success':'bg-danger'}`}><i className={`bi ${a.tipo==='ingreso'?'bi-box-arrow-in-down':'bi-box-arrow-up'} me-1`}></i>{a.tipo}</span></td>
                           <td className={`text-end fw-bold ${a.tipo==='ingreso'?'text-success':'text-danger'}`}>{a.tipo==='ingreso'?'+':'-'}{fmt(a.monto)}</td>
                           <td>{a.motivo}</td>
                           <td className="text-muted">{a.registrado_por_nombre}</td>
@@ -1107,7 +1113,7 @@ const ShiftManager = () => {
     <div className="d-flex">
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft:240 }}>
-        <h4 className="fw-bold mb-1">🔄 {isAdmin ? 'Turnos, Cajas y Cierres' : 'Mi Turno'}</h4>
+        <h4 className="fw-bold mb-1"><i className="bi bi-arrow-repeat me-2"></i> {isAdmin ? 'Turnos, Cajas y Cierres' : 'Mi Turno'}</h4>
         <p className="text-muted mb-4">
           {isAdmin ? 'Gestión completa de cajas, turnos, retiros y cierres' : `Cajero: ${user?.name}`}
         </p>

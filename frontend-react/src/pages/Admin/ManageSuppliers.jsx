@@ -90,16 +90,18 @@ const ManageSuppliers = () => {
     <div className="d-flex">
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft: 240 }}>
-        <h4 className="fw-bold mb-4">🏭 Gestión de Proveedores</h4>
+        <h4 className="fw-bold mb-4"><i className="bi bi-truck me-2"></i>Gestión de Proveedores</h4>
 
         {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
 
-        <div className="d-flex gap-2 mb-3">
-          <input className="form-control" style={{ maxWidth: 320 }}
-            placeholder="🔍 Buscar proveedor..." value={search}
-            onChange={e => setSearch(e.target.value)} />
-          <button className="btn btn-success ms-auto" onClick={openAdd}>+ Nuevo Proveedor</button>
-        </div>
+        <div className="input-group" style={{ maxWidth: 320 }}>
+  <span className="input-group-text bg-white border-end-0">
+    <i className="bi bi-search text-muted"></i>
+  </span>
+  <input className="form-control border-start-0 ps-0"
+    placeholder="Buscar proveedor..." value={search}
+    onChange={e => setSearch(e.target.value)} />
+</div>
 
         <p className="text-muted small mb-2">
           Mostrando <strong>{filtered.length}</strong> de <strong>{suppliers.length}</strong> proveedores
@@ -135,15 +137,19 @@ const ManageSuppliers = () => {
                     </td>
                     <td className="text-nowrap">
                       <div className="d-flex align-items-center gap-1">
-                        <button
-                          className={`btn btn-sm ${s.is_active !== false ? 'btn-outline-secondary' : 'btn-outline-success'}`}
-                          onClick={() => handleToggle(s)}
-                          title={s.is_active !== false ? 'Desactivar' : 'Activar'}>
-                          {s.is_active !== false ? '❌' : '✅'}
-                        </button>
-                        <button className="btn btn-warning btn-sm" onClick={() => openEdit(s)}>✏️</button>
-                        <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(s)}>🗑️</button>
-                      </div>
+  <button
+    className={`btn btn-sm ${s.is_active !== false ? 'btn-outline-secondary' : 'btn-outline-success'}`}
+    onClick={() => handleToggle(s)}
+    title={s.is_active !== false ? 'Desactivar' : 'Activar'}>
+    <i className={`bi ${s.is_active !== false ? 'bi-x-circle' : 'bi-check-circle'}`}></i>
+  </button>
+  <button className="btn btn-warning btn-sm" onClick={() => openEdit(s)} title="Editar">
+    <i className="bi bi-pencil"></i>
+  </button>
+  <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(s)} title="Eliminar">
+    <i className="bi bi-trash"></i>
+  </button>
+</div>
                     </td>
                   </tr>
                 ))}
@@ -158,7 +164,11 @@ const ManageSuppliers = () => {
             <div className="modal-dialog">
               <div className="modal-content">
                 <div className="modal-header">
-                  <h5 className="modal-title">{editing ? '✏️ Editar Proveedor' : '+ Nuevo Proveedor'}</h5>
+                 <h5 className="modal-title">
+  {editing
+    ? <><i className="bi bi-pencil me-2"></i>Editar Proveedor</>
+    : <><i className="bi bi-plus-circle me-2"></i>Nuevo Proveedor</>}
+</h5>
                   <button className="btn-close" onClick={() => setShowModal(false)} />
                 </div>
                 <form onSubmit={handleSave}>
@@ -235,7 +245,9 @@ const ManageSuppliers = () => {
           <div className="modal d-block" style={{background:'rgba(0,0,0,0.5)',position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center'}}>
             <div style={{maxWidth:440,width:'90%',margin:'auto',background:'#fff',borderRadius:14,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}>
               <div style={{background:'#fef3c7',padding:'16px 20px'}}>
-                <h5 style={{margin:0,fontWeight:700,color:'#92400e'}}>⚠️ {deactivatedModal.titulo}</h5>
+               <h5 style={{margin:0,fontWeight:700,color:'#92400e'}}>
+  <i className="bi bi-exclamation-triangle-fill me-2"></i>{deactivatedModal.titulo}
+</h5>
               </div>
               <div style={{padding:'20px'}}>
                 <p style={{fontWeight:600}}>{deactivatedModal.mensaje}</p>

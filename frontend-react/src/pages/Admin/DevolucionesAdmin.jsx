@@ -51,17 +51,17 @@ const DevolucionesAdmin = () => {
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft:240, background:'#f8fafc', minHeight:'100vh' }}>
 
-        <h4 className="fw-bold mb-1">↩️ Devoluciones</h4>
+        <h4 className="fw-bold mb-1"><i className="bi bi-arrow-return-left me-2"></i> Devoluciones</h4>
         <p className="text-muted mb-4">Historial completo de devoluciones y cambios de productos</p>
 
         {/* KPIs */}
         <div className="row g-3 mb-4">
           {[
-            { label:'Total devoluciones', value: filtered.length,       icon:'↩️', color:'#1e3a5f', bg:'#dbeafe' },
-            { label:'Devuelto en dinero', value: fmtMoney(totalDinero), icon:'💵', color:'#166534', bg:'#dcfce7' },
-            { label:'Cambios de producto',value: totalCambios,          icon:'🔄', color:'#1d4ed8', bg:'#eff6ff' },
-            { label:'Con PIN de admin',   value: conPin,                icon:'🔐', color:'#92400e', bg:'#fef3c7' },
-            { label:'Sin PIN (libre)',    value: sinPin,                icon:'🔓', color:'#991b1b', bg:'#fee2e2' },
+            { label:'Total devoluciones', value: filtered.length,       icon:<i className="bi bi-arrow-return-left" style={{fontSize:22}}></i>, color:'#1e3a5f', bg:'#dbeafe' },
+            { label:'Devuelto en dinero', value: fmtMoney(totalDinero), icon:<i className="bi bi-cash" style={{fontSize:22}}></i>, color:'#166534', bg:'#dcfce7' },
+            { label:'Cambios de producto',value: totalCambios,          icon:<i className="bi bi-arrow-repeat" style={{fontSize:22}}></i>, color:'#1d4ed8', bg:'#eff6ff' },
+            { label:'Con PIN de admin',   value: conPin,                icon:<i className="bi bi-lock-fill" style={{fontSize:22}}></i>, color:'#92400e', bg:'#fef3c7' },
+            { label:'Sin PIN (libre)',    value: sinPin,                icon:<i className="bi bi-unlock" style={{fontSize:22}}></i>, color:'#991b1b', bg:'#fee2e2' },
           ].map((k,i) => (
             <div className="col-6 col-md-4 col-lg" key={i}>
               <div className="card border-0 shadow-sm h-100" style={{ borderRadius:12 }}>
@@ -83,16 +83,16 @@ const DevolucionesAdmin = () => {
                 <label className="form-label small fw-semibold mb-1">Modalidad</label>
                 <select className="form-select form-select-sm" value={filtroMode} onChange={e=>setFiltroMode(e.target.value)}>
                   <option value="todos">Todos</option>
-                  <option value="dinero">💵 Dinero</option>
-                  <option value="cambio">🔄 Cambio</option>
+                  <option value="dinero">Dinero</option>
+<option value="cambio">Cambio</option>
                 </select>
               </div>
               <div className="col-md-2">
                 <label className="form-label small fw-semibold mb-1">Autorización PIN</label>
                 <select className="form-select form-select-sm" value={filtroPin} onChange={e=>setFiltroPin(e.target.value)}>
                   <option value="todos">Todos</option>
-                  <option value="con">🔐 Con PIN</option>
-                  <option value="sin">🔓 Sin PIN</option>
+                  <option value="con">Con PIN</option>
+<option value="sin">Sin PIN</option>
                 </select>
               </div>
               <div className="col-md-2">
@@ -113,7 +113,7 @@ const DevolucionesAdmin = () => {
               <div className="col-md-2">
                 <button className="btn btn-outline-secondary btn-sm w-100"
                   onClick={() => { setFiltroMode('todos'); setFiltroPin('todos'); setFiltroCajero(''); setDateFrom(''); setDateTo(''); }}>
-                  🗑️ Limpiar
+                  <i className="bi bi-trash me-1"></i> Limpiar
                 </button>
               </div>
             </div>
@@ -144,7 +144,7 @@ const DevolucionesAdmin = () => {
                   ? <tr><td colSpan="11" className="text-center py-5"><div className="spinner-border spinner-border-sm"/></td></tr>
                   : filtered.length === 0
                     ? <tr><td colSpan="11" className="text-center text-muted py-5">
-                        <div style={{ fontSize:'2rem' }}>↩️</div>
+                        <div style={{ fontSize:'2rem' }}><i className="bi bi-inbox me-2"></i></div>
                         Sin devoluciones en este período
                       </td></tr>
                     : filtered.map((r, i) => (
@@ -159,7 +159,9 @@ const DevolucionesAdmin = () => {
                           </td>
                           <td>
                             <span className={`badge ${r.mode==='cambio' ? 'bg-info text-dark':'bg-success'}`}>
-                              {r.mode==='cambio' ? '🔄 Cambio':'💵 Dinero'}
+                              {r.mode==='cambio'
+  ? <><i className="bi bi-arrow-repeat me-1"></i>Cambio</>
+  : <><i className="bi bi-cash me-1"></i>Dinero</>}
                             </span>
                           </td>
                           <td className="small">
@@ -169,15 +171,16 @@ const DevolucionesAdmin = () => {
                           </td>
                           <td>
                             {r.authorized_by
-                              ? <span className="badge bg-warning text-dark">🔐 {r.authorized_by}</span>
-                              : <span className="badge bg-light text-muted border">Sin PIN</span>}
+                              ? <span className="badge bg-warning text-dark"><i className="bi bi-lock-fill me-1"></i> {r.authorized_by}</span>
+                              : <span className="badge bg-light text-muted border"><i className="bi bi-unlock me-1"></i> Sin PIN</span>}
                           </td>
                           <td className="text-end fw-bold text-danger">{fmtMoney(r.total)}</td>
                           <td className="small text-muted">{fmtDate(r.created_at)}</td>
                           <td>
                             <button className="btn btn-outline-secondary btn-sm"
                               onClick={() => setExpanded(expanded===r.id ? null : r.id)}>
-                              {expanded===r.id ? '▲':'▼'}
+                              
+<i className={`bi ${expanded===r.id?'bi-chevron-up':'bi-chevron-down'}`}></i>
                             </button>
                           </td>
                         </tr>
@@ -191,7 +194,7 @@ const DevolucionesAdmin = () => {
 
                                   {/* Productos devueltos */}
                                   <div className="col-md-5">
-                                    <div className="fw-semibold small mb-2">📦 Productos devueltos:</div>
+                                    <div className="fw-semibold small mb-2"><i className="bi bi-arrow-repeat me-1"></i> Productos devueltos:</div>
                                     <table className="table table-sm table-bordered mb-0" style={{ fontSize:13 }}>
                                       <thead className="table-light">
                                         <tr>
@@ -226,7 +229,7 @@ const DevolucionesAdmin = () => {
                                       {r.mode === 'cambio' && (
                                         <div className="col-12">
                                           <div className="alert py-2 mb-0" style={{ background:'#eff6ff', border:'1px solid #bfdbfe' }}>
-                                            <div className="fw-semibold small mb-1">🔄 Producto entregado a cambio:</div>
+                                            <div className="fw-semibold small mb-1"><i className="bi bi-arrow-repeat me-1"></i> Producto entregado a cambio:</div>
                                             <div className="fw-bold" style={{ color:'#1d4ed8' }}>
                                               {r.exchange_product || <em className="text-muted">No registrado</em>}
                                             </div>
@@ -238,12 +241,12 @@ const DevolucionesAdmin = () => {
                                       <div className="col-12">
                                         {r.authorized_by ? (
                                           <div className="alert alert-warning py-2 mb-0">
-                                            <div className="fw-semibold small mb-1">🔐 Autorización requerida:</div>
+                                            <div className="fw-semibold small mb-1"><i className="bi bi-lock-fill me-1"></i> Autorización requerida:</div>
                                             <div>Autorizado por: <strong>{r.authorized_by}</strong></div>
                                           </div>
                                         ) : (
                                           <div className="alert alert-light py-2 mb-0 border">
-                                            <div className="small text-muted">🔓 Esta devolución no requirió PIN de autorización</div>
+                                            <div className="small text-muted"><i className="bi bi-unlock me-1"></i> Esta devolución no requirió PIN de autorización</div>
                                           </div>
                                         )}
                                       </div>

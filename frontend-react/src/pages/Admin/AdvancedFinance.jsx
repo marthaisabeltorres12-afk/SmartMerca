@@ -20,11 +20,11 @@ const MARGEN_CRITICO  = 10;
 const MARGEN_BAJO     = 25;
 
 const marginTag = (pct, hasCost) => {
-  if (!hasCost)           return { lb:'⚪ Sin costo',   bg:'#f1f5f9', c:'#64748b' };
-  if (pct < 0)            return { lb:'🔴 Pérdida',     bg:'#fee2e2', c:'#991b1b' };
-  if (pct < MARGEN_CRITICO) return { lb:'🟠 Crítico',   bg:'#ffedd5', c:'#9a3412' };
-  if (pct < MARGEN_BAJO)  return { lb:'🟡 Bajo',        bg:'#fef9c3', c:'#854d0e' };
-  return                         { lb:'🟢 Saludable',   bg:'#dcfce7', c:'#166534' };
+  if (!hasCost)              return { lb:'Sin costo',  icon:'bi-dash-circle-fill',           bg:'#f1f5f9', c:'#64748b' };
+  if (pct < 0)               return { lb:'Pérdida',    icon:'bi-exclamation-octagon-fill',   bg:'#fee2e2', c:'#991b1b' };
+  if (pct < MARGEN_CRITICO)  return { lb:'Crítico',    icon:'bi-exclamation-triangle-fill',  bg:'#ffedd5', c:'#9a3412' };
+  if (pct < MARGEN_BAJO)     return { lb:'Bajo',       icon:'bi-exclamation-circle-fill',    bg:'#fef9c3', c:'#854d0e' };
+  return                            { lb:'Saludable', icon:'bi-check-circle-fill',          bg:'#dcfce7', c:'#166534' };
 };
 
 const stockTag = (estado) => {
@@ -173,7 +173,7 @@ const AdvancedFinance = () => {
 
         {/* Título */}
         <div className="mb-4">
-          <h4 className="fw-bold mb-0">💰 Finanzas Avanzadas</h4>
+          <h4 className="fw-bold mb-0"> Finanzas Avanzadas</h4>
           <small className="text-muted">Costo · IVA DIAN · Ganancia bruta · Margen por producto (IVA incluido en precio de venta)</small>
         </div>
 
@@ -212,13 +212,21 @@ const AdvancedFinance = () => {
         {/* Tabs + filtros */}
         <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
           <div className="btn-group btn-group-sm">
-            <button className={`btn ${tab==='tabla'  ?'btn-dark':'btn-outline-secondary'}`} onClick={()=>setTab('tabla')}>📋 Tabla</button>
-            <button className={`btn ${tab==='grafico'?'btn-dark':'btn-outline-secondary'}`} onClick={()=>setTab('grafico')}>📊 Gráfico</button>
+            <button className={`btn ${tab==='tabla'  ?'btn-dark':'btn-outline-secondary'}`} onClick={()=>setTab('tabla')}><i className="bi bi-list-columns"></i> Tabla</button>
+            <button className={`btn ${tab==='grafico'?'btn-dark':'btn-outline-secondary'}`} onClick={()=>setTab('grafico')}><i className="bi bi-bar-chart-line"></i> Gráfico</button>
           </div>
           <div className="d-flex gap-2 flex-wrap">
-            <input className="form-control form-control-sm" style={{ width:210 }}
-              placeholder="🔍 Buscar producto..."
-              value={search} onChange={e=>setSearch(e.target.value)} />
+            <div className="input-group input-group-sm" style={{ width: 210 }}>
+  <span className="input-group-text">
+    <i className="bi bi-search"></i>
+  </span>
+  <input
+    className="form-control"
+    placeholder="Buscar producto..."
+    value={search}
+    onChange={e => setSearch(e.target.value)}
+  />
+</div>
             <select className="form-select form-select-sm" style={{ width:180 }}
               value={catFilter} onChange={e=>setCatFilter(e.target.value)}>
               <option value="">Todas las categorías</option>
@@ -231,11 +239,11 @@ const AdvancedFinance = () => {
         {/* Leyenda semáforo */}
         <div className="d-flex gap-2 mb-3 flex-wrap">
           {[
-            { bg:'#fee2e2', c:'#991b1b', lb:'🔴 Pérdida (< 0%)' },
-            { bg:'#ffedd5', c:'#9a3412', lb:`🟠 Crítico (< ${MARGEN_CRITICO}%)` },
-            { bg:'#fef9c3', c:'#854d0e', lb:`🟡 Bajo (< ${MARGEN_BAJO}%)` },
-            { bg:'#dcfce7', c:'#166534', lb:'🟢 Saludable' },
-            { bg:'#f1f5f9', c:'#64748b', lb:'⚪ Sin costo' },
+           { bg:'#fee2e2', c:'#991b1b', lb:<><i className="bi bi-exclamation-octagon-fill me-1"></i>Pérdida (&lt; 0%)</> },
+{ bg:'#ffedd5', c:'#9a3412', lb:<><i className="bi bi-exclamation-triangle-fill me-1"></i>Crítico (&lt; {MARGEN_CRITICO}%)</> },
+{ bg:'#fef9c3', c:'#854d0e', lb:<><i className="bi bi-exclamation-circle-fill me-1"></i>Bajo (&lt; {MARGEN_BAJO}%)</> },
+{ bg:'#dcfce7', c:'#166534', lb:<><i className="bi bi-check-circle-fill me-1"></i>Saludable</> },
+{ bg:'#f1f5f9', c:'#64748b', lb:<><i className="bi bi-dash-circle-fill me-1"></i>Sin costo</> },
           ].map((l,i)=>(
             <span key={i} style={{ background:l.bg, color:l.c, fontSize:11, padding:'3px 10px', borderRadius:99, fontWeight:600 }}>{l.lb}</span>
           ))}
@@ -245,7 +253,7 @@ const AdvancedFinance = () => {
         {tab==='grafico' && (
           <div className="card border-0 shadow-sm mb-4">
             <div className="card-header border-0 bg-white pt-3 fw-bold">
-              📊 Margen % — Top 15 productos con costo registrado
+              <i className="bi bi-bar-chart-line"></i> Margen % — Top 15 productos con costo registrado
             </div>
             <div className="card-body">
               {withCost.length===0
@@ -351,7 +359,8 @@ const AdvancedFinance = () => {
                           <td style={{ padding:'9px 10px' }}>
                             <div style={{ display:'flex', flexDirection:'column', gap:3 }}>
                               <span style={{ background:stag.bg, color:stag.c, fontSize:10, padding:'2px 8px', borderRadius:99, fontWeight:600, whiteSpace:'nowrap' }}>
-                                {d.estado==='Agotado'?'❌':d.estado==='Crítico'?'🟠':d.estado==='Bajo'?'🟡':'🟢'} {d.estado}
+                                 <i className={ d.estado === 'Agotado'  ? 'bi bi-x-circle-fill' : d.estado === 'Crítico'  ? 'bi bi-exclamation-octagon-fill' : d.estado === 'Bajo' ? 'bi bi-exclamation-triangle-fill'  : 'bi bi-check-circle-fill'} 
+                                 style={{ marginRight: '4px' }}></i>{d.estado}
                               </span>
                               <span style={{ background:mtag.bg, color:mtag.c, fontSize:10, padding:'2px 8px', borderRadius:99, fontWeight:600, whiteSpace:'nowrap' }}>
                                 {mtag.lb}
@@ -369,9 +378,9 @@ const AdvancedFinance = () => {
                 {' '}IVA DIAN = Precio ÷ 1.19 × 19% &nbsp;|&nbsp;
                 Ganancia bruta = (Precio ÷ 1.19) − Costo promedio &nbsp;|&nbsp;
                 Margen % = Ganancia ÷ Costo × 100 &nbsp;|&nbsp;
-                <span style={{ color:'#10b981' }}>✅ Verificación: Costo + IVA + Ganancia = Precio de venta</span>
+                <span style={{ color:'#10b981' }}><i className="bi bi-check-circle"></i> Verificación: Costo + IVA + Ganancia = Precio de venta</span>
                 <br/>
-                💡 El costo promedio se calcula desde las entradas de inventario con <strong>costo unitario registrado</strong>.
+                <i className="bi bi-info-circle"></i> El costo promedio se calcula desde las entradas de inventario con <strong>costo unitario registrado</strong>.
               </div>
             </div>
           </div>
@@ -381,7 +390,7 @@ const AdvancedFinance = () => {
         <div className="card border-0 shadow-sm">
           <div className="card-header border-0 bg-white pt-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div className="d-flex align-items-center gap-2">
-              <span className="fw-bold">🏷️ Ganancias con descuento activo</span>
+              <span className="fw-bold"> Ganancias con descuento activo</span>
               <span className="badge" style={{ background:'#ede9fe', color:'#7c3aed', fontSize:11 }}>
                 {conDescuento.length} producto{conDescuento.length !== 1 ? 's' : ''}
               </span>
@@ -400,7 +409,7 @@ const AdvancedFinance = () => {
           <div className="card-body p-0">
             {conDescuento.length === 0 ? (
               <div className="text-center text-muted py-5">
-                <div style={{ fontSize: 28, marginBottom: 8 }}>🏷️</div>
+                <div style={{ fontSize: 28, marginBottom: 8 }}><i className="bi bi-cart-x"></i></div>
                 <div className="fw-semibold">No hay productos con descuento activo y costo registrado</div>
                 <div style={{ fontSize: 12 }}>Activa un descuento en un producto con costo de inventario para ver el análisis</div>
               </div>
@@ -520,7 +529,7 @@ const AdvancedFinance = () => {
               {' '}Ganancia normal = (Precio ÷ 1.19) − Costo &nbsp;|&nbsp;
               Ganancia c/dto = (Precio × (1 − dto%) ÷ 1.19) − Costo &nbsp;|&nbsp;
               Impacto total = Diferencia/ud × Uds vendidas &nbsp;|&nbsp;
-              💡 Solo muestra productos con descuento activo hoy y costo registrado en inventario.
+               Solo muestra productos con descuento activo hoy y costo registrado en inventario.
             </div>
           </div>
         </div>
