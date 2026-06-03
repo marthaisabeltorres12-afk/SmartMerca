@@ -89,13 +89,13 @@ const ImportarProductos = () => {
       <Navbar />
       <main className="flex-grow-1 p-4" style={{marginLeft:240, background:'#f8fafc', minHeight:'100vh'}}>
         <div className="mb-4">
-          <h4 className="fw-bold mb-0">📦 Importar / Exportar Productos</h4>
+          <h4 className="fw-bold mb-0 bi-box-seam-fill"> Importar / Exportar Productos</h4>
           <small className="text-muted">Transfiere productos desde cualquier POS o sistema anterior</small>
         </div>
 
         <ul className="nav nav-tabs mb-4">
           <li className="nav-item">
-            <button className={`nav-link ${tab==='importar'?'active fw-bold':''}`}
+            <button className={`nav-link ${tab==='importar'?'active fw-bold ':''}`}
               onClick={()=>setTab('importar')}>📥 Importar desde Excel/CSV</button>
           </li>
           <li className="nav-item">
@@ -114,26 +114,26 @@ const ImportarProductos = () => {
 
                   {/* Pasos */}
                   <div className="row g-3 mb-4">
-                    {[
-                      ['1', '📥', 'Descarga la plantilla', 'Formato listo con los campos correctos'],
-                      ['2', '✏️', 'Llena con tus productos', 'O pega desde tu POS anterior'],
-                      ['3', '📤', 'Sube el archivo', 'El sistema importa y detecta duplicados'],
-                    ].map(([n, ico, titulo, sub]) => (
-                      <div key={n} className="col-4">
-                        <div className="text-center p-3 rounded" style={{background:'#f0f4ff'}}>
-                          <div style={{fontSize:28}}>{ico}</div>
-                          <div className="fw-bold small mt-1">{titulo}</div>
-                          <div className="text-muted" style={{fontSize:11}}>{sub}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+  {[
+    ['1', 'bi-download', 'Descarga la plantilla', 'Formato listo con los campos correctos'],
+    ['2', 'bi-pencil-square', 'Llena con tus productos', 'O pega desde tu POS anterior'],
+    ['3', 'bi-upload', 'Sube el archivo', 'El sistema importa y detecta duplicados'],
+  ].map(([n, icono, titulo, sub]) => (
+    <div key={n} className="col-4">
+      <div className="text-center p-3 rounded"style={{ background: '#f0f4ff' }}>
+        <div className="text-primary" style={{ fontSize: 28 }}><i className={`bi ${icono}`}></i></div>
+
+        <div className="fw-bold small mt-1"> {titulo}</div>
+
+        <div className="text-muted" style={{ fontSize: 11 }}>{sub} </div>
+      </div>
+    </div>
+  ))}
+</div>
 
                   {/* Descargar plantilla */}
                   <div className="d-flex gap-2 mb-4">
-                    <button className="btn btn-outline-primary fw-bold" onClick={handlePlantilla}>
-                      📋 Descargar plantilla Excel
-                    </button>
+                    <button className="btn btn-outline-primary fw-bold bi-card-list" onClick={handlePlantilla}> Descargar plantilla Excel </button>
                   </div>
 
                   {/* Formatos aceptados */}
@@ -211,27 +211,27 @@ const ImportarProductos = () => {
                   </div>
                 </div>
               ) : (
-                <div className="card border-0 shadow-sm h-100">
-                  <div className="card-header fw-semibold">💡 ¿Cómo funciona?</div>
+                <div className="card border-0 shadow-sm h-100 ">
+                  <div className="card-header fw-semibold bi-lightbulb-fill"> ¿Cómo funciona?</div>
                   <div className="card-body">
                     <div className="mb-3">
-                      <div className="fw-semibold mb-1">🔄 Productos duplicados</div>
+                      <div className="fw-semibold mb-1 bi-arrow-clockwise "> Productos duplicados</div>
                       <div className="text-muted small">Si el producto ya existe con el mismo nombre, se <strong>actualiza</strong> el precio y stock. No se crea duplicado.</div>
                     </div>
                     <div className="mb-3">
-                      <div className="fw-semibold mb-1">📊 Columnas flexibles</div>
+                      <div className="fw-semibold mb-1 bi-grid-1x2-fill"> Columnas flexibles</div>
                       <div className="text-muted small">El sistema detecta automáticamente las columnas aunque el Excel venga de otro POS diferente.</div>
                     </div>
                     <div className="mb-3">
-                      <div className="fw-semibold mb-1">✅ Columnas obligatorias</div>
+                      <div className="fw-semibold mb-1 bi-bookmark-check-fill "> Columnas obligatorias</div>
                       <div className="text-muted small">Solo necesitas <strong>Nombre</strong> y <strong>Precio</strong>. El resto es opcional.</div>
                     </div>
                     <div className="mb-3">
-                      <div className="fw-semibold mb-1">💰 Formatos de precio</div>
+                      <div className="fw-semibold mb-1 bi-cash-coin">  Formatos de precio</div>
                       <div className="text-muted small">Acepta: <code>3500</code>, <code>$3.500</code>, <code>3,500</code>, <code>3500.00</code></div>
                     </div>
                     <div>
-                      <div className="fw-semibold mb-1">📦 POS compatibles</div>
+                      <div className="fw-semibold mb-1 bi-box-fill"> POS compatibles</div>
                       <div className="text-muted small">Siigo, Alegra, Aspel, Helisa, Syscafe, cualquier sistema que exporte a Excel o CSV.</div>
                     </div>
                   </div>
@@ -281,30 +281,30 @@ const ImportarProductos = () => {
                 <div className="card-header fw-semibold">ℹ️ ¿Para qué sirve exportar?</div>
                 <div className="card-body">
                   <div className="mb-3 d-flex gap-3">
-                    <div style={{fontSize:28}}>💾</div>
+                    <div style={{fontSize:28}}><i className="bi bi-floppy-fill me-2 text-success"></i></div>
                     <div>
                       <div className="fw-semibold">Respaldo de datos</div>
                       <div className="text-muted small">Guarda una copia de tus productos fuera del sistema.</div>
                     </div>
                   </div>
                   <div className="mb-3 d-flex gap-3">
-                    <div style={{fontSize:28}}>🔄</div>
+                    <div style={{ fontSize: 28 }}><i className="bi bi-arrow-repeat text-primary"></i></div>
                     <div>
                       <div className="fw-semibold">Migrar a otro sistema</div>
                       <div className="text-muted small">Si cambias de POS, llevas todos tus productos fácilmente.</div>
                     </div>
                   </div>
                   <div className="mb-3 d-flex gap-3">
-                    <div style={{fontSize:28}}>✏️</div>
+                    <div style={{fontSize:28}}><i className="bi bi-pencil-square text-warning"></i></div>
                     <div>
                       <div className="fw-semibold">Edición masiva</div>
                       <div className="text-muted small">Edita precios o stocks en Excel y vuelve a importar.</div>
                     </div>
                   </div>
                   <div className="d-flex gap-3">
-                    <div style={{fontSize:28}}>📊</div>
+                    <div style={{fontSize:28}}><i className="bi bi-graph-up me-3" style={{ color:'#7c3aed' }}></i></div>
                     <div>
-                      <div className="fw-semibold">Análisis externo</div>
+                      <div className="fw-semibold ">Análisis externo</div>
                       <div className="text-muted small">Abre en Excel o Google Sheets para análisis adicionales.</div>
                     </div>
                   </div>

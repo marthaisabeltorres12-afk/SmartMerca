@@ -7,8 +7,8 @@ const fmtNum = n => Number(n||0).toLocaleString('es-CO');
 
 const statusBadge = s => {
   if (s === 'en_progreso')       return <span className="badge bg-primary">🔄 En progreso</span>;
-  if (s === 'conteo_terminado')  return <span className="badge bg-warning text-dark">✅ Conteo terminado</span>;
-  if (s === 'ajustes_aprobados') return <span className="badge bg-success">✔️ Aprobado</span>;
+  if (s === 'conteo_terminado')  return <span className="badge bg-warning text-dark"> Conteo terminado</span>;
+  if (s === 'ajustes_aprobados') return <span className="badge bg-success"> Aprobado</span>;
   return <span className="badge bg-secondary">{s}</span>;
 };
 
@@ -123,7 +123,7 @@ const ConteoInventario = () => {
       <main className="flex-grow-1 p-4" style={{ marginLeft:240 }}>
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <h4 className="fw-bold mb-0">📋 Conteo Físico de Inventario</h4>
+            <h4 className="fw-bold mb-0 bi-card-list"> Conteo Físico de Inventario</h4>
             <p className="text-muted small mb-0">Toma física, reconciliación y ajustes de stock</p>
           </div>
           <button className="btn btn-primary fw-bold" onClick={()=>setNewModal(true)}>
@@ -134,14 +134,26 @@ const ConteoInventario = () => {
         {alert && <div className={`alert alert-${alert.type} py-2`}>{alert.msg}</div>}
 
         <ul className="nav nav-tabs mb-4">
-          {[['lista','📋 Conteos'],
-            ...(selected ? [['contar','✏️ Contar'],['revisar','🔍 Revisar diferencias']] : [])
-          ].map(([k,l])=>(
-            <li key={k} className="nav-item">
-              <button className={`nav-link ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</button>
-            </li>
-          ))}
-        </ul>
+  {[
+    ['lista', 'bi-clipboard-data-fill', 'Conteos'],
+    ...(selected
+      ? [
+          ['contar', 'bi-pencil-square', 'Contar'],
+          ['revisar', 'bi-search', 'Revisar diferencias']
+        ]
+      : [])
+  ].map(([k, icon, label]) => (
+    <li key={k} className="nav-item">
+      <button
+        className={`nav-link ${tab === k ? 'active' : ''}`}
+        onClick={() => setTab(k)}
+      >
+        <i className={`bi ${icon} me-2`}></i>
+        {label}
+      </button>
+    </li>
+  ))}
+</ul>
 
         {/* Tab lista */}
         {tab === 'lista' && (
@@ -160,13 +172,20 @@ const ConteoInventario = () => {
                     <tr key={c.id}>
                       <td className="fw-semibold">{c.nombre}</td>
                       <td className="text-muted">
-                        {c.location_name
-                          ? <span className="badge bg-primary" style={{fontSize:11}}>🏪 {c.location_name}</span>
-                          : <span className="text-muted small">{c.seccion || 'Completo'}</span>}
-                      </td>
+  {c.location_name ? (
+    <span className="badge bg-primary" style={{ fontSize: 11 }}>
+      <i className="bi bi-shop me-1"></i>
+      {c.location_name}
+    </span>
+  ) : (
+    <span className="text-muted small">
+      {c.seccion || 'Completo'}
+    </span>
+  )}
+</td>
                       <td>
                         <span className={`badge ${c.origen==='bodeguero'?'bg-warning text-dark':'bg-secondary'}`} style={{fontSize:10}}>
-                          {c.origen==='bodeguero'?'📦 Bodeguero':'⚙️ Admin'}
+                          {c.origen==='bodeguero'?' Bodeguero':'⚙️ Admin'}
                         </span>
                       </td>
                       <td className="text-center">{c.total_items}</td>
@@ -180,10 +199,25 @@ const ConteoInventario = () => {
                       <td className="text-muted">{c.created_at?.slice(0,10)}</td>
                       <td>
                         {c.status !== 'ajustes_aprobados' && (
-                          <button className="btn btn-sm btn-outline-primary py-0 px-2"
-                            onClick={()=>{ setSelected(c); setTab('contar'); }}>
-                            {c.status === 'en_progreso' ? '✏️ Continuar' : '🔍 Revisar'}
-                          </button>
+                          <button
+  className="btn btn-sm btn-outline-primary py-0 px-2"
+  onClick={() => {
+    setSelected(c);
+    setTab('contar');
+  }}
+>
+  {c.status === 'en_progreso' ? (
+    <>
+      <i className="bi bi-pencil-square me-1"></i>
+      Continuar
+    </>
+  ) : (
+    <>
+      <i className="bi bi-search me-1"></i>
+      Revisar
+    </>
+  )}
+</button>
                         )}
                       </td>
                     </tr>
@@ -239,7 +273,7 @@ const ConteoInventario = () => {
             <div className="d-flex gap-2 justify-content-end">
               <button className="btn btn-secondary" onClick={()=>setTab('lista')}>← Volver</button>
               <button className="btn btn-success fw-bold" onClick={handleRegister} disabled={loading}>
-                {loading ? '⏳ Guardando...' : '✅ Terminar conteo y ver diferencias'}
+                {loading ? ' Guardando...' : ' Terminar conteo y ver diferencias'}
               </button>
             </div>
           </div>
@@ -305,7 +339,7 @@ const ConteoInventario = () => {
                 <div className="d-flex gap-2 justify-content-end">
                   <button className="btn btn-secondary" onClick={()=>setTab('contar')}>← Volver a contar</button>
                   <button className="btn btn-success fw-bold" onClick={handleApprove} disabled={loading}>
-                    {loading ? '⏳ Aplicando...' : `✅ Aprobar ajustes y actualizar stock`}
+                    {loading ? ' Aplicando...' : ` Aprobar ajustes y actualizar stock`}
                   </button>
                 </div>
               </>
@@ -319,7 +353,7 @@ const ConteoInventario = () => {
             <div className="modal-dialog">
               <div className="modal-content">
                 <div className="modal-header" style={{background:'#1e3a5f',color:'#fff'}}>
-                  <h5 className="modal-title fw-bold">📋 Iniciar nuevo conteo</h5>
+                  <h5 className="modal-title fw-bold bi-clipboard-data-fill"> Iniciar nuevo conteo</h5>
                   <button className="btn-close btn-close-white" onClick={()=>setNewModal(false)} />
                 </div>
                 <form onSubmit={handleCreate}>
@@ -343,7 +377,7 @@ const ConteoInventario = () => {
                   <div className="modal-footer">
                     <button type="button" className="btn btn-secondary" onClick={()=>setNewModal(false)}>Cancelar</button>
                     <button type="submit" className="btn btn-primary fw-bold" disabled={loading}>
-                      {loading ? '⏳ Iniciando...' : '✅ Iniciar conteo'}
+                      {loading ? '⏳ Iniciando...' : ' Iniciar conteo'}
                     </button>
                   </div>
                 </form>

@@ -104,7 +104,8 @@ const Bodegas = () => {
       <main className="flex-grow-1 p-4" style={{ marginLeft:240 }}>
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <h4 className="fw-bold mb-0">🏭 Bodegas y Ubicaciones</h4>
+            <h4 className="fw-bold mb-0">
+  <i className="bi bi-building-fill me-2" style={{ color: "#ea580c" }}></i> Bodegas y Ubicaciones</h4>
             <p className="text-muted small mb-0">Control de stock por ubicación y traslados</p>
           </div>
           <div className="d-flex gap-2">
@@ -119,13 +120,22 @@ const Bodegas = () => {
 
         {alert && <div className={`alert alert-${alert.type} py-2`}>{alert.msg}</div>}
 
-        <ul className="nav nav-tabs mb-4">
-          {[['ubicaciones','🏭 Ubicaciones'],['traslados','🔄 Historial traslados']].map(([k,l])=>(
-            <li key={k} className="nav-item">
-              <button className={`nav-link ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</button>
-            </li>
-          ))}
-        </ul>
+       <ul className="nav nav-tabs mb-4">
+  {[
+    ['ubicaciones', 'bi-building-fill', 'Ubicaciones'],
+    ['traslados', 'bi-arrow-left-right', 'Historial traslados']
+  ].map(([k, icon, label]) => (
+    <li key={k} className="nav-item">
+      <button
+        className={`nav-link ${tab === k ? 'active' : ''}`}
+        onClick={() => setTab(k)}
+      >
+        <i className={`bi ${icon} me-2`}></i>
+        {label}
+      </button>
+    </li>
+  ))}
+</ul>
 
         {/* Tab ubicaciones */}
         {tab === 'ubicaciones' && (
@@ -222,20 +232,47 @@ const Bodegas = () => {
                     <th className="text-end">Cantidad</th><th>Motivo</th><th>Registrado por</th></tr>
                 </thead>
                 <tbody>
-                  {!transfers.length ? (
-                    <tr><td colSpan="7" className="text-center text-muted py-4">Sin traslados registrados</td></tr>
-                  ) : transfers.map(t=>(
-                    <tr key={t.id}>
-                      <td className="text-muted">{t.created_at?.slice(0,10)}</td>
-                      <td className="fw-semibold">{t.product_name}</td>
-                      <td className="text-muted">🏭 {t.from_location}</td>
-                      <td className="text-muted">📦 {t.to_location}</td>
-                      <td className="text-end fw-bold">{fmtNum(t.cantidad)}</td>
-                      <td className="text-muted">{t.motivo||'—'}</td>
-                      <td className="text-muted">{t.created_by_name}</td>
-                    </tr>
-                  ))}
-                </tbody>
+  {!transfers.length ? (
+    <tr>
+      <td colSpan="7" className="text-center text-muted py-4">
+        Sin traslados registrados
+      </td>
+    </tr>
+  ) : transfers.map(t => (
+    <tr key={t.id}>
+      <td className="text-muted">{t.created_at?.slice(0,10)}</td>
+
+      <td className="fw-semibold">
+        <i className="bi bi-box-seam-fill text-primary me-2"></i>
+        {t.product_name}
+      </td>
+
+      <td className="text-muted">
+        <i className="bi bi-building-fill text-danger me-2"></i>
+        {t.from_location}
+      </td>
+
+      <td className="text-muted">
+        <i className="bi bi-boxes text-success me-2"></i>
+        {t.to_location}
+      </td>
+
+      <td className="text-end fw-bold">
+        {fmtNum(t.cantidad)}
+      </td>
+
+      <td className="text-muted">
+        <i className="bi bi-chat-left-text me-2"></i>
+        {t.motivo || '—'}
+      </td>
+
+      <td className="text-muted">
+        <i className="bi bi-person-badge-fill text-info me-2"></i>
+        {t.created_by_name}
+      </td>
+    </tr>
+  ))}
+</tbody>
               </table>
             </div>
           </div>
@@ -266,6 +303,7 @@ const Bodegas = () => {
                         <option value="sala">🛒 Sala de ventas</option>
                         <option value="produccion">⚙️ Producción</option>
                         <option value="frio">🧊 Cuarto frío</option>
+                        
                       </select>
                     </div>
                     <div className="form-check">
@@ -280,7 +318,7 @@ const Bodegas = () => {
                   <div className="modal-footer">
                     <button type="button" className="btn btn-secondary" onClick={()=>setLocModal(false)}>Cancelar</button>
                     <button type="submit" className="btn btn-primary fw-bold" disabled={loading}>
-                      {loading?'Guardando...':'✅ Guardar'}
+                      {loading?'Guardando...':' Guardar'}
                     </button>
                   </div>
                 </form>
@@ -295,7 +333,7 @@ const Bodegas = () => {
             <div className="modal-dialog">
               <div className="modal-content">
                 <div className="modal-header" style={{background:'#166534',color:'#fff'}}>
-                  <h5 className="modal-title fw-bold">🔄 Registrar Traslado</h5>
+                  <h5 className="modal-title fw-bold bi-arrow-clockwise"> Registrar Traslado</h5>
                   <button className="btn-close btn-close-white" onClick={()=>setTransferModal(false)} />
                 </div>
                 <form onSubmit={handleTransfer}>

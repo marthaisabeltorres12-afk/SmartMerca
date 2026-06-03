@@ -148,23 +148,6 @@ const ManageProducts = () => {
         <h4 className="fw-bold mb-4"><i className="bi bi-box-fill me-2"></i> Gestión de Productos</h4>
         {alert && <div className={`alert alert-${alert.type} alert-dismissible`}>{alert.msg}</div>}
         <div className="d-flex gap-2 mb-3 flex-wrap">
-<<<<<<< HEAD
-<div style={{ maxWidth: 300 }} className="position-relative">
-    <i className="bi bi-search position-absolute"style={{ left: 12,top: '50%',transform: 'translateY(-50%)',color: '#6c757d'}}></i>
-
-    <input className="form-control ps-5"placeholder="Buscar por nombre, categoría o código..."value={search}onChange={e => setSearch(e.target.value)}/>
-  </div>
-
-  <select className="form-select"style={{ maxWidth: 240 }}value={catFilter}onChange={e => setCatFilter(e.target.value)}>
-    <option value="">Todas las categorías</option>{CATEGORIAS.map(c => (<option key={c} value={c}> {c}</option>))}
-    </select>
-
-  {catFilter && (
-    <button className="btn btn-outline-secondary" onClick={() => setCatFilter('')}><i className="bi bi-x-circle me-1"></i>Limpiar filtro</button>
-  )}
-
-</div>
-=======
           <input className="form-control" style={{ maxWidth: 300 }}
             placeholder=" Buscar por nombre, categoría o código..."
             value={search} onChange={e => setSearch(e.target.value)} />
@@ -178,7 +161,6 @@ const ManageProducts = () => {
           )}
          
         </div>
->>>>>>> b75233fbb9dedfb2c4819aed14d311d20bfa70e5
 
         <p className="text-muted small mb-2">
           Mostrando <strong>{filtered.length}</strong> de <strong>{products.length}</strong> productos
@@ -254,18 +236,19 @@ const ManageProducts = () => {
     </button>
 
     <button
-      className="btn btn-warning btn-sm"
-      onClick={() => openEdit(p)}
-    >
-      ✏️
-    </button>
+  className="btn btn-outline-warning btn-sm"
+  onClick={() => openEdit(p)}
+  title="Editar producto"
+>
+  <i className="bi bi-pencil-square"></i>
+</button>
 
     <button
       className="btn btn-sm btn-outline-info"
       title="Historial de precios"
       onClick={() => openPriceHistory(p)}
     >
-      📊
+      <i className="bi bi-graph-up"></i>
     </button>
 
     <button
@@ -290,14 +273,14 @@ const ManageProducts = () => {
             <div className="modal-dialog modal-lg">
               <div className="modal-content">
                 <div className="modal-header">
-                  <h5 className="modal-title">{editing ? '✏️ Editar Producto' : '+ Nuevo Producto'}</h5>
+                  <h5 className="modal-title bi bi-pencil-square ">{editing ? '  Editar Producto' : '+ Nuevo Producto'}</h5>
                   <button className="btn-close" onClick={() => setShowModal(false)} />
                 </div>
                 <form onSubmit={handleSave}>
                   <div className="modal-body">
                     <div className="row g-3">
                       <div className="col-md-6">
-                        <label className="form-label">Nombre *</label>
+                        <label className="form-label">Nombre </label>
                         <input className="form-control" value={form.name}
                           onChange={e => setForm({...form, name: e.target.value})} required />
                       </div>
@@ -310,7 +293,7 @@ const ManageProducts = () => {
 </select>
                       </div>
                       <div className="col-md-6">
-                        <label className="form-label">Precio *</label>
+                        <label className="form-label">Precio </label>
                         <input className="form-control" type="number" step="0.01" min="0"
                           value={form.price} onChange={e => setForm({...form, price: e.target.value})} required />
                       </div>
@@ -320,7 +303,7 @@ const ManageProducts = () => {
                           value={form.stock} onChange={e => setForm({...form, stock: e.target.value})} />
                       </div>
                       <div className="col-md-6">
-                        <label className="form-label">⚠️ Stock mínimo</label>
+                        <label className="bi bi-exclamation-triangle-fill"> Stock mínimo</label>
                         <input className="form-control" type="number" min="0"
                           value={form.min_stock} onChange={e => setForm({...form, min_stock: e.target.value})} />
                         <div className="form-text text-muted">Alerta cuando baje de este nivel</div>
@@ -333,7 +316,7 @@ const ManageProducts = () => {
 
                       {/* Gramaje */}
                       <div className="col-12">
-                        <label className="form-label fw-semibold">⚖️ Gramaje / Presentación del producto</label>
+                        <label className="form-label fw-semibold"><i className="bi bi-archive-fill me-2"></i> Gramaje / Presentación del producto </label>
                         <div className="row g-2">
                           <div className="col-md-4">
                             <label className="form-label small text-muted">Cantidad</label>
@@ -371,7 +354,7 @@ const ManageProducts = () => {
 
                       {/* IVA */}
                       <div className="col-md-6">
-                        <label className="form-label fw-semibold">🏛️ Tipo de IVA</label>
+                        <label className="form-label fw-semibold"><i className="bi bi-receipt me-2"></i> Tipo de IVA </label>
                         <select className="form-select" value={form.iva_type}
                           onChange={e => setForm({...form, iva_type: parseInt(e.target.value)})}>
                           <option value={0}>0% — Exento (canasta familiar)</option>
@@ -395,7 +378,7 @@ const ManageProducts = () => {
 
                       {/* Descuento */}
                       <div className="col-md-4">
-                        <label className="form-label">🏷️ Descuento (%)</label>
+                        <label className="form-label"><i className="bi bi-ticket-perforated-fill"></i> Descuento (%)</label>
                         <div className="input-group">
                           <input className="form-control" type="number" min="0" max="100" step="1"
                             placeholder="0" value={form.discount}
@@ -404,19 +387,19 @@ const ManageProducts = () => {
                         </div>
                       </div>
                       <div className="col-md-4">
-                        <label className="form-label">📅 Inicio descuento</label>
+                        <label className="form-label"><i className="bi bi-calendar"></i> Inicio descuento</label>
                         <input className="form-control" type="date" value={form.discount_start}
                           onChange={e => setForm({...form, discount_start: e.target.value})} />
                       </div>
                       <div className="col-md-4">
-                        <label className="form-label">📅 Fin descuento</label>
+                        <label className="form-label"><i className="bi bi-calendar"></i> Fin descuento</label>
                         <input className="form-control" type="date" value={form.discount_end}
                           onChange={e => setForm({...form, discount_end: e.target.value})} />
                       </div>
                       {form.discount > 0 && form.price && (
                         <div className="col-12">
-                          <div className="alert alert-success py-2 mb-0">
-                            💰 Precio original: <strong>${parseFloat(form.price).toLocaleString('es-CO')}</strong>
+                          <div className="alert alert-success py-2 mb-0 ">
+                             Precio original: <strong>${parseFloat(form.price).toLocaleString('es-CO')}</strong>
                             {' → '}
                             Precio con descuento: <strong className="text-success">
                               ${(parseFloat(form.price) * (1 - form.discount/100)).toLocaleString('es-CO', {maximumFractionDigits:0})}
@@ -466,7 +449,7 @@ const ManageProducts = () => {
             <div className="modal-dialog modal-lg">
               <div className="modal-content">
                 <div className="modal-header" style={{background:'#1e3a5f',color:'#fff'}}>
-                  <h5 className="modal-title fw-bold">📊 Historial de precios — {priceHistoryModal.name}</h5>
+                  <h5 className="modal-title fw-bold bi-speedometer2"> Historial de precios — {priceHistoryModal.name}</h5>
                   <button className="btn-close btn-close-white" onClick={()=>setPriceHistoryModal(null)} />
                 </div>
                 <div className="modal-body p-0">

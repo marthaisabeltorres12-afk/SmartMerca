@@ -81,7 +81,7 @@ const LinesOverview = () => {
     periodSales.forEach(sale => {
       sale.items?.forEach(item => {
         const meta = products.find(p => p.id===item.product_id || p.name===item.product);
-        const cat  = meta?.category || '📦 Otros';
+        const cat  = meta?.category || ' Otros';
         if (!map[cat]) map[cat] = { monto:0, unidades:0, ventas: new Set() };
         map[cat].monto    += parseFloat(item.subtotal||0);
         map[cat].unidades += parseFloat(item.quantity||0);
@@ -89,7 +89,7 @@ const LinesOverview = () => {
       });
     });
     products.forEach(p => {
-      const cat = p.category || '📦 Otros';
+      const cat = p.category || ' Otros';
       if (!map[cat]) map[cat] = { monto:0, unidades:0, ventas: new Set() };
     });
     return Object.entries(map)
@@ -107,7 +107,7 @@ const LinesOverview = () => {
     periodSales.forEach(sale => {
       sale.items?.forEach(item => {
         const meta = products.find(p => p.id===item.product_id || p.name===item.product);
-        const cat  = meta?.category || '📦 Otros';
+        const cat  = meta?.category || ' Otros';
         if (!map[cat]) map[cat] = {};
         const name = item.product || meta?.name || '?';
         if (!map[cat][name]) map[cat][name] = { qty:0, monto:0 };
@@ -170,7 +170,7 @@ const LinesOverview = () => {
       <main className="flex-grow-1 p-4" style={{ marginLeft:240 }}>
         <div className="d-flex align-items-center justify-content-between mb-4">
           <div>
-            <h4 className="fw-bold mb-0">📊 Líneas / Categorías</h4>
+            <h4 className="fw-bold mb-0"><i className="bi bi-grid-1x2-fill me-2" style={{ color: "#8b5cf6" }}></i>Líneas / Categorías</h4>
             <p className="text-muted mb-0 small">Rendimiento de cada categoría de productos</p>
           </div>
           <div className="d-flex gap-2">
@@ -326,7 +326,7 @@ const LinesOverview = () => {
                   <div className="modal-footer">
                     <button type="button" className="btn btn-secondary" onClick={()=>setConfigModal(null)}>Cancelar</button>
                     <button type="submit" className="btn btn-primary fw-bold" disabled={saving}>
-                      {saving ? 'Guardando...' : '✅ Guardar'}
+                      {saving ? 'Guardando...' : ' Guardar'}
                     </button>
                   </div>
                 </form>

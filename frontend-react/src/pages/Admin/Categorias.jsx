@@ -87,9 +87,9 @@ const Categorias = () => {
 
         {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
 
-        <div className="d-flex gap-2 mb-3">
-          <input className="form-control" style={{ maxWidth: 320 }}
-            placeholder="🔍 Buscar categoría..." value={search}
+        <div className="d-flex gap-2 mb-3 ">
+          <input className="form-control " style={{ maxWidth: 320 }}
+            placeholder=" Buscar categoría..." value={search}
             onChange={e => setSearch(e.target.value)} />
           <button className="btn btn-success ms-auto" onClick={openAdd}>+ Nueva Categoría</button>
         </div>
@@ -127,7 +127,7 @@ const Categorias = () => {
                           title={c.is_active !== false ? 'Desactivar' : 'Activar'}>
                           {c.is_active !== false ? '❌' : '✅'}
                         </button>
-                        <button className="btn btn-warning btn-sm" onClick={() => openEdit(c)}>✏️</button>
+                        <button className="btn btn-warning btn-sm" onClick={() => openEdit(c)}><i className="bi-pencil-square"></i></button>
                         <button
   className="btn btn-danger btn-sm"
   onClick={() => setConfirmDelete(c)}
@@ -149,14 +149,14 @@ const Categorias = () => {
             <div className="modal-dialog">
               <div className="modal-content">
                 <div className="modal-header">
-                  <h5 className="modal-title">{editing ? '✏️ Editar Categoría' : '+ Nueva Categoría'}</h5>
+                  <h5 className="modal-title bi-pencil-square">{editing ? ' Editar Categoría' : ' Nueva Categoría'}</h5>
                   <button className="btn-close" onClick={() => setShowModal(false)} />
                 </div>
                 <form onSubmit={handleSave}>
                   <div className="modal-body">
                     <div className="row g-3">
                       <div className="col-md-8">
-                        <label className="form-label">Nombre *</label>
+                        <label className="form-label">Nombre </label>
                         <input className="form-control" placeholder="Ej: Lácteos"
                           value={form.name}
                           onChange={e => setForm({...form, name: e.target.value})} required />

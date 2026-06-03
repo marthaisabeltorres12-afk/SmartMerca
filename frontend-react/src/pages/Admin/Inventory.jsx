@@ -92,7 +92,7 @@ const Searcher = ({ products, onSelect, excludeIds = [], placeholder }) => {
   return (
     <div style={{ position:'relative' }}>
       <div className="input-group">
-        <span className="input-group-text bg-dark text-white">🔍</span>
+        <span className="input-group-text bg-dark text-white bi-search"></span>
         <input ref={ref} className="form-control" autoComplete="off"
           placeholder={placeholder || 'Nombre o código de barras — escanear o escribir...'}
           value={q}
@@ -105,7 +105,7 @@ const Searcher = ({ products, onSelect, excludeIds = [], placeholder }) => {
           onClick={() => { setQ(''); setList([]); setOpen(false); ref.current?.focus(); }}>✕</button>}
       </div>
       <div className="text-muted mt-1" style={{ fontSize:11 }}>
-        📦 Escanea → agrega directo &nbsp;|&nbsp; ✍️ Escribe nombre → elige del listado
+        | Escanea → agrega directo &nbsp;|&nbsp;  Escribe nombre → elige del listado |
       </div>
 
       {open && (
@@ -116,14 +116,14 @@ const Searcher = ({ products, onSelect, excludeIds = [], placeholder }) => {
               onMouseDown={e => { e.preventDefault(); pick(p); }}>
               <div className="fw-semibold" style={{ fontSize:13 }}>
                 {dname(p)}
-                {p.barcode && <span className="text-muted ms-2" style={{ fontSize:10, fontFamily:'monospace' }}>📦 {p.barcode}</span>}
+                {p.barcode && <span className="text-muted ms-2" style={{ fontSize:10, fontFamily:'monospace' }}> {p.barcode}</span>}
               </div>
               <div className="d-flex gap-2 flex-wrap align-items-center mt-1" style={{ fontSize:11 }}>
                 <span className="text-success fw-bold">{fmt(p.price)}</span>
                 <span className="text-muted">{p.category || '—'}</span>
                 <span className={`badge ${stockColor(p)}`}>Stock: {p.stock}</span>
                 {p.line_name && <span className="badge px-1" style={{ background:p.line_color||'#6b7280', color:'#fff', fontSize:9 }}>{p.line_name}</span>}
-                {p.stock_alert && <span className="badge bg-danger" style={{ fontSize:9 }}>⚠️ Bajo</span>}
+                {p.stock_alert && <span className="badge bg-danger" style={{ fontSize:9 }}> Bajo</span>}
               </div>
             </div>
           ))}
@@ -162,7 +162,7 @@ const Historial = ({ movements, products }) => {
                       <tr key={m.id}>
                        <td className="fw-semibold">
                          {p ? dname(p) : m.product}
-                        {p?.stock_alert && <span className="badge bg-danger ms-1" style={{ fontSize:9 }}>⚠️</span>}
+                        {p?.stock_alert && <span className="badge bg-danger ms-1 bi-exclamation-triangle-fill" style={{ fontSize:9 }}></span>}
                          </td>
                         <td><span className={`badge ${stockColor(p)}`}>{p?.stock ?? '—'}</span></td>
                         <td>{m.unit_cost ? fmt(m.unit_cost) : <span className="text-muted">—</span>}</td>
@@ -248,8 +248,8 @@ const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
       {/* Cabecera del editor */}
       <div className="fw-semibold mb-3 d-flex align-items-center gap-2" style={{ fontSize:13 }}>
         {r.mode === 'new'
-          ? <><span className="badge bg-success">✨ Nuevo</span> {r.name || 'Producto nuevo'}</>
-          : <><span className="badge bg-dark">📦</span> {dname(r.product)}</>
+          ? <><span className="badge bg-success"> Nuevo</span> {r.name || 'Producto nuevo'}</>
+          : <><span className="badge bg-dark"></span> {dname(r.product)}</>
         }
       </div>
 
@@ -291,14 +291,14 @@ const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
             </select>
           </div>
           <div className="col-md-6">
-            <label className="form-label small fw-semibold">🏛️ Tipo de IVA</label>
+            <label className="form-label small fw-semibold bi-receipt-cutoff"> Tipo de IVA</label>
             <select className="form-select form-select-sm" value={r.iva_type}
               onChange={e => set('iva_type', parseInt(e.target.value))}>
               {IVA_OPTS.map(o => <option key={o.v} value={o.v}>{o.label}</option>)}
             </select>
           </div>
           <div className="col-md-6">
-            <label className="form-label small fw-semibold">⚠️ Stock mínimo para alerta</label>
+            <label className="form-label small fw-semibold bi-exclamation-triangle-fill"> Stock mínimo para alerta</label>
             <div className="input-group input-group-sm">
               <input className="form-control" type="number" min="0" value={r.min_stock}
                 onChange={e => set('min_stock', e.target.value)} />
@@ -335,8 +335,8 @@ const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
         <div className="col-6 col-md-4">
           <label className="form-label small fw-semibold d-flex align-items-center gap-1">
             Precio de venta *
-            <span className="badge bg-light text-dark border" style={{ fontSize:9, fontWeight:400 }}>
-              {!r.price_manual && r.unit_cost && r.ganancia_pct ? '⚡ Auto' : '✏️ Manual'}
+            <span className="badge bg-light text-warning border" style={{ fontSize:9, fontWeight:400 }}>
+              {!r.price_manual && r.unit_cost && r.ganancia_pct ? ' Auto' : ' Manual'}
             </span>
           </label>
           <div className="input-group input-group-sm">
@@ -358,7 +358,7 @@ const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
             value={r.expiry_date} onChange={e => set('expiry_date', e.target.value)} />
         </div>
         <div className="col-md-4">
-          <label className="form-label small fw-semibold">🏷️ Número de lote</label>
+          <label className="form-label small fw-semibold bi-tag-fill"> Número de lote</label>
           <input className="form-control form-control-sm" type="text"
             placeholder="Ej: L-2026-001 (opcional)"
             value={r.numero_lote||''} onChange={e => set('numero_lote', e.target.value)} />
@@ -378,7 +378,7 @@ const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
           {egreso !== null && r.quantity && (
             <span>📦 Egreso: <b className="text-danger">{fmt(egreso)}</b></span>
           )}
-          {verif && <span style={{ color:'#059669', fontSize:10 }}>✅ Verificado</span>}
+          {verif && <span style={{ color:'#059669', fontSize:10 }}> Verificado</span>}
         </div>
       )}
 
@@ -386,12 +386,12 @@ const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
       <div className="d-flex gap-2">
         <button type="button" className="btn btn-success btn-sm px-4 fw-bold"
           onClick={() => onSave(r)}>
-          ✅ Guardar en pedido
+           Guardar en pedido
         </button>
         <button type="button" className="btn btn-outline-secondary btn-sm"
           onClick={onCancel}>
           Cancelar
-        </button>
+        </button> Proveedor 
       </div>
     </div>
   );
@@ -761,13 +761,17 @@ const Inventory = () => {
     <div className="d-flex">
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft:240, minHeight:'100vh', background:'#f8fafc' }}>
-        <h4 className="fw-bold mb-4">📦 Inventario</h4>
+        <h4 className="bi-boxes"> Inventario</h4>
 
         {alert && <div className={`alert alert-${alert.type} alert-dismissible mb-3`}>{alert.msg}</div>}
 
         {/* Tabs */}
         <ul className="nav nav-tabs mb-4">
-          {[['historial','📜 Historial'],['lotes','📦 Lotes activos'],['entrada','📦 Registrar Pedido'],['salida','📤 Novedades']].map(([k,l]) => (
+          {[['historial', <><i className="bi bi-journal-text"></i> Historial</>],
+    ['lotes', <><i className="bi bi-box-seam"></i> Lotes activos</>],
+    ['entrada', <><i className="bi bi-bag-plus"></i> Registrar Pedido</>],
+    ['salida', <><i className="bi bi-send"></i> Novedades</>],
+  ].map(([k, l]) => (
             <li key={k} className="nav-item">
               <button className={`nav-link ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</button>
             </li>
@@ -782,7 +786,7 @@ const Inventory = () => {
           <div>
             {!batches.length ? (
               <div className="text-center text-muted py-5">
-                <div className="fs-2">📦</div>
+                <div className="bi-box-seam-fill"></div>
                 <div>No hay lotes activos. Los lotes se crean automáticamente al registrar entradas de inventario.</div>
               </div>
             ) : (
@@ -909,7 +913,7 @@ const Inventory = () => {
               <div className="card-body">
                 <div className="row g-3">
                   <div className="col-md-4">
-                  <label className="form-label fw-semibold small">🚚 Proveedor (NIT o nombre)</label>
+                  <label className="form-label fw-semibold small">  Proveedor (NIT o nombre)</label>
 <div className="position-relative">
   <input className="form-control" placeholder="Escribe NIT o nombre..."
     value={header.supplierSearch || ''}
@@ -967,18 +971,18 @@ const Inventory = () => {
                       readOnly style={{ background:'#f8fafc', color:'#64748b' }} />
                   </div>
                   <div className="col-md-4">
-                    <label className="form-label fw-semibold small">🧾 N° Factura del proveedor</label>
+                    <label className="form-label fw-semibold small bi-receipt-cutoff"> N° Factura del proveedor</label>
                     <input className="form-control" placeholder="Ej: FAC-001 (opcional)"
                       value={header.invoice_num}
                       onChange={e => setHeader({...header, invoice_num:e.target.value})} />
                   </div>
                   <div className="col-12">
-                    <label className="form-label fw-semibold small">📝 Razón del pedido</label>
+                    <label className="form-label fw-semibold small bi-archive-fill"> Razón del pedido</label>
                     <input className="form-control" value={header.reason}
                       onChange={e => setHeader({...header, reason:e.target.value})} />
                   </div>
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold small">💳 ¿Factura quedó pendiente de pago?</label>
+                    <label className="form-label fw-semibold small bi-credit-card-fill"> ¿Factura quedó pendiente de pago?</label>
                     <select className="form-select" value={header.factura_pendiente||''}
                       onChange={e=>setHeader({...header, factura_pendiente:e.target.value})}>
                       <option value="">No — se pagó de contado</option>
@@ -1025,7 +1029,7 @@ const Inventory = () => {
                     <div className="mt-3 text-center">
                       <button type="button" className="btn btn-outline-success"
                         onClick={openNew}>
-                        ✨ Crear producto nuevo dentro del pedido
+                         Crear producto nuevo dentro del pedido
                       </button>
                     </div>
                   </>

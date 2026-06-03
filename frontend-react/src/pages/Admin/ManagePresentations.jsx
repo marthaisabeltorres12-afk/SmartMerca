@@ -111,7 +111,13 @@ const ManagePresentations = () => {
     <div className="d-flex">
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft:240 }}>
-        <h4 className="fw-bold mb-1">🥚 Presentaciones de Venta</h4>
+        <h4 className="fw-bold mb-1">
+  <i
+    className="bi bi-box-seam-fill me-2"
+    style={{ color: "#8d6606" }}
+  ></i>
+  Presentaciones de Venta
+</h4>
         <p className="text-muted mb-4">
           Define cómo se agrupan los productos para la venta. Ejemplo: llegan 500 huevos,
           se venden por media cubeta (15) o cubeta completa (30). El stock siempre se descuenta del producto base.
@@ -125,7 +131,7 @@ const ManagePresentations = () => {
             <div className="card border-0 shadow-sm">
               <div className="card-header fw-semibold py-3"
                 style={{ background: editing ? '#1e40af' : '#1e3a5f', color:'#fff' }}>
-                {editing ? '✏️ Editar presentación' : '➕ Nueva presentación'}
+                {editing ? ' Editar presentación' : '➕ Nueva presentación'}
               </div>
               <div className="card-body">
                 <form onSubmit={handleSubmit}>
@@ -204,7 +210,7 @@ const ManagePresentations = () => {
 
                   <div className="d-flex gap-2">
                     <button type="submit" className="btn btn-dark flex-fill fw-bold" disabled={loading}>
-                      {loading ? 'Guardando...' : editing ? '✅ Actualizar' : '➕ Crear'}
+                      {loading ? 'Guardando...' : editing ? ' Actualizar' : '➕ Crear'}
                     </button>
                     {editing && (
                       <button type="button" className="btn btn-outline-secondary"
@@ -220,7 +226,7 @@ const ManagePresentations = () => {
             {/* Explicación visual */}
             <div className="card border-0 shadow-sm mt-3" style={{ background:'#f0fdf4' }}>
               <div className="card-body" style={{ fontSize:12 }}>
-                <div className="fw-semibold mb-2">📖 ¿Cómo funciona?</div>
+                <div className="fw-semibold mb-2"> ¿Cómo funciona?</div>
                 <div className="d-flex flex-column gap-1">
                   <div>1. El producto base es la <strong>unidad mínima</strong> (ej: Huevo)</div>
                   <div>2. La presentación define cuántos entran en un pack (ej: 30)</div>
@@ -234,11 +240,24 @@ const ManagePresentations = () => {
 
           {/* ── Lista de presentaciones ── */}
           <div className="col-md-8">
-            <div className="mb-3">
-              <input className="form-control" placeholder="🔍 Buscar por nombre de producto, presentación o código de barras..."
-                value={filterProd}
-                onChange={e => setFilterProd(e.target.value)} />
-            </div>
+            <div className="mb-3 position-relative">
+  <i
+    className="bi bi-search position-absolute"
+    style={{
+      left: "12px",
+      top: "50%",
+      transform: "translateY(-50%)",
+      color: "#6b7280"
+    }}
+  ></i>
+
+  <input
+    className="form-control ps-5"
+    placeholder="Buscar por nombre de producto, presentación o código de barras..."
+    value={filterProd}
+    onChange={e => setFilterProd(e.target.value)}
+  />
+</div>
 
             {prodConPres.length === 0 ? (
               <div className="text-center text-muted py-5">No hay productos</div>
@@ -295,10 +314,10 @@ const ManagePresentations = () => {
                               </td>
                               <td>
                                 <div className="d-flex gap-1">
-                                  <button className="btn btn-sm btn-outline-primary py-0 px-2"
-                                    onClick={() => handleEdit(p)}>✏️</button>
-                                  <button className="btn btn-sm btn-outline-danger py-0 px-2"
-                                    onClick={() => setConfirmDeletePres({id: p.id, name: p.name})}>🗑️</button>
+                                  <button className="btn btn-sm btn-outline-primary py-0 px-2 bi bi-pencil"
+                                    onClick={() => handleEdit(p)}></button>
+                                  <button className="btn btn-sm btn-outline-danger py-0 px-2"onClick={() => setConfirmDeletePres({id: p.id,name: p.name})}>
+                                   <i className="bi bi-trash-fill"></i></button>
                                 </div>
                               </td>
                             </tr>

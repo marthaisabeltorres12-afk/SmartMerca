@@ -168,7 +168,7 @@ const OrdenesCompra = () => {
       <main className="flex-grow-1 p-4" style={{ marginLeft:240 }}>
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <h4 className="fw-bold mb-0">📦 Órdenes de Compra</h4>
+            <h4 className="fw-bold mb-0 bi-box-seam-fill"> Órdenes de Compra</h4>
             <p className="text-muted small mb-0">Pedidos a proveedores y recepción de mercancía</p>
           </div>
           <button className="btn btn-primary fw-bold" onClick={()=>setNewOrderModal(true)}>
@@ -198,15 +198,40 @@ const OrdenesCompra = () => {
         </div>
 
         {/* Tabs */}
-        <ul className="nav nav-tabs mb-4">
-          {[['lista','📋 Órdenes'],['sugeridos','⚠️ Stock bajo'],['sugerencias','🔄 Sugerencias auto'],['ia','🤖 IA Predictiva →']].map(([k,l])=>(
-            <li key={k} className="nav-item">
-              <button className={`nav-link ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}
-                {k==='sugeridos' && suggested.length > 0 && <span className="badge bg-danger ms-1">{suggested.length}</span>}
-              </button>
-            </li>
-          ))}
-        </ul>
+       <ul className="nav nav-tabs mb-4">
+  {[
+    ['lista', <>
+      <i className="bi bi-card-checklist me-2"></i>
+      Órdenes
+    </>],
+    ['sugeridos', <>
+      <i className="bi bi-exclamation-triangle me-2"></i>
+      Stock bajo
+    </>],
+    ['sugerencias', <>
+      <i className="bi bi-arrow-repeat me-2"></i>
+      Sugerencias auto
+    </>],
+    ['ia', <>
+      <i className="bi bi-robot me-2"></i>
+      IA Predictiva
+    </>]
+  ].map(([k, l]) => (
+    <li key={k} className="nav-item">
+      <button
+        className={`nav-link ${tab === k ? 'active' : ''}`}
+        onClick={() => setTab(k)}
+      >
+        {l}
+        {k === 'sugeridos' && suggested.length > 0 && (
+          <span className="badge bg-danger ms-1">
+            {suggested.length}
+          </span>
+        )}
+      </button>
+    </li>
+  ))}
+</ul>
 
         {/* Tab lista de órdenes */}
         {tab === 'lista' && (
@@ -252,15 +277,23 @@ const OrdenesCompra = () => {
                                 title="Ver detalle de productos">
                                 {expanded===o.id?'▲':'▼'}
                               </button>
-                              <button className="btn btn-sm btn-outline-danger py-0 px-2"
-                                title="Descargar PDF para enviar al proveedor"
-                                onClick={()=>exportOrdenCompraPDF(o)}>
-                                📄 PDF
-                              </button>
+                              <button
+  className="btn btn-sm btn-outline-danger py-0 px-2"
+  title="Descargar PDF para enviar al proveedor"
+  onClick={() => exportOrdenCompraPDF(o)}
+>
+  <i className="bi bi-file-earmark-pdf me-1"></i>
+  PDF
+</button>
                               {o.status !== 'completada' && o.status !== 'cancelada' && (
                                 <>
-                                  <button className="btn btn-sm btn-outline-primary py-0 px-2"
-                                    onClick={()=>openReceive(o)}>📥 Recibir</button>
+                                  <button
+  className="btn btn-sm btn-outline-primary py-0 px-2"
+  onClick={() => openReceive(o)}
+>
+  <i className="bi bi-box-arrow-in-down me-1"></i>
+  Recibir
+</button>
                                   <button className="btn btn-sm btn-outline-danger py-0 px-1"
                                     title="Cancelar orden"
                                     onClick={()=>setConfirmCancel(o)}>❌</button>
@@ -319,8 +352,7 @@ const OrdenesCompra = () => {
               <>
                 <div className="alert alert-warning py-2 mb-3">
                   <strong>{suggested.length} producto(s)</strong> por debajo del stock mínimo.
-                  <button className="btn btn-sm btn-warning ms-3" onClick={()=>{ setNewOrderModal(true); addSuggestedItems(); }}>
-                    📦 Crear orden con todos
+                  <button className="btn btn-sm btn-warning ms-3 bi-box-seam-fill" onClick={()=>{ setNewOrderModal(true); addSuggestedItems(); }}> Crear orden con todos
                   </button>
                 </div>
                 <div className="card border-0 shadow-sm">
@@ -331,7 +363,7 @@ const OrdenesCompra = () => {
                     <tbody>
                       {suggested.map(p=>(
                         <tr key={p.id} style={{background:'#fff5f5'}}>
-                          <td className="fw-semibold">⚠️ {p.name}</td>
+                          <td className="fw-semibold bi-exclamation-triangle-fill"> {p.name}</td>
                           <td className="text-muted">{p.supplier||'—'}</td>
                           <td className="text-end fw-bold text-danger">{fmtNum(p.stock)}</td>
                           <td className="text-end text-muted">{fmtNum(p.min_stock)}</td>
@@ -412,7 +444,7 @@ const OrdenesCompra = () => {
                         const qty = editedQty[p.product_id] ?? p.cantidad_sugerida;
                         return (
                           <tr key={p.product_id}>
-                            <td className="fw-semibold">⚠️ {p.product_name}</td>
+                            <td className="fw-semibold bi-exclamation-triangle-fill"> {p.product_name}</td>
                             <td className="text-end text-danger fw-bold">{fmtNum(p.stock_actual)}</td>
                             <td className="text-end text-muted">{fmtNum(p.min_stock)}</td>
                             <td className="text-end text-muted">{p.rotacion_semanal} uds</td>

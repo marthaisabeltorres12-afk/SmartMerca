@@ -56,7 +56,7 @@ const Merma = () => {
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft:240 }}>
         <div className="mb-4">
-          <h4 className="fw-bold mb-0">⚠️ Merma y Averías</h4>
+          <h4 className="fw-bold mb-0 bi-exclamation-triangle-fill"> Merma y Averías</h4>
           <p className="text-muted small mb-0">
             Las mermas se registran automáticamente desde <strong>Inventario → Registrar Salida</strong> cuando el motivo es daño, vencimiento, robo o pérdida.
           </p>
@@ -65,12 +65,20 @@ const Merma = () => {
         {alert && <div className={`alert alert-${alert.type} py-2`}>{alert.msg}</div>}
 
         <ul className="nav nav-tabs mb-4">
-          {[['historial','📋 Historial'],['reporte','📊 Reporte mensual']].map(([k,l])=>(
-            <li key={k} className="nav-item">
-              <button className={`nav-link ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</button>
-            </li>
-          ))}
-        </ul>
+  {[
+    ['historial', <><i className="bi bi-clock-history me-2"></i>Historial</>],
+    ['reporte', <><i className="bi bi-bar-chart-line me-2"></i>Reporte mensual</>]
+  ].map(([k, l]) => (
+    <li key={k} className="nav-item">
+      <button
+        className={`nav-link ${tab === k ? 'active' : ''}`}
+        onClick={() => setTab(k)}
+      >
+        {l}
+      </button>
+    </li>
+  ))}
+</ul>
 
         {/* Historial */}
         {tab === 'historial' && (

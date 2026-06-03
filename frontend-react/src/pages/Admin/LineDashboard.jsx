@@ -142,25 +142,56 @@ const LineDashboard = () => {
 
         {/* KPIs */}
         <div className="row g-3 mb-4">
-          {[
-            { icon:'🧾', value: totalVentas,         label:'Ventas con esta categoría', color:'primary' },
-            { icon:'💰', value: fmt(totalMonto),      label:'Ingresos del período',      color:'success' },
-            { icon:'📦', value: Math.round(totalUnidades), label:'Unidades vendidas',   color:'info'    },
-            { icon:'📋', value: lineProducts.length,  label:'Productos activos',        color:'secondary'},
-          ].map((k,i) => (
-            <div key={i} className="col-md-3">
-              <div className={`card border-${k.color} border-2`}>
-                <div className="card-body d-flex align-items-center gap-3">
-                  <span style={{ fontSize:'1.8rem' }}>{k.icon}</span>
-                  <div>
-                    <div className={`fs-4 fw-bold text-${k.color}`}>{k.value}</div>
-                    <div className="text-muted small">{k.label}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+  {[
+    {
+      icon: 'bi-journal-text',
+      value: totalVentas,
+      label: 'Ventas con esta categoría',
+      color: '#2563eb'
+    },
+    {
+      icon: 'bi-cash-stack',
+      value: fmt(totalMonto),
+      label: 'Ingresos del período',
+      color: '#16a34a'
+    },
+    {
+      icon: 'bi-box-seam-fill',
+      value: Math.round(totalUnidades),
+      label: 'Unidades vendidas',
+      color: '#f97316'
+    },
+    {
+      icon: 'bi-grid-1x2-fill',
+      value: lineProducts.length,
+      label: 'Productos activos',
+      color: '#8b5cf6'
+    },
+  ].map((k, i) => (
+    <div key={i} className="col-md-3">
+      <div className="card border-0 shadow-sm h-100">
+        <div className="card-body text-center">
+          <div
+            style={{
+              fontSize: 28,
+              color: k.color
+            }}
+          >
+            <i className={`bi ${k.icon}`}></i>
+          </div>
+
+          <div className="fw-bold fs-4 mt-2">
+            {k.value}
+          </div>
+
+          <div className="text-muted small">
+            {k.label}
+          </div>
         </div>
+      </div>
+    </div>
+  ))}
+</div>
 
         {lineItems.length === 0 ? (
           <div className="card text-center py-5 text-muted">
@@ -173,7 +204,7 @@ const LineDashboard = () => {
             {/* Top productos */}
             <div className="col-md-6">
               <div className="card border-0 shadow-sm h-100">
-                <div className="card-header fw-semibold">📈 Productos más vendidos</div>
+                <div className="card-header fw-semibold bi-graph-up-arrow"> Productos más vendidos</div>
                 <div className="card-body p-0">
                   <table className="table table-hover mb-0" style={{ fontSize:13 }}>
                     <thead className="table-light">
@@ -197,7 +228,7 @@ const LineDashboard = () => {
             {/* Desglose por pago */}
             <div className="col-md-6">
               <div className="card border-0 shadow-sm h-100">
-                <div className="card-header fw-semibold">💳 Desglose por método de pago</div>
+                <div className="card-header fw-semibold bi-credit-card-fill"> Desglose por método de pago</div>
                 <div className="card-body">
                   {Object.entries(pagoMap).sort((a,b)=>b[1]-a[1]).map(([pago,monto]) => {
                     const pct = totalMonto > 0 ? ((monto/totalMonto)*100).toFixed(1) : 0;
@@ -220,7 +251,7 @@ const LineDashboard = () => {
             {/* Cajeros */}
             <div className="col-md-6">
               <div className="card border-0 shadow-sm">
-                <div className="card-header fw-semibold">👤 Cajeros que vendieron esta categoría</div>
+                <div className="card-header fw-semibold bi-person-workspace"> Cajeros que vendieron esta categoría</div>
                 <div className="table-responsive">
                   <table className="table table-hover mb-0" style={{ fontSize:13 }}>
                     <thead className="table-light">
@@ -229,7 +260,7 @@ const LineDashboard = () => {
                     <tbody>
                       {topCajeros.map(([cajero,v]) => (
                         <tr key={cajero}>
-                          <td className="fw-semibold">👤 {cajero}</td>
+                          <td className="fw-semibold bi-person-workspace"> {cajero}</td>
                           <td className="text-center"><span className="badge bg-secondary">{Math.round(v.qty)}</span></td>
                           <td className="text-end text-success fw-semibold">{fmt(v.monto)}</td>
                         </tr>
@@ -243,7 +274,7 @@ const LineDashboard = () => {
             {/* Clientes frecuentes */}
             <div className="col-md-6">
               <div className="card border-0 shadow-sm">
-                <div className="card-header fw-semibold">⭐ Clientes frecuentes en esta categoría</div>
+                <div className="card-header fw-semibold bi-star-fill"> Clientes frecuentes en esta categoría</div>
                 {!topClientes.length ? (
                   <div className="card-body text-muted small">Sin ventas con cliente registrado</div>
                 ) : (
@@ -271,7 +302,7 @@ const LineDashboard = () => {
             {/* Stock de la categoría */}
             <div className="col-12">
               <div className="card border-0 shadow-sm">
-                <div className="card-header fw-semibold">📦 Stock de productos en esta categoría</div>
+                <div className="card-header fw-semibold bi-box-seam-fill"> Stock de productos en esta categoría</div>
                 <div className="table-responsive">
                   <table className="table table-hover mb-0" style={{ fontSize:13 }}>
                     <thead className="table-light">
