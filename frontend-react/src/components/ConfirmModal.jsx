@@ -25,12 +25,11 @@ const ConfirmModal = ({
   if (!show) return null;
 
   const iconos = {
-    danger:  '🗑️',
-    warning: '⚠️',
-    primary: '✅',
-    success: '✅',
-  };
-
+  danger:  <i className="bi bi-trash-fill"></i>,
+  warning: <i className="bi bi-exclamation-triangle-fill"></i>,
+  primary: <i className="bi bi-check-circle-fill"></i>,
+  success: <i className="bi bi-check-circle-fill"></i>,
+};
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.55)', zIndex: 99999 }}>
       <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: 420 }}>

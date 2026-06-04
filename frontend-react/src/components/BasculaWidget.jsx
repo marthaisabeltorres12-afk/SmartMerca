@@ -31,7 +31,7 @@ const BasculaWidget = ({ onPesoConfirmado, productoNombre }) => {
   if (!soportado) {
     return (
       <div className="alert alert-warning py-2 small">
-        ⚠️ Tu navegador no soporta báscula USB. Usa Chrome 89+ o Edge 89+.
+        <i className="bi bi-exclamation-triangle"></i> Tu navegador no soporta báscula USB. Usa Chrome 89+ o Edge 89+.
       </div>
     );
   }
@@ -41,7 +41,7 @@ const BasculaWidget = ({ onPesoConfirmado, productoNombre }) => {
       <div className="card-body py-3">
         <div className="d-flex align-items-center justify-content-between mb-2">
           <div className="d-flex align-items-center gap-2">
-            <span style={{ fontSize: 22 }}>⚖️</span>
+            <span style={{ fontSize: 22 }}><i className="bi bi-cup-straw"></i></span>
             <div>
               <div className="fw-bold" style={{ fontSize: 13 }}>Báscula digital</div>
               {productoNombre && (
@@ -52,11 +52,11 @@ const BasculaWidget = ({ onPesoConfirmado, productoNombre }) => {
           <div>
             {!conectada ? (
               <button className="btn btn-success btn-sm fw-bold" onClick={conectar}>
-                🔌 Conectar báscula
+                <i className="bi bi-plug"></i> Conectar báscula
               </button>
             ) : (
               <button className="btn btn-outline-danger btn-sm" onClick={desconectar}>
-                ✕ Desconectar
+                <i className="bi bi-x-circle"></i> Desconectar
               </button>
             )}
           </div>
@@ -90,7 +90,10 @@ const BasculaWidget = ({ onPesoConfirmado, productoNombre }) => {
                 <div style={{ fontSize: 14, color: '#94a3b8', marginTop: 2 }}>kg</div>
               </div>
               <div style={{ fontSize: 11, color: estable ? '#16a34a' : '#d97706', fontWeight: 700 }}>
-                {estable ? '✅ Estable' : '⏳ Midiendo...'}
+                {estable
+  ? <><i className="bi bi-check-circle-fill me-1"></i>Estable</>
+  : <><i className="bi bi-hourglass-split me-1"></i>Midiendo...</>
+}
               </div>
             </div>
 
@@ -101,7 +104,7 @@ const BasculaWidget = ({ onPesoConfirmado, productoNombre }) => {
                 onClick={() => onPesoConfirmado && onPesoConfirmado(tomarPeso())}
                 disabled={!estable}
               >
-                ✅ Usar {peso?.toFixed(3)} kg
+                <i className="bi bi-check-circle"></i> Usar {peso?.toFixed(3)} kg
               </button>
             )}
 

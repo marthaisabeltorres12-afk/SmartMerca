@@ -439,15 +439,15 @@ const TABS = [
 
           // Resumen del rango seleccionado
           const rentTotalVentas   = rentSales.reduce((a,s) => a + parseFloat(s.total||0), 0);
-          const rentMovs = movements.filter(m => {
-            if (m.type !== 'entrada' || !m.total_cost) return false;
-            const d = m.created_at?.slice(0,10) || '';
-            if (rentDesde && d < rentDesde) return false;
-            if (rentHasta && d > rentHasta) return false;
-            return true;
-          });
-          const rentTotalCosto    = rentMovs.reduce((a,m) => a + (m.total_cost||0), 0);
-          const rentTotalGanancia = rentTotalVentas - rentTotalCosto;
+         // ✅ DESPUÉS — calcula costo real de los productos vendidos en el rango
+const rentTotalCosto = rentSales.reduce((acc, sale) => {
+  const costoPorVenta = (sale.items || []).reduce((a, item) => {
+    const costoUnit = costoMap[item.product_id] || 0;
+    return a + costoUnit * (item.quantity || 0);
+  }, 0);
+  return acc + costoPorVenta;
+}, 0);
+const rentTotalGanancia = rentTotalVentas - rentTotalCosto;
 
           // Tabla por mes (sin filtro de hora, solo fecha para la tabla histórica)
           const meses = {};
@@ -462,8 +462,15 @@ const TABS = [
             meses[mes].ventas += parseFloat(s.total);
           });
           const filas   = Object.entries(meses).sort((a,b) => b[0].localeCompare(a[0]));
-          const actual  = meses[mesActual] || { inversion:0, ventas:0 };
-          const ganAct  = actual.ventas - actual.inversion;
+          // ✅ DESPUÉS — ganancia del mes actual basada en costo real de ventas
+const ventasMesActual = sales.filter(s => s.created_at?.slice(0,7) === mesActual);
+const costoMesActual  = ventasMesActual.reduce((acc, sale) => {
+  return acc + (sale.items || []).reduce((a, item) => {
+    return a + (costoMap[item.product_id] || 0) * (item.quantity || 0);
+  }, 0);
+}, 0);
+const actual  = meses[mesActual] || { inversion:0, ventas:0 };
+const ganAct  = actual.ventas - costoMesActual;
           return (
             <div className="d-flex flex-column gap-3">
 

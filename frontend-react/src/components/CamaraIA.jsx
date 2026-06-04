@@ -126,7 +126,7 @@ const CamaraIA = ({ onAddToCart, onClose, products }) => {
 
       } catch {
         // Microservicio no disponible
-        setMensaje('⚠️ Servicio IA no disponible');
+        setMensaje(' Servicio IA no disponible');
       } finally {
         setAnalizando(false);
       }
@@ -171,14 +171,14 @@ const CamaraIA = ({ onAddToCart, onClose, products }) => {
         {/* Header */}
         <div style={{ background:'#1e3a5f', color:'#fff', padding:'14px 20px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <span style={{ fontSize:22 }}>🤖</span>
+            <span style={{ fontSize:22 }}><i className="bi bi-camera"></i></span>
             <div>
               <div style={{ fontWeight:700, fontSize:16 }}>Cámara IA</div>
               <div style={{ fontSize:11, opacity:0.75 }}>YOLOv8 · SmartMerca</div>
             </div>
           </div>
           <button onClick={cerrar} style={{ background:'rgba(220,38,38,0.8)', border:'none', color:'#fff', borderRadius:8, padding:'6px 14px', cursor:'pointer', fontSize:13, fontWeight:600 }}>
-            ✕ Cerrar
+             Cerrar
           </button>
         </div>
 
@@ -201,12 +201,12 @@ const CamaraIA = ({ onAddToCart, onClose, products }) => {
           {/* Overlay confirmado */}
           {confirmado && (
             <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:10 }}>
-              <div style={{ fontSize:52 }}>✅</div>
+              <div style={{ fontSize:52 }}><i className="bi bi-check-circle"></i></div>
               <div style={{ background:'rgba(21,128,61,0.95)', color:'#fff', borderRadius:12, padding:'12px 28px', textAlign:'center' }}>
                 <div style={{ fontSize:22, fontWeight:800 }}>{deteccion.producto}</div>
                 <div style={{ fontSize:13, opacity:0.85, marginTop:4 }}>{deteccion.confianza}% confianza</div>
                 {deteccion.alerta && (
-                  <div style={{ fontSize:12, color:'#fde68a', marginTop:4 }}>⚠️ {deteccion.alerta}</div>
+                  <div style={{ fontSize:12, color:'#fde68a', marginTop:4 }}><i className="bi bi-exclamation-triangle"></i> {deteccion.alerta}</div>
                 )}
               </div>
               <div style={{ color:'rgba(255,255,255,0.75)', fontSize:13 }}>
@@ -218,9 +218,12 @@ const CamaraIA = ({ onAddToCart, onClose, products }) => {
           {/* Mensaje buscando */}
           {!confirmado && (
             <div style={{ position:'absolute', bottom:10, left:10, right:10, background:'rgba(0,0,0,0.65)', borderRadius:8, padding:'8px 14px', color:'#fff', fontSize:13, fontWeight:600, textAlign:'center' }}>
-              {estado === 'cargando'   && '⏳ ' + mensaje}
-              {estado === 'buscando'   && (analizando ? '🔍 Analizando...' : '🎯 ' + mensaje)}
-              {estado === 'error'      && '❌ ' + mensaje}
+              {estado === 'cargando'   && <><i className="bi bi-hourglass-split me-1"></i>{mensaje}</>}
+{estado === 'buscando'   && (analizando
+  ? <><i className="bi bi-search me-1"></i>Analizando...</>
+  : <><i className="bi bi-crosshair me-1"></i>{mensaje}</>
+)}
+{estado === 'error'      && <><i className="bi bi-x-circle me-1"></i>{mensaje}</>}
             </div>
           )}
         </div>
@@ -230,10 +233,10 @@ const CamaraIA = ({ onAddToCart, onClose, products }) => {
           {confirmado ? (
             <div style={{ display:'flex', gap:10 }}>
               <button onClick={seguirBuscando} style={{ flex:1, padding:'11px 0', background:'#f3f4f6', border:'none', borderRadius:10, fontWeight:600, fontSize:14, cursor:'pointer', color:'#374151' }}>
-                🔄 Otro
+                <i className="bi bi-arrow-repeat"></i> Otro
               </button>
               <button onClick={confirmarProducto} style={{ flex:2, padding:'11px 0', background:'#16a34a', border:'none', borderRadius:10, fontWeight:700, fontSize:15, cursor:'pointer', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
-                🛒 Agregar al carrito <span style={{ opacity:0.65, fontSize:12 }}>(Enter)</span>
+                <i className="bi bi-cart-plus"></i> Agregar al carrito <span style={{ opacity:0.65, fontSize:12 }}>(Enter)</span>
               </button>
             </div>
           ) : (

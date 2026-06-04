@@ -126,7 +126,7 @@ const ImportExcel = ({ onDone }) => {
       {step === 'idle' && (
         <div className="card border-0 shadow-sm">
           <div className="card-header fw-semibold bg-primary bg-opacity-10">
-            📥 Importar productos desde Excel
+            <i className="bi bi-file-earmark-excel me-2"></i> Importar productos desde Excel
           </div>
           <div className="card-body">
             <div className="row g-4 align-items-center">
@@ -134,7 +134,7 @@ const ImportExcel = ({ onDone }) => {
                 <div className="fw-semibold mb-2">Paso 1 — Descargar plantilla</div>
                 <p className="text-muted small mb-3">Descarga la plantilla con columnas configuradas y ejemplos.</p>
                 <button className="btn btn-outline-success w-100" onClick={downloadTemplate}>
-                  📄 Descargar plantilla .xlsx
+                  <i className="bi bi-download me-2"></i> Descargar plantilla .xlsx
                 </button>
               </div>
               <div className="col-md-2 text-center" style={{fontSize:24}}>→</div>
@@ -145,7 +145,7 @@ const ImportExcel = ({ onDone }) => {
                 <button className="btn btn-primary w-100" onClick={() => fileRef.current?.click()} disabled={loading}>
                   {loading
                     ? <><span className="spinner-border spinner-border-sm me-2"/>Leyendo...</>
-                    : '📤 Subir archivo Excel'}
+                    : ' Subir archivo Excel'}
                 </button>
               </div>
             </div>
@@ -184,7 +184,7 @@ const ImportExcel = ({ onDone }) => {
                 disabled={loading || (counts.new + counts.update) === 0}>
                 {loading
                   ? <><span className="spinner-border spinner-border-sm me-2"/>Importando...</>
-                  : `✅ Importar ${counts.new + counts.update} productos`}
+                  : ` Importar ${counts.new + counts.update} productos`}
               </button>
             </div>
           </div>
@@ -233,28 +233,28 @@ const ImportExcel = ({ onDone }) => {
                     }}>
                       <td>
                         {row.status === 'error' ? (
-                          <span className="badge bg-danger">⚠️ Error</span>
+                          <span className="badge bg-danger"><i className="bi bi-exclamation-circle"></i> Error</span>
                         ) : (
                           <div className="btn-group btn-group-sm">
                             <button
                               className={`btn btn-sm ${row.action === 'new'    ? 'btn-success'   : 'btn-outline-secondary'}`}
-                              onClick={() => setAction(idx, 'new')} title="Crear como nuevo">✨</button>
+                              onClick={() => setAction(idx, 'new')} title="Crear como nuevo"><i className="bi bi-plus-circle"></i></button>
                             {row.status === 'update' && (
                               <button
                                 className={`btn btn-sm ${row.action === 'update' ? 'btn-warning'  : 'btn-outline-secondary'}`}
-                                onClick={() => setAction(idx, 'update')} title="Actualizar existente">🔄</button>
+                                onClick={() => setAction(idx, 'update')} title="Actualizar existente"><i className="bi bi-arrow-repeat"></i></button>
                             )}
                             <button
                               className={`btn btn-sm ${row.action === 'skip'   ? 'btn-secondary' : 'btn-outline-secondary'}`}
-                              onClick={() => setAction(idx, 'skip')} title="Omitir">—</button>
+                              onClick={() => setAction(idx, 'skip')} title="Omitir"><i className="bi bi-slash-circle"></i></button>
                           </div>
                         )}
                       </td>
                       <td className="fw-semibold">
                         {row.nombre}
-                        {row.status === 'update' && <div className="text-warning" style={{fontSize:10}}>⚠️ Ya existe: {row.existing_name}</div>}
-                        {row.status === 'error'  && <div className="text-danger"  style={{fontSize:10}}>{row.error}</div>}
-                        {row.aviso && <div className="text-info" style={{fontSize:10}}>ℹ️ {row.aviso}</div>}
+                        {row.status === 'update' && <div className="text-warning" style={{fontSize:10}}><i className="bi bi-exclamation-triangle"></i> Ya existe: {row.existing_name}</div>}
+                        {row.status === 'error'  && <div className="text-danger"  style={{fontSize:10}}><i className="bi bi-exclamation-circle"></i> {row.error}</div>}
+                        {row.aviso && <div className="text-info" style={{fontSize:10}}><i className="bi bi-info-circle"></i> {row.aviso}</div>}
                       </td>
                       <td className="text-muted">{row.categoria || '—'}</td>
                       <td className="text-end">{row.precio_llegada ? fmt(row.precio_llegada) : '—'}</td>
@@ -266,9 +266,9 @@ const ImportExcel = ({ onDone }) => {
                       </td>
                       <td className="text-muted">{row.proveedor || '—'}</td>
                       <td>
-                        {row.action === 'new'    && <span className="badge bg-success">✨ Crear</span>}
-                        {row.action === 'update' && <span className="badge bg-warning text-dark">🔄 Actualizar</span>}
-                        {row.action === 'skip'   && <span className="badge bg-secondary">— Omitir</span>}
+                        {row.action === 'new'    && <span className="badge bg-success"><i className="bi bi-plus-circle"></i> Crear</span>}
+                        {row.action === 'update' && <span className="badge bg-warning text-dark"><i className="bi bi-arrow-repeat"></i> Actualizar</span>}
+                        {row.action === 'skip'   && <span className="badge bg-secondary"><i className="bi bi-slash-circle"></i> Omitir</span>}
                       </td>
                     </tr>
                   ))}
@@ -283,7 +283,7 @@ const ImportExcel = ({ onDone }) => {
       {step === 'done' && result && (
         <div className="card border-0 shadow-sm">
           <div className="card-body text-center py-4">
-            <div style={{fontSize:48}}>✅</div>
+            <div style={{fontSize:48}}><i className="bi bi-check-circle-fill text-success"></i></div>
             <h5 className="fw-bold mt-2">{result.message}</h5>
             <div className="d-flex justify-content-center gap-4 mt-3">
               <div><div className="fs-3 fw-bold text-success">{result.created}</div><div className="text-muted small">Creados</div></div>

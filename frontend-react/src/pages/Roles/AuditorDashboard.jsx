@@ -72,10 +72,10 @@ const AuditorDashboard = () => {
         <div className="mb-4 d-flex justify-content-between align-items-center">
           <div className="d-flex align-items-center gap-3">
             <div>
-              <h4 className="fw-bold mb-0">🔍 Panel Auditor</h4>
+              <h4 className="fw-bold mb-0"><i className="bi bi-shield-check"></i> Panel Auditor</h4>
               <small className="text-muted">{user?.name} — Solo lectura</small>
             </div>
-            <span className="badge bg-secondary">🔒 Solo lectura</span>
+            <span className="badge bg-secondary"><i className="bi bi-lock"></i> Solo lectura</span>
           </div>
 
         </div>
@@ -90,27 +90,35 @@ const AuditorDashboard = () => {
         <div id="auditor-content">
 
         {tab === 'dashboard' && (<>
-          <div className="row g-3 mb-4">
-            {[
-              ['🧾 Ventas hoy',   ventasHoy.length,   'primary'],
-              ['💰 Total hoy',    fmt(totalHoy),       'success'],
-              ['📋 Logs hoy',     logsHoy.length,      'info'],
-              ['📦 Movimientos',  movimientos.length,  'warning'],
-            ].map(([l,v,c]) => (
-              <div key={l} className="col-md-3 col-6">
-                <div className={`card border-0 shadow-sm border-start border-${c} border-3`}>
-                  <div className="card-body py-3">
-                    <div className="text-muted small">{l}</div>
-                    <div className={`fw-bold fs-5 text-${c}`}>{v}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
+         <div className="row g-3 mb-4">
+  {[
+    ['bi bi-receipt', 'Ventas hoy', ventasHoy.length, 'primary'],
+    ['bi bi-cash-stack', 'Total hoy', fmt(totalHoy), 'success'],
+    ['bi bi-journal-text', 'Logs hoy', logsHoy.length, 'info'],
+    ['bi bi-box-seam', 'Movimientos', movimientos.length, 'warning'],
+  ].map(([icon, label, value, color]) => (
+    <div key={label} className="col-md-3 col-6">
+      <div className={`card border-0 shadow-sm border-start border-${color} border-3`}>
+        <div className="card-body py-3">
+
+          <div className="text-muted small d-flex align-items-center gap-2">
+            <i className={`${icon} text-${color}`}></i>
+            {label}
           </div>
+
+          <div className={`fw-bold fs-5 text-${color}`}>
+            {value}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
           <div className="row g-3">
             <div className="col-md-7">
               <div className="card border-0 shadow-sm">
-                <div className="card-header fw-semibold">🔍 Últimas acciones del sistema</div>
+                <div className="card-header fw-semibold"><i className="bi bi-clock-history"></i> Últimas acciones del sistema</div>
                 <div className="table-responsive">
                   <table className="table table-sm mb-0" style={{fontSize:13}}>
                     <thead className="table-light"><tr><th>Hora</th><th>Usuario</th><th>Acción</th><th>Descripción</th></tr></thead>
@@ -131,7 +139,7 @@ const AuditorDashboard = () => {
             </div>
             <div className="col-md-5">
               <div className="card border-0 shadow-sm h-100">
-                <div className="card-header fw-semibold">📊 Acciones por tipo hoy</div>
+                <div className="card-header fw-semibold"><i className="bi bi-graph-up"></i> Acciones por tipo hoy</div>
                 <div className="card-body">
                   {['crear','editar','eliminar','login','otro'].map(tipo => {
                     const count = logsHoy.filter(a=>(a.accion||'otro')===tipo).length;
@@ -154,7 +162,7 @@ const AuditorDashboard = () => {
         {tab === 'logs' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
-              <span>🛡️ Logs del sistema ({auditFilt.length})</span>
+              <span><i className="bi bi-shield-check"></i> Logs del sistema ({auditFilt.length})</span>
               <input className="form-control form-control-sm" placeholder="🔍 Usuario, acción, descripción..." value={busq} onChange={e=>setBusq(e.target.value)} style={{width:260}}/>
             </div>
             <div className="table-responsive">
@@ -180,7 +188,7 @@ const AuditorDashboard = () => {
         {tab === 'ventas' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
-              <span>🧾 Ventas <span className="badge bg-secondary ms-2">Solo lectura</span></span>
+              <span><i className="bi bi-receipt"></i> Ventas <span className="badge bg-secondary ms-2">Solo lectura</span></span>
               <div className="d-flex gap-2 align-items-center">
                 <input className="form-control form-control-sm" placeholder="🔍 Buscar cajero..." value={busq} onChange={e=>setBusq(e.target.value)} style={{width:180}}/>
                 <span className="badge bg-success">{fmt(totalHoy)} hoy</span>
@@ -210,7 +218,7 @@ const AuditorDashboard = () => {
         {tab === 'inventario' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
-              <span>📦 Movimientos de inventario <span className="badge bg-secondary ms-2">Solo lectura</span></span>
+              <span><i className="bi bi-box2"></i> Movimientos de inventario <span className="badge bg-secondary ms-2">Solo lectura</span></span>
               <input className="form-control form-control-sm" placeholder="🔍 Buscar producto..." value={busq} onChange={e=>setBusq(e.target.value)} style={{width:200}}/>
             </div>
             <div className="table-responsive">

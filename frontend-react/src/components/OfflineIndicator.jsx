@@ -21,7 +21,7 @@ const OfflineIndicator = ({ isOnline, pendingCount, syncing, onSync }) => {
       gap:        10,
       maxWidth:   280,
     }}>
-      <span style={{ fontSize: 18 }}>{isOnline ? '🌐' : '📴'}</span>
+      <span style={{ fontSize: 18 }}>{isOnline ? <i className="bi bi-wifi"></i> : <i className="bi bi-wifi-off"></i>}</span>
       <div>
         <div>{isOnline ? 'Conectado' : 'Sin conexión'}</div>
         {pendingCount > 0 && (
@@ -44,7 +44,7 @@ const OfflineIndicator = ({ isOnline, pendingCount, syncing, onSync }) => {
             cursor:     'pointer',
             fontWeight: 700,
           }}>
-          {syncing ? '...' : '🔄 Sync'}
+          {syncing ? '...' : ' Sync'}
         </button>
       )}
     </div>

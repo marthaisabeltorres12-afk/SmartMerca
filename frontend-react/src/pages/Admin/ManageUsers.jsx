@@ -332,7 +332,7 @@ const ManageUsers = () => {
                       autoComplete="new-password"
                       name="new-password"
                       required={!editing}
-                      minLength={4}
+                      minLength={6}
                     />
                     <div className="row g-2 mt-1">
                       <div className="col-md-4">

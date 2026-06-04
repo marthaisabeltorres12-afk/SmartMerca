@@ -6,7 +6,7 @@ import { apiFetch } from '../../services/api';
 const fmt    = n => Number(n||0).toLocaleString('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
 const fmtNum = n => Number(n||0).toLocaleString('es-CO');
 
-const tipoIcon = t => ({ bodega:'🏭', sala:'🛒', produccion:'⚙️', frio:'🧊' })[t] || '📦';
+const tipoIcon = t => ({ bodega:'', sala:'', produccion:'', frio:'' })[t] || '';
 const tipoBadge = t => {
   const map = { bodega:'secondary', sala:'success', produccion:'warning', frio:'info' };
   return <span className={`badge bg-${map[t]||'secondary'}`}>{tipoIcon(t)} {t}</span>;
@@ -120,7 +120,7 @@ const Bodegas = () => {
   Registrar traslado
 </button>
             <button className="btn btn-primary fw-bold" onClick={()=>{ setEditingLoc(null); setLocForm(EMPTY_LOC); setLocModal(true); }}>
-              + Nueva ubicación
+              <i className="bi bi-plus-circle me-2"></i> Nueva ubicación
             </button>
           </div>
         </div>
@@ -180,7 +180,7 @@ const Bodegas = () => {
             <div className="col-md-8">
               {!selected ? (
                 <div className="text-center text-muted py-5">
-                  <div className="fs-2">👈</div>
+                  <div className="fs-2"></div>
                   <div>Selecciona una ubicación para ver su stock</div>
                 </div>
               ) : (
@@ -190,7 +190,7 @@ const Bodegas = () => {
                       <div>
                         <h5 className="fw-bold mb-0">{tipoIcon(selected.tipo)} {selected.nombre}</h5>
                         {tipoBadge(selected.tipo)}
-                        {selected.requiere_temperatura && <span className="badge bg-info ms-1">❄️ Temperatura</span>}
+                        {selected.requiere_temperatura && <span className="badge bg-info ms-1"><i className="bi bi-snow"></i> Temperatura</span>}
                       </div>
                       <div className="text-end">
                         <div className="fw-bold fs-5">{locStock.length}</div>
@@ -312,10 +312,10 @@ const Bodegas = () => {
                       <label className="form-label fw-semibold">Tipo *</label>
                       <select className="form-select" value={locForm.tipo}
                         onChange={e=>setLocForm({...locForm,tipo:e.target.value})}>
-                        <option value="bodega">🏭 Bodega</option>
-                        <option value="sala">🛒 Sala de ventas</option>
-                        <option value="produccion">⚙️ Producción</option>
-                        <option value="frio">🧊 Cuarto frío</option>
+                        <option value="bodega"><i className="bi bi-building"></i> Bodega</option>
+                        <option value="sala"><i className="bi bi-shop"></i> Sala de ventas</option>
+                        <option value="produccion"><i className="bi bi-gear"></i> Producción</option>
+                        <option value="frio"><i className="bi bi-snow"></i> Cuarto frío</option>
                         
                       </select>
                     </div>
@@ -324,7 +324,7 @@ const Bodegas = () => {
                         checked={locForm.requiere_temperatura}
                         onChange={e=>setLocForm({...locForm,requiere_temperatura:e.target.checked})} />
                       <label className="form-check-label" htmlFor="tempCheck">
-                        ❄️ Requiere control de temperatura
+                        <i className="bi bi-snow"></i> Requiere control de temperatura
                       </label>
                     </div>
                   </div>

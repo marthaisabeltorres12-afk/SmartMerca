@@ -83,7 +83,7 @@ const Categorias = () => {
     <div className="d-flex">
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft: 240 }}>
-        <h4 className="fw-bold mb-4">Gestión de Categorías</h4>
+        <h4 className="fw-bold mb-4"><i className="bi bi-list-task me-2"></i>Gestión de Categorías</h4>
 
         {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
 
@@ -121,19 +121,19 @@ const Categorias = () => {
                     </td>
                     <td className="text-nowrap">
                       <div className="d-flex align-items-center gap-1">
+                        
                         <button
-                          className={`btn btn-sm ${c.is_active !== false ? 'btn-outline-secondary' : 'btn-outline-success'}`}
-                          onClick={() => handleToggle(c)}
-                          title={c.is_active !== false ? 'Desactivar' : 'Activar'}>
-                          {c.is_active !== false ? '❌' : '✅'}
-                        </button>
-                        <button className="btn btn-warning btn-sm" onClick={() => openEdit(c)}><i className="bi-pencil-square"></i></button>
-                        <button
-  className="btn btn-danger btn-sm"
-  onClick={() => setConfirmDelete(c)}
->
-  🗑️
-</button>
+    className={`btn btn-sm ${c.is_active !== false ? 'btn-outline-secondary' : 'btn-outline-success'}`}
+    onClick={() => handleToggle(c)}
+    title={c.is_active !== false ? 'Desactivar' : 'Activar'}>
+    <i className={`bi ${c.is_active !== false ? 'bi-x-circle' : 'bi-check-circle'}`}></i>
+  </button>
+                        <button className="btn btn-warning btn-sm" onClick={() => openEdit(c)} title="Editar">
+    <i className="bi bi-pencil"></i>
+  </button>
+                        <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(c)} title="Eliminar">
+    <i className="bi bi-trash"></i>
+  </button>
                       </div>
                     </td>
                   </tr>

@@ -73,7 +73,7 @@ const ContadorDashboard = () => {
 
         <div className="mb-4 d-flex justify-content-between align-items-center">
           <div>
-            <h4 className="fw-bold mb-0">📊 Panel Contador</h4>
+            <h4 className="fw-bold mb-0"><i className="bi bi-calculator"></i> Panel Contador</h4>
             <small className="text-muted">Bienvenido, {user?.name}</small>
           </div>
 
@@ -109,7 +109,7 @@ const ContadorDashboard = () => {
           <div className="row g-3">
             <div className="col-md-6">
               <div className="card border-0 shadow-sm h-100">
-                <div className="card-header fw-semibold">💳 Ventas por método de pago hoy</div>
+                <div className="card-header fw-semibold"><i className="bi bi-credit-card me-2"></i>Ventas por método de pago hoy</div>
                 <div className="card-body">
                   {['efectivo','tarjeta','transferencia','credito','mixto'].map(m => {
                     const vM = ventasHoy.filter(v=>(v.payment_method||'efectivo')===m);
@@ -131,7 +131,7 @@ const ContadorDashboard = () => {
             </div>
             <div className="col-md-6">
               <div className="card border-0 shadow-sm h-100">
-                <div className="card-header fw-semibold">📋 Últimos períodos de nómina</div>
+                <div className="card-header fw-semibold"><i className="bi bi-list me-2"></i> Últimos períodos de nómina</div>
                 <div className="table-responsive">
                   <table className="table table-sm mb-0" style={{fontSize:13}}>
                     <thead className="table-light"><tr><th>Período</th><th>Estado</th><th className="text-end">Total neto</th></tr></thead>
@@ -146,8 +146,8 @@ const ContadorDashboard = () => {
         {tab === 'finanzas' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
-              <span>💰 Ventas por día</span>
-              <input className="form-control form-control-sm" placeholder="🔍 Buscar cajero..." value={busq} onChange={e=>setBusq(e.target.value)} style={{width:200}}/>
+              <span><i className="bi bi-bar-chart me-2"></i> Ventas por día</span>
+              <input className="form-control form-control-sm" placeholder=" Buscar cajero..." value={busq} onChange={e=>setBusq(e.target.value)} style={{width:200}}/>
             </div>
             <div className="table-responsive">
               <table className="table table-hover mb-0" style={{fontSize:13}}>
@@ -174,9 +174,9 @@ const ContadorDashboard = () => {
         {tab === 'ventas' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
-              <span>🧾 Historial de ventas</span>
+              <span><i className="bi bi-receipt me-2"></i>Historial de ventas</span>
               <div className="d-flex gap-2 align-items-center">
-                <input className="form-control form-control-sm" placeholder="🔍 Buscar..." value={busq} onChange={e=>setBusq(e.target.value)} style={{width:180}}/>
+                <input className="form-control form-control-sm" placeholder=" Buscar..." value={busq} onChange={e=>setBusq(e.target.value)} style={{width:180}}/>
                 <span className="badge bg-success">{fmt(totalMes)} este mes</span>
               </div>
             </div>
@@ -205,7 +205,7 @@ const ContadorDashboard = () => {
         {tab === 'cuentas' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
-              <span>🏦 Cuentas por pagar ({cuentasPend.length} pendientes)</span>
+              <span><i className="bi bi-bank me-2"></i>Cuentas por pagar ({cuentasPend.length} pendientes)</span>
               <span className="badge bg-danger">{fmt(cuentasPend.reduce((a,f)=>a+Number(f.balance_pendiente||0),0))}</span>
             </div>
             <div className="table-responsive">
@@ -232,8 +232,8 @@ const ContadorDashboard = () => {
         {tab === 'auditoria' && (
           <div className="card border-0 shadow-sm">
             <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
-              <span>🔍 Logs de auditoría</span>
-              <input className="form-control form-control-sm" placeholder="🔍 Buscar..." value={busq} onChange={e=>setBusq(e.target.value)} style={{width:220}}/>
+              <span><i className="bi bi-search me-2"></i>Logs de auditoría</span>
+              <input className="form-control form-control-sm" placeholder=" Buscar..." value={busq} onChange={e=>setBusq(e.target.value)} style={{width:220}}/>
             </div>
             <div className="table-responsive">
               <table className="table table-hover mb-0" style={{fontSize:13}}>
@@ -280,7 +280,7 @@ const ContadorDashboard = () => {
               </div>
               <div className="card border-0 shadow-sm">
                 <div className="card-header fw-semibold d-flex justify-content-between">
-                  <span>💳 Clientes con saldo de crédito pendiente</span>
+                  <span> Clientes con saldo de crédito pendiente</span>
                   <span className="badge bg-danger">{conCredito.length} clientes</span>
                 </div>
                 <div className="table-responsive">

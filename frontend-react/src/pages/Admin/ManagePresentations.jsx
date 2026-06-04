@@ -131,7 +131,7 @@ const ManagePresentations = () => {
             <div className="card border-0 shadow-sm">
               <div className="card-header fw-semibold py-3"
                 style={{ background: editing ? '#1e40af' : '#1e3a5f', color:'#fff' }}>
-                {editing ? ' Editar presentación' : '➕ Nueva presentación'}
+                {editing ? ' Editar presentación' : ' Nueva presentación'}
               </div>
               <div className="card-body">
                 <form onSubmit={handleSubmit}>

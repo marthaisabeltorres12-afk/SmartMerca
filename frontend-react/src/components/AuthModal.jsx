@@ -42,6 +42,7 @@ const AuthModal = ({ tipo = 'eliminar_producto', onAuthorized, onCancel, targetE
     titulo: <><i className="bi bi-pencil-square me-2"></i>Editar precio</>,
     sub: 'Escanea la tarjeta o ingresa PIN del administrador'
   },
+
   devolucion: {
     titulo: <><i className="bi bi-arrow-return-left me-2"></i>Devolución</>,
     sub: 'Escanea la tarjeta o ingresa PIN del administrador'
@@ -52,8 +53,25 @@ const AuthModal = ({ tipo = 'eliminar_producto', onAuthorized, onCancel, targetE
   },
   reset_password: {
     titulo: <><i className="bi bi-shield-lock me-2"></i>Restablecer contraseña</>,
-    sub: '⚠️ Requiere tarjeta Y PIN (doble factor)'
+    sub: ' Requiere tarjeta Y PIN (doble factor)'
   },
+
+
+  devolucion: {
+    titulo: <><i className="bi bi-arrow-counterclockwise me-2"></i>Devolución</>,
+    sub: 'Escanea la tarjeta o ingresa PIN del administrador'
+  },
+
+  descuento_manual: {
+    titulo: <><i className="bi bi-tag me-2"></i>Descuento manual</>,
+    sub: 'Escanea la tarjeta o ingresa PIN del administrador'
+  },
+
+  reset_password: {
+    titulo: <><i className="bi bi-key me-2"></i>Restablecer contraseña</>,
+    sub: <><i className="bi bi-exclamation-triangle text-warning me-2"></i>Requiere tarjeta y PIN (doble factor)</>
+  }
+
 };
 
 const label = LABELS[tipo] || {
@@ -253,7 +271,7 @@ const label = LABELS[tipo] || {
               {/* Ícono de escaneo */}
               <div style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)',
                 fontSize:18, opacity: tarjeta ? 1 : 0.4 }}>
-                {escaneando ? '✅' : tarjeta ? '💳' : '📷'}
+                {escaneando ? <i className="bi bi-check-circle-fill"></i> : tarjeta ? <i className="bi bi-credit-card"></i> : <i className="bi bi-camera"></i>}
               </div>
             </div>
 
@@ -288,7 +306,7 @@ const label = LABELS[tipo] || {
           <div style={{ marginBottom:20 }}>
             <label style={{ color:'#94a3b8', fontSize:11, fontWeight:700, display:'block',
               marginBottom:6, textTransform:'uppercase', letterSpacing:'0.07em' }}>
-              {esDobleFacto ? '2️⃣ PIN del administrador *' : '🔢 PIN del administrador'}
+              {esDobleFacto ? ' PIN del administrador *' : ' PIN del administrador'}
             </label>
             <input
               ref={pinRef}

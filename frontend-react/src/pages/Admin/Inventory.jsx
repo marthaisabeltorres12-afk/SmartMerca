@@ -132,7 +132,7 @@ const Searcher = ({ products, onSelect, excludeIds = [], placeholder }) => {
 
       {q.length >= 1 && list.length === 0 && (
         <div className="px-3 py-2 border rounded mt-1 text-muted small text-center" style={{ background:'#fff5f5' }}>
-          ❌ No se encontró "{q}"
+          <i className="bi bi-exclamation-triangle-fill"></i> No se encontró "{q}"
         </div>
       )}
     </div>
@@ -147,7 +147,7 @@ const Historial = ({ movements, products }) => {
     <div className="row g-3">
       <div className="col-12">
         <div className="card border-0 shadow-sm">
-          <div className="card-header fw-semibold">📥 Entradas registradas</div>
+          <div className="card-header fw-semibold"><i className="bi bi-box-arrow-in-down"></i> Entradas registradas</div>
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0" style={{ fontSize:13 }}>
               <thead className="table-light">
@@ -167,7 +167,7 @@ const Historial = ({ movements, products }) => {
                         <td><span className={`badge ${stockColor(p)}`}>{p?.stock ?? '—'}</span></td>
                         <td>{m.unit_cost ? fmt(m.unit_cost) : <span className="text-muted">—</span>}</td>
                         <td className="fw-bold text-danger">{m.total_cost ? fmt(m.total_cost) : '—'}</td>
-                        <td>{m.expiry_date ? <span className="badge bg-warning text-dark">📅 {m.expiry_date}</span> : <span className="text-muted">—</span>}</td>
+                        <td>{m.expiry_date ? <span className="badge bg-warning text-dark"><i className="bi bi-calendar"></i> {m.expiry_date}</span> : <span className="text-muted">—</span>}</td>
                         <td className="text-muted">{m.supplier || '—'}</td>
                         <td className="text-muted" style={{ maxWidth:140, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{m.reason}</td>
                         <td className="text-muted">{m.created_at?.slice(0,10)}</td>
@@ -181,7 +181,7 @@ const Historial = ({ movements, products }) => {
       </div>
       <div className="col-12">
         <div className="card border-0 shadow-sm">
-          <div className="card-header fw-semibold">📤 Salidas registradas</div>
+          <div className="card-header fw-semibold"><i className="bi bi-arrow-up-right-circle"></i> Salidas registradas</div>
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0" style={{ fontSize:13 }}>
               <thead className="table-light">
@@ -348,12 +348,12 @@ const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
                 onClick={() => {
                   const pv = autoPrice(r.unit_cost, r.ganancia_pct, iva);
                   if (pv !== '') setR(prev => ({ ...prev, price: String(pv), price_manual: false }));
-                }}>⚡</button>
+                }}><i className="bi bi-arrow-repeat"></i></button>
             )}
           </div>
         </div>
         <div className="col-md-4">
-          <label className="form-label small fw-semibold">📅 Vencimiento del lote</label>
+          <label className="form-label small fw-semibold"><i className="bi bi-calendar"></i> Vencimiento del lote</label>
           <input className="form-control form-control-sm" type="date"
             value={r.expiry_date} onChange={e => set('expiry_date', e.target.value)} />
         </div>
@@ -368,15 +368,15 @@ const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
       {/* Preview financiero */}
       {pv > 0 && costo > 0 && (
         <div className="rounded px-3 py-2 mb-3 d-flex flex-wrap gap-3" style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', fontSize:12 }}>
-          <span>💵 Costo: <b>{fmt(costo)}</b></span>
-          <span>🏷️ Venta: <b>{fmt(pv)}</b></span>
-          <span>🏛️ IVA/ud: <b style={{ color:'#7c3aed' }}>{fmt(Math.round(ivaDian))}</b></span>
-          <span>💰 Ganancia: <b style={{ color: ganBruta>=0?'#059669':'#dc2626' }}>{fmt(Math.round(ganBruta))}</b></span>
+          <span><i className="bi bi-currency-dollar"></i> Costo: <b>{fmt(costo)}</b></span>
+          <span><i className="bi bi-tag"></i> Venta: <b>{fmt(pv)}</b></span>
+          <span><i className="bi bi-building"></i> IVA/ud: <b style={{ color:'#7c3aed' }}>{fmt(Math.round(ivaDian))}</b></span>
+          <span><i className="bi bi-graph-up"></i> Ganancia: <b style={{ color: ganBruta>=0?'#059669':'#dc2626' }}>{fmt(Math.round(ganBruta))}</b></span>
           {margen !== null && (
-            <span>📊 Margen: <b style={{ color: parseFloat(margen)<10?'#dc2626':parseFloat(margen)<25?'#d97706':'#059669' }}>{margen}%</b></span>
+            <span><i className="bi bi-bar-chart"></i> Margen: <b style={{ color: parseFloat(margen)<10?'#dc2626':parseFloat(margen)<25?'#d97706':'#059669' }}>{margen}%</b></span>
           )}
           {egreso !== null && r.quantity && (
-            <span>📦 Egreso: <b className="text-danger">{fmt(egreso)}</b></span>
+            <span><i className="bi bi-box"></i> Egreso: <b className="text-danger">{fmt(egreso)}</b></span>
           )}
           {verif && <span style={{ color:'#059669', fontSize:10 }}> Verificado</span>}
         </div>
@@ -391,7 +391,7 @@ const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
         <button type="button" className="btn btn-outline-secondary btn-sm"
           onClick={onCancel}>
           Cancelar
-        </button> Proveedor 
+        </button> 
       </div>
     </div>
   );
@@ -418,7 +418,7 @@ const Comprobante = ({ result, header, suppliers, onClose }) => {
       <div className="modal-dialog modal-lg">
         <div className="modal-content">
           <div className="modal-header">
-            <h6 className="modal-title fw-bold">🧾 Comprobante de entrada</h6>
+            <h6 className="modal-title fw-bold"><i className="bi bi-file-earmark-text me-2"></i> Comprobante de entrada</h6>
             <button className="btn-close" onClick={onClose} />
           </div>
           <div className="modal-body" style={{ background:'#fafafa' }}>
@@ -473,7 +473,7 @@ const Comprobante = ({ result, header, suppliers, onClose }) => {
           </div>
           <div className="modal-footer">
             <button className="btn btn-outline-secondary" onClick={onClose}>Cerrar</button>
-            <button className="btn btn-dark fw-bold" onClick={print}>🖨️ Imprimir comprobante</button>
+            <button className="btn btn-dark fw-bold" onClick={print}><i className="bi bi-printer"></i> Imprimir comprobante</button>
           </div>
         </div>
       </div>
@@ -525,6 +525,7 @@ const Inventory = () => {
       setBatches(Array.isArray(bt) ? bt : []);
     } catch(e) { showAlert('danger', e.message); }
   }, [token]);
+  useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
   const loadCats = async () => {
@@ -670,9 +671,9 @@ const Inventory = () => {
               descripcion:    `Generada automáticamente desde entrada de inventario — ${header.reason}`,
             })
           }, token);
-          showAlert('success', '✅ Pedido registrado y factura agregada a Cuentas por Pagar');
+          showAlert('success', ' Pedido registrado y factura agregada a Cuentas por Pagar');
         } catch(fe) {
-          showAlert('success', '✅ Pedido registrado (no se pudo crear la factura pendiente)');
+          showAlert('success', ' Pedido registrado (no se pudo crear la factura pendiente)');
         }
       }
 
@@ -814,14 +815,14 @@ const Inventory = () => {
                         {vencidos.length > 0 && (
                           <div className="col-auto">
                             <div className="alert alert-danger py-2 mb-0 d-flex align-items-center gap-2">
-                              <span>🚨 <strong>{vencidos.length}</strong> lote(s) vencido(s)</span>
+                              <span><i className="bi bi-exclamation-triangle"></i> <strong>{vencidos.length}</strong> lote(s) vencido(s)</span>
                             </div>
                           </div>
                         )}
                         {proximos7.length > 0 && (
                           <div className="col-auto">
                             <div className="alert alert-warning py-2 mb-0 d-flex align-items-center gap-2">
-                              <span>⚠️ <strong>{proximos7.length}</strong> lote(s) vence(n) en 7 días</span>
+                              <span><i className="bi bi-exclamation-triangle"></i> <strong>{proximos7.length}</strong> lote(s) vence(n) en 7 días</span>
                             </div>
                           </div>
                         )}
@@ -853,7 +854,7 @@ const Inventory = () => {
                                   <td>
                                     {b.fecha_vencimiento ? (
                                       <span className={`badge ${diasVenc < 0 ? 'bg-danger' : diasVenc <= 7 ? 'bg-warning text-dark' : 'bg-success'}`}>
-                                        📅 {b.fecha_vencimiento}
+                                        <i className="bi bi-calendar-event"></i> {b.fecha_vencimiento}
                                         {diasVenc !== null && (
                                           diasVenc < 0
                                             ? ` — Vencido hace ${Math.abs(diasVenc)} día(s)`
@@ -956,7 +957,7 @@ const Inventory = () => {
 </div>
 {header.supplier_id && (
   <div className="d-flex align-items-center gap-2 mt-1">
-    <span className="text-success small">✅ Proveedor seleccionado</span>
+    <span className="text-success small"> Proveedor seleccionado</span>
     <button type="button" className="btn btn-link btn-sm p-0 text-danger" style={{fontSize:11}}
       onClick={() => setHeader({...header, supplier_id:'', supplierSearch:''})}>
       Cambiar
@@ -965,7 +966,7 @@ const Inventory = () => {
 )}
                   </div>
                   <div className="col-md-4">
-                    <label className="form-label fw-semibold small">📅 Fecha de entrada</label>
+                    <label className="form-label fw-semibold small"><i className="bi bi-calendar-event"></i> Fecha de entrada</label>
                     <input className="form-control" type="text"
                       value={new Date().toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
                       readOnly style={{ background:'#f8fafc', color:'#64748b' }} />
@@ -991,7 +992,7 @@ const Inventory = () => {
                   </div>
                   {header.factura_pendiente === 'si' && (
                     <div className="col-md-6">
-                      <label className="form-label fw-semibold small">📅 Fecha límite de pago</label>
+                      <label className="form-label fw-semibold small"><i className="bi bi-calendar-event"></i> Fecha límite de pago</label>
                       <input type="date" className="form-control" value={header.fecha_limite_pago||''}
                         onChange={e=>setHeader({...header, fecha_limite_pago:e.target.value})} />
                     </div>
@@ -1096,9 +1097,9 @@ const Inventory = () => {
                             <td>
                               <div className="d-flex gap-1">
                                 <button type="button" className="btn btn-sm btn-outline-warning py-0 px-2"
-                                  onClick={() => editRow(r)} title="Editar">✏️</button>
+                                  onClick={() => editRow(r)} title="Editar"><i className="bi bi-pencil"></i></button>
                                 <button type="button" className="btn btn-sm btn-outline-danger py-0 px-2"
-                                  onClick={() => deleteRow(r._id)} title="Eliminar">🗑️</button>
+                                  onClick={() => deleteRow(r._id)} title="Eliminar"><i className="bi bi-trash"></i></button>
                               </div>
                             </td>
                           </tr>
@@ -1136,7 +1137,7 @@ const Inventory = () => {
                       onClick={confirmOrder} disabled={loading}>
                       {loading
                         ? <><span className="spinner-border spinner-border-sm me-2"/>Registrando...</>
-                        : `✅ Confirmar pedido (${rows.length} producto${rows.length!==1?'s':''})`}
+                        : ` Confirmar pedido (${rows.length} producto${rows.length!==1?'s':''})`}
                     </button>
                   </div>
                 </div>
@@ -1151,7 +1152,7 @@ const Inventory = () => {
             <div className="card border-0 shadow-sm">
               <div className="card-header fw-semibold py-3"
                 style={{ background:'#7f1d1d', color:'#fff', borderRadius:'8px 8px 0 0' }}>
-                📤 Registrar Novedades de Inventario
+                <i className="bi bi-box-arrow-down"></i> Registrar Novedades de Inventario
               </div>
               <div className="card-body">
                 <form onSubmit={handleExit}>
@@ -1162,7 +1163,7 @@ const Inventory = () => {
                         <div style={{ flex:1 }}>
                           <div className="fw-bold">{dname(exitProduct)}</div>
                           <div className="d-flex gap-2 flex-wrap mt-1" style={{ fontSize:11 }}>
-                            {exitProduct.barcode && <span className="text-muted" style={{ fontFamily:'monospace' }}>📦 {exitProduct.barcode}</span>}
+                            {exitProduct.barcode && <span className="text-muted" style={{ fontFamily:'monospace' }}><i className="bi bi-upc"></i> {exitProduct.barcode}</span>}
                             <span className={`badge ${stockColor(exitProduct)}`}>Stock actual: {exitProduct.stock}</span>
                             <span className="text-muted">{exitProduct.category || '—'}</span>
                           </div>
@@ -1202,7 +1203,7 @@ const Inventory = () => {
 
                   <button type="submit" className="btn btn-danger w-100 fw-bold"
                     disabled={loading || !exitProduct || !exitQty}>
-                    {loading ? 'Guardando...' : '📤 Registrar Salida'}
+                    {loading ? 'Guardando...' : 'Registrar Salida'}
                   </button>
                 </form>
               </div>
@@ -1226,7 +1227,7 @@ const Inventory = () => {
         <div className="modal d-block" style={{background:'rgba(0,0,0,0.5)',position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center'}}>
           <div style={{maxWidth:440,width:'90%',margin:'auto',background:'#fff',borderRadius:14,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}>
             <div style={{background:'#fef3c7',padding:'16px 20px'}}>
-              <h5 style={{margin:0,fontWeight:700,color:'#92400e'}}>⚠️ {deactivatedModal.titulo}</h5>
+              <h5 style={{margin:0,fontWeight:700,color:'#92400e'}}><i className="bi bi-exclamation-triangle"></i> {deactivatedModal.titulo}</h5>
             </div>
             <div style={{padding:'20px'}}>
               <p style={{fontWeight:600}}>{deactivatedModal.mensaje}</p>

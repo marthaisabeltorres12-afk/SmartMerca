@@ -96,11 +96,11 @@ const ImportarProductos = () => {
         <ul className="nav nav-tabs mb-4">
           <li className="nav-item">
             <button className={`nav-link ${tab==='importar'?'active fw-bold ':''}`}
-              onClick={()=>setTab('importar')}>📥 Importar desde Excel/CSV</button>
+              onClick={()=>setTab('importar')}><i className="bi bi-download"></i> Importar desde Excel/CSV</button>
           </li>
           <li className="nav-item">
             <button className={`nav-link ${tab==='exportar'?'active fw-bold':''}`}
-              onClick={()=>setTab('exportar')}>📤 Exportar mis productos</button>
+              onClick={()=>setTab('exportar')}><i className="bi bi-box-arrow-up-right"></i> Exportar mis productos</button>
           </li>
         </ul>
 
@@ -109,7 +109,7 @@ const ImportarProductos = () => {
           <div className="row g-4">
             <div className="col-md-7">
               <div className="card border-0 shadow-sm">
-                <div className="card-header fw-semibold">📥 Importar productos</div>
+                <div className="card-header fw-semibold"><i className="bi bi-download"></i> Importar productos</div>
                 <div className="card-body">
 
                   {/* Pasos */}
@@ -151,20 +151,20 @@ const ImportarProductos = () => {
                       onChange={e => { setArchivo(e.target.files[0]); setResultado(null); setError(''); }}/>
                     {archivo && (
                       <div className="text-muted small mt-1">
-                        📄 {archivo.name} ({(archivo.size/1024).toFixed(1)} KB)
+                        <i className="bi bi-file-earmark"></i> {archivo.name} ({(archivo.size/1024).toFixed(1)} KB)
                       </div>
                     )}
                   </div>
 
                   {error && (
-                    <div className="alert alert-danger py-2 small">⚠️ {error}</div>
+                    <div className="alert alert-danger py-2 small"><i className="bi bi-exclamation-circle"></i> {error}</div>
                   )}
 
                   <button className="btn btn-success btn-lg fw-bold w-100"
                     onClick={handleImportar} disabled={!archivo || loading}>
                     {loading
                       ? <><span className="spinner-border spinner-border-sm me-2"/>Importando...</>
-                      : '📥 Importar productos'}
+                      : ' Importar productos'}
                   </button>
                 </div>
               </div>
@@ -174,7 +174,7 @@ const ImportarProductos = () => {
             <div className="col-md-5">
               {resultado ? (
                 <div className="card border-0 shadow-sm border-success border-2">
-                  <div className="card-header fw-semibold text-success">✅ Importación completada</div>
+                  <div className="card-header fw-semibold text-success"><i className="bi bi-check-circle"></i> Importación completada</div>
                   <div className="card-body">
                     <div className="row g-3 mb-3">
                       <div className="col-4 text-center">
@@ -193,7 +193,7 @@ const ImportarProductos = () => {
 
                     {resultado.errores?.length > 0 && (
                       <div className="alert alert-warning py-2" style={{fontSize:12}}>
-                        <strong>⚠️ {resultado.errores.length} filas con errores:</strong>
+                        <strong><i className="bi bi-exclamation-triangle"></i> {resultado.errores.length} filas con errores:</strong>
                         <ul className="mb-0 mt-1">
                           {resultado.errores.slice(0,5).map((e,i) => (
                             <li key={i}>{e}</li>
@@ -206,7 +206,7 @@ const ImportarProductos = () => {
                     )}
 
                     <div className="alert alert-success py-2 small">
-                      ✅ {resultado.message}
+                      <i className="bi bi-check-circle"></i> {resultado.message}
                     </div>
                   </div>
                 </div>
@@ -246,7 +246,7 @@ const ImportarProductos = () => {
           <div className="row g-4">
             <div className="col-md-6">
               <div className="card border-0 shadow-sm">
-                <div className="card-header fw-semibold">📤 Exportar productos</div>
+                <div className="card-header fw-semibold"><i className="bi bi-box-arrow-up-right"></i> Exportar productos</div>
                 <div className="card-body">
                   <p className="text-muted">Exporta todos tus productos activos a un archivo Excel con formato profesional.</p>
 
@@ -266,7 +266,7 @@ const ImportarProductos = () => {
                     onClick={handleExportar} disabled={exportando}>
                     {exportando
                       ? <><span className="spinner-border spinner-border-sm me-2"/>Generando Excel...</>
-                      : '📥 Descargar Excel de productos'}
+                      : ' Descargar Excel de productos'}
                   </button>
 
                   <div className="text-muted small text-center mt-2">
@@ -278,7 +278,7 @@ const ImportarProductos = () => {
 
             <div className="col-md-6">
               <div className="card border-0 shadow-sm">
-                <div className="card-header fw-semibold">ℹ️ ¿Para qué sirve exportar?</div>
+                <div className="card-header fw-semibold"> ¿Para qué sirve exportar?</div>
                 <div className="card-body">
                   <div className="mb-3 d-flex gap-3">
                     <div style={{fontSize:28}}><i className="bi bi-floppy-fill me-2 text-success"></i></div>

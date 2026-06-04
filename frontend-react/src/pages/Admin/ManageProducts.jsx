@@ -185,7 +185,7 @@ const ManageProducts = () => {
                         <div className="fw-semibold">{p.name}</div>
                         {p.gramaje_cantidad && p.gramaje_unidad && (
                           <div className="badge bg-light text-dark border" style={{fontSize:10}}>
-                            ⚖️ {p.gramaje_cantidad} {p.gramaje_unidad}
+                            <i className="bi bi-weight"></i> {p.gramaje_cantidad} {p.gramaje_unidad}
                           </div>
                         )}
                         {p.description && <div className="text-muted small">{p.description.slice(0,40)}</div>}
@@ -212,7 +212,7 @@ const ManageProducts = () => {
                               {p.discount_end && <div className="text-muted" style={{fontSize:'0.7rem'}}>hasta {p.discount_end}</div>}
                             </div>
                           : p.discount > 0
-                            ? <span className="badge bg-secondary">⏸ {p.discount}% (inactivo)</span>
+                            ? <span className="badge bg-secondary"> <i className="bi bi-patch-exclamation"></i> {p.discount}% (inactivo)</span>
                             : <span className="text-muted small">—</span>
                         }
                       </td>
@@ -232,19 +232,15 @@ const ManageProducts = () => {
                       <td className="text-nowrap">
   <div className="d-flex align-items-center gap-1">
     <button
-      className={`btn btn-sm ${p.is_active ? 'btn-outline-secondary' : 'btn-outline-success'}`}
-      onClick={() => handleToggle(p)}
-    >
-      {p.is_active ? '❌' : '✅'}
-    </button>
+    className={`btn btn-sm ${p.is_active !== false ? 'btn-outline-secondary' : 'btn-outline-success'}`}
+    onClick={() => handleToggle(p)}
+    title={p.is_active !== false ? 'Desactivar' : 'Activar'}>
+    <i className={`bi ${p.is_active !== false ? 'bi-x-circle' : 'bi-check-circle'}`}></i>
+  </button>
 
-    <button
-  className="btn btn-outline-warning btn-sm"
-  onClick={() => openEdit(p)}
-  title="Editar producto"
->
-  <i className="bi bi-pencil-square"></i>
-</button>
+      <button className="btn btn-warning btn-sm" onClick={() => openEdit(p)} title="Editar">
+    <i className="bi bi-pencil"></i>
+  </button>
 
     <button
       className="btn btn-sm btn-outline-info"
@@ -254,12 +250,9 @@ const ManageProducts = () => {
       <i className="bi bi-graph-up"></i>
     </button>
 
-    <button
-      className="btn btn-danger btn-sm"
-      onClick={() => setConfirmDelete(p)}
-    >
-      🗑️
-    </button>
+    <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(p)} title="Eliminar">
+    <i className="bi bi-trash"></i>
+  </button>
   </div>
 </td>
                     </tr>
@@ -506,7 +499,7 @@ const ManageProducts = () => {
         <div className="modal d-block" style={{background:'rgba(0,0,0,0.5)',position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center'}}>
           <div style={{maxWidth:440,width:'90%',margin:'auto',background:'#fff',borderRadius:14,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}>
             <div style={{background:'#fef3c7',padding:'16px 20px'}}>
-              <h5 style={{margin:0,fontWeight:700,color:'#92400e'}}>⚠️ {deactivatedModal.titulo}</h5>
+              <h5 style={{margin:0,fontWeight:700,color:'#92400e'}}><i className="bi bi-exclamation-triangle"></i> {deactivatedModal.titulo}</h5>
             </div>
             <div style={{padding:'20px'}}>
               <p style={{fontWeight:600}}>{deactivatedModal.mensaje}</p>

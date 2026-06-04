@@ -11,7 +11,7 @@ const adminLinks = [
    { path: "/admin/domicilios", icon: "bi-bicycle", label: "Domicilios", badge: "pendientes" },
   
 
-  // 📦 INVENTARIO
+  //  INVENTARIO
   {
     group: true, label: "Inventario", icon: "bi-archive", key: "inventario",
     children: [
@@ -31,7 +31,7 @@ const adminLinks = [
 
  
 
-  // 👥 CLIENTES
+  //  CLIENTES
   {
     group: true, label: "Clientes", icon: "bi-people", key: "clientes",
     children: [
@@ -41,7 +41,7 @@ const adminLinks = [
     ]
   },
 
-  // 💰 FINANZAS
+  //  FINANZAS
   {
     group: true, label: "Finanzas", icon: "bi-cash-stack", key: "finanzas",
     children: [
@@ -50,7 +50,7 @@ const adminLinks = [
     ]
   },
 
-  // ⚙️ OPERACIONES
+  //  OPERACIONES
   {
     group: true, label: "Operaciones", icon: "bi-gear", key: "operaciones",
     children: [
@@ -66,7 +66,7 @@ const adminLinks = [
     ]
   },
 
-  // 📊 REPORTES
+  //  REPORTES
   {
     group: true, label: "Reportes", icon: "bi-bar-chart", key: "reportes",
     children: [
@@ -237,13 +237,13 @@ const Navbar = () => {
     : cajeroLinks;
 
   const roleLabel = {
-    admin_tecnico: '🔧 Admin Técnico',
-    admin:         '⚙️ Administrador',
-    cajero:        '🖥️ Cajero',
-    bodeguero:     '📦 Bodeguero',
-    supervisor:    '👁️ Supervisor',
-    contador:      '📊 Contador',
-    auditor:       '🔍 Auditor',
+    admin_tecnico: ' Admin Técnico',
+    admin:         ' Administrador',
+    cajero:        ' Cajero',
+    bodeguero:     ' Bodeguero',
+    supervisor:    ' Supervisor',
+    contador:      ' Contador',
+    auditor:       ' Auditor',
   }[user?.role] || user?.role;
 
   const initial = user?.name?.charAt(0)?.toUpperCase() || "?";
