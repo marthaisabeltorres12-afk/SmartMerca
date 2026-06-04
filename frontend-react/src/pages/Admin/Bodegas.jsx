@@ -109,9 +109,16 @@ const Bodegas = () => {
             <p className="text-muted small mb-0">Control de stock por ubicación y traslados</p>
           </div>
           <div className="d-flex gap-2">
-            <button className="btn btn-outline-primary" onClick={()=>{ setTransferModal(true); setTransferForm(EMPTY_TRANSFER); }}>
-              🔄 Registrar traslado
-            </button>
+          <button
+  className="btn btn-outline-primary"
+  onClick={() => {
+    setTransferModal(true);
+    setTransferForm(EMPTY_TRANSFER);
+  }}
+>
+  <i className="bi bi-arrow-left-right me-2"></i>
+  Registrar traslado
+</button>
             <button className="btn btn-primary fw-bold" onClick={()=>{ setEditingLoc(null); setLocForm(EMPTY_LOC); setLocModal(true); }}>
               + Nueva ubicación
             </button>
@@ -159,9 +166,9 @@ const Bodegas = () => {
                           {l.tipo}{l.requiere_temperatura?' · ❄️ Requiere temp.':''}
                         </div>
                       </div>
-                      <button className="btn btn-sm btn-outline-secondary py-0 px-1" style={{fontSize:10}}
+                      <button className="btn btn-sm btn-outline-secondary py-0 px-1 bi-pencil-square" style={{fontSize:10}}
                         onClick={e=>{ e.stopPropagation(); setEditingLoc(l); setLocForm({nombre:l.nombre,tipo:l.tipo,requiere_temperatura:l.requiere_temperatura}); setLocModal(true); }}>
-                        ✏️
+                        
                       </button>
                     </button>
                   ))}
@@ -284,7 +291,13 @@ const Bodegas = () => {
             <div className="modal-dialog">
               <div className="modal-content">
                 <div className="modal-header" style={{background:'#1e3a5f',color:'#fff'}}>
-                  <h5 className="modal-title fw-bold">{editingLoc?'✏️ Editar':'🏭 Nueva'} ubicación</h5>
+                  <h5 className="modal-title fw-bold">
+  {editingLoc
+    ? <><i className="bi bi-pencil-square me-2"></i>Editar</>
+    : <><i className="bi bi-building me-2"></i>Nueva</>
+  }
+  {" "}ubicación
+</h5>
                   <button className="btn-close btn-close-white" onClick={()=>setLocModal(false)} />
                 </div>
                 <form onSubmit={handleSaveLoc}>

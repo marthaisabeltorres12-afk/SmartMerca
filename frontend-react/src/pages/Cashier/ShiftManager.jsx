@@ -57,7 +57,9 @@ const CashierView = ({ token, user }) => {
 
         {!shift ? (
           <div className="card border-0 shadow-sm text-center py-5">
-            <div className="fs-2 mb-2">⏳</div>
+            <div className="fs-2 mb-2">
+  <i className="bi bi-hourglass-split"></i>
+</div>
             <div className="fw-semibold">No tienes turno activo</div>
             <div className="text-muted small mt-1">El administrador abrirá tu turno</div>
           </div>
@@ -91,9 +93,13 @@ const CashierView = ({ token, user }) => {
             </div>
 
             <div className="card border-0 shadow-sm">
-              <div className="card-header fw-semibold py-3" style={{ background:'#1e3a5f', color:'#fff' }}>
-                🔒 Cerrar mi turno
-              </div>
+              <div
+  className="card-header fw-semibold py-3"
+  style={{ background: '#1e3a5f', color: '#fff' }}
+>
+  <i className="bi bi-shield-lock me-2"></i>
+  Cerrar mi turno
+</div>
               <div className="card-body">
                 <p className="text-muted small mb-3">
                   Cuenta todo el dinero físico en caja e ingresa el total.
@@ -101,7 +107,7 @@ const CashierView = ({ token, user }) => {
                 </p>
                 <form onSubmit={handleRequestClose}>
                   <div className="mb-4">
-                    <label className="form-label fw-semibold">💵 Total efectivo en caja</label>
+                    <label className="form-label fw-semibold bi-wallet2"> Total efectivo en caja</label>
                     <div className="input-group input-group-lg">
                       <span className="input-group-text">$</span>
                       <input type="number" className="form-control" min="0" step="1"
@@ -112,9 +118,23 @@ const CashierView = ({ token, user }) => {
                       Cuenta billete por billete antes de ingresar
                     </div>
                   </div>
-                  <button type="submit" className="btn btn-danger w-100 fw-bold btn-lg" disabled={closing}>
-                    {closing ? '⏳ Enviando...' : '🔒 Solicitar cierre de turno'}
-                  </button>
+                 <button
+  type="submit"
+  className="btn btn-danger w-100 fw-bold btn-lg"
+  disabled={closing}
+>
+  {closing ? (
+    <>
+      <i className="bi bi-hourglass-split me-2"></i>
+      Enviando...
+    </>
+  ) : (
+    <>
+      <i className="bi bi-shield-lock me-2"></i>
+      Solicitar cierre de turno
+    </>
+  )}
+</button>
                 </form>
               </div>
             </div>
@@ -858,7 +878,7 @@ const ShiftManager = () => {
     <div className="d-flex">
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft:240 }}>
-        <h4 className="fw-bold mb-1">🔄 {isAdmin ? 'Turnos y Cierres de Caja' : 'Mi Turno'}</h4>
+        <h4 className="fw-bold mb-1 bi-repeat"> {isAdmin ? 'Turnos y Cierres de Caja' : 'Mi Turno'}</h4>
         <p className="text-muted mb-4">
           {isAdmin ? 'Gestión completa de turnos, retiros y cierres' : `Cajero: ${user?.name}`}
         </p>

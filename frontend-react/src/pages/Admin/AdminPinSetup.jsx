@@ -183,7 +183,7 @@ const AdminPinSetup = () => {
                       onChange={e=>{ setConfirm(e.target.value.replace(/\D/g,'')); setMsg(null); }}
                       style={{ letterSpacing:10, fontSize:24 }}/>
                     {confirm && confirm!==pin && <div className="invalid-feedback">Los PINs no coinciden</div>}
-                    {confirm && confirm===pin && confirm.length>=4 && <div className="valid-feedback d-block">✅ PINs coinciden</div>}
+                    {confirm && confirm===pin && confirm.length>=4 && <div className="valid-feedback d-block bi-check-circle-fill"> PINs coinciden</div>}
                   </div>
                   <button type="submit" className="btn btn-dark w-100 fw-bold py-2"
                     disabled={loading||pin.length<4||pin!==confirm}>

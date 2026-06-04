@@ -197,7 +197,7 @@ const Returns = () => {
         authorized_by:       adminName,
         items: items.map(i => ({ product_id: i.product_id, quantity: i.returnQty, price: i.price }))
       }, token);
-      showAlert('success', '✅ Devolución registrada correctamente');
+      showAlert('success', ' Devolución registrada correctamente');
       setSale(null); setSaleId(''); setSelectedItems({});
       setReason(''); resetExchange(); setAuthorizedBy('');
       load();
@@ -206,13 +206,29 @@ const Returns = () => {
     finally { setLoading(false); }
   };
 
-  const modeLabel = { dinero:'💵 En dinero', cambio:'🔄 Cambio de producto' };
+const modeLabel = {
+  dinero: (
+    <>
+      <i className="bi bi-cash-coin me-1"></i>
+      En dinero
+    </>
+  ),
+  cambio: (
+    <>
+      <i className="bi bi-arrow-left-right me-1"></i>
+      Cambio de producto
+    </>
+  )
+};
 
   return (
     <div className="d-flex">
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft:240, background:'#f8fafc', minHeight:'100vh' }}>
-        <h4 className="fw-bold mb-1">↩️ Devoluciones</h4>
+       <h4 className="fw-bold mb-1">
+  <i className="bi bi-arrow-return-left me-2"></i>
+  Devoluciones
+</h4>
         <p className="text-muted mb-4">Registra devoluciones de productos y revierte el stock</p>
 
         {/* Banner política */}
@@ -245,10 +261,11 @@ const Returns = () => {
         {/* Tabs */}
         <div className="btn-group mb-4">
           <button className={`btn btn-sm ${tab==='nueva'?'btn-dark':'btn-outline-secondary'}`} onClick={()=>setTab('nueva')}>
-            ↩️ Nueva Devolución
+            <i className="bi bi-plus-circle me-1"></i>
+             Nueva Devolución
           </button>
           <button className={`btn btn-sm ${tab==='historial'?'btn-dark':'btn-outline-secondary'}`} onClick={()=>setTab('historial')}>
-            📜 Historial ({returns.length})
+            <i className="bi bi-card-list me-1"></i> Historial ({returns.length})
           </button>
         </div>
 
@@ -260,7 +277,7 @@ const Returns = () => {
             <div className="col-lg-5">
               <div className="card border-0 shadow-sm" style={{ borderRadius:12 }}>
                 <div className="card-header border-0 fw-bold bg-white" style={{ borderRadius:'12px 12px 0 0' }}>
-                  🔍 Buscar Venta
+                  <i className="bi bi-search me-1"></i> Buscar Venta
                 </div>
                 <div className="card-body">
                   <div className="input-group mb-3">
@@ -306,14 +323,42 @@ const Returns = () => {
                         <div className="mb-3">
                           <label className="form-label small fw-semibold">Tipo de devolución</label>
                           <div className="d-flex gap-2">
-                            {[{val:'dinero',lb:'💵 En dinero'},{val:'cambio',lb:'🔄 Cambio'}].map(opt => (
-                              <button key={opt.val} type="button"
-                                className={`btn btn-sm flex-fill ${mode===opt.val?'btn-primary':'btn-outline-secondary'}`}
-                                onClick={() => { setMode(opt.val); resetExchange(); setAuthorizedBy(''); }}>
-                                {opt.lb}
-                              </button>
-                            ))}
-                          </div>
+  {[
+    {
+      val: 'dinero',
+      lb: (
+        <>
+          <i className="bi bi-cash-coin me-1"></i>
+          En dinero
+        </>
+      )
+    },
+    {
+      val: 'cambio',
+      lb: (
+        <>
+          <i className="bi bi-arrow-left-right me-1"></i>
+          Cambio
+        </>
+      )
+    }
+  ].map(opt => (
+    <button
+      key={opt.val}
+      type="button"
+      className={`btn btn-sm flex-fill ${
+        mode === opt.val ? 'btn-primary' : 'btn-outline-secondary'
+      }`}
+      onClick={() => {
+        setMode(opt.val);
+        resetExchange();
+        setAuthorizedBy('');
+      }}
+    >
+      {opt.lb}
+    </button>
+  ))}
+</div>
                         </div>
                       )}
                       {policy && policy.return_mode !== 'ambos' && (
@@ -326,8 +371,7 @@ const Returns = () => {
                       {/* ── MINI CARRITO PRODUCTO A CAMBIO ── */}
                       {mode === 'cambio' && (
                         <div className="mb-3">
-                          <label className="form-label small fw-semibold">
-                            🔄 Producto a entregar a cambio <span className="text-danger">*</span>
+                          <label className="form-label small fw-semibold bi-arrow-left-right">  Producto a entregar a cambio <span className="text-danger">*</span>
                           </label>
 
                           {/* Buscador */}
@@ -354,7 +398,7 @@ const Returns = () => {
                                       onMouseDown={() => selectExchangeProduct(p)}>
                                       <div>
                                         <div className="fw-semibold">{p.name}</div>
-                                        {p.barcode && <div className="text-muted" style={{ fontSize:11 }}>📦 {p.barcode}</div>}
+                                        {p.barcode && <div className="text-muted bi-box-seam-fill" style={{ fontSize:11 }}> {p.barcode}</div>}
                                       </div>
                                       <div className="text-end">
                                         <div className="fw-bold text-success">{fmtMoney(p.final_price ?? p.price)}</div>
@@ -374,7 +418,7 @@ const Returns = () => {
                                 <div>
                                   <div className="fw-bold small">{exchangeProduct.name}</div>
                                   {exchangeProduct.barcode && (
-                                    <div className="text-muted" style={{ fontSize:11 }}>📦 {exchangeProduct.barcode}</div>
+                                    <div className="text-muted bi-box-seam-fill" style={{ fontSize:11 }}> {exchangeProduct.barcode}</div>
                                   )}
                                   <div className="text-success fw-semibold small mt-1">
                                     {fmtMoney(exchangeProduct.final_price ?? exchangeProduct.price)} / und
@@ -409,22 +453,45 @@ const Returns = () => {
 
                           {/* Diferencia de precios */}
                           {exchangeProduct && itemsCount > 0 && (
-                            <div className={`alert py-2 px-3 mt-2 mb-0 ${
-                              diferencia > 0 ? 'alert-warning' :
-                              diferencia < 0 ? 'alert-info' : 'alert-success'
-                            }`} style={{ fontSize:13 }}>
-                              {diferencia > 0 && <>
-                                <strong>⚠️ El cliente debe pagar {fmtMoney(diferencia)} adicional</strong>
-                                <div className="text-muted small">El producto a cambio cuesta más que el devuelto</div>
-                              </>}
-                              {diferencia < 0 && <>
-                                <strong>💵 Devolver {fmtMoney(Math.abs(diferencia))} al cliente</strong>
-                                <div className="text-muted small">El producto a cambio cuesta menos que el devuelto</div>
-                              </>}
-                              {diferencia === 0 && <>
-                                <strong>✅ Cambio exacto — sin diferencia de precio</strong>
-                              </>}
-                            </div>
+                          <div
+  className={`alert py-2 px-3 mt-2 mb-0 ${
+    diferencia > 0 ? 'alert-warning' :
+    diferencia < 0 ? 'alert-info' :
+    'alert-success'
+  }`}
+  style={{ fontSize: 13 }}
+>
+  {diferencia > 0 && (
+    <>
+      <strong>
+        <i className="bi bi-exclamation-triangle-fill me-1"></i>
+        El cliente debe pagar {fmtMoney(diferencia)} adicional
+      </strong>
+      <div className="text-muted small">
+        El producto a cambio cuesta más que el devuelto
+      </div>
+    </>
+  )}
+
+  {diferencia < 0 && (
+    <>
+      <strong>
+        <i className="bi bi-cash-coin me-1"></i>
+        Devolver {fmtMoney(Math.abs(diferencia))} al cliente
+      </strong>
+      <div className="text-muted small">
+        El producto a cambio cuesta menos que el devuelto
+      </div>
+    </>
+  )}
+
+  {diferencia === 0 && (
+    <strong>
+      <i className="bi bi-check-circle-fill me-1"></i>
+      Cambio exacto — sin diferencia de precio
+    </strong>
+  )}
+</div>
                           )}
                         </div>
                       )}
@@ -459,29 +526,45 @@ const Returns = () => {
                             </div>
                           )}
                           {sale.customer && (
-                            <div className="text-muted small mt-1">
-                              ⭐ Se restarán {Math.floor(totalDevuelto/1000)} puntos al cliente
-                            </div>
+                           <div className="text-muted small mt-1">
+  <i className="bi bi-star-fill me-1"></i>
+  Se restarán {Math.floor(totalDevuelto / 1000)} puntos al cliente
+</div>
                           )}
                           {necesitaPin() && !authorizedBy && (
-                            <div className="alert alert-warning py-1 px-2 mt-2 mb-0 small">
-                              🔐 Requiere PIN del admin ({razonPin()})
-                            </div>
-                          )}
-                          {authorizedBy && (
-                            <div className="alert alert-success py-1 px-2 mt-2 mb-0 small">
-                              ✅ Autorizado por: <strong>{authorizedBy}</strong>
-                            </div>
-                          )}
+  <div className="alert alert-warning py-1 px-2 mt-2 mb-0 small">
+    <i className="bi bi-shield-lock me-1"></i>
+    Requiere PIN del admin ({razonPin()})
+  </div>
+)}
+                         {authorizedBy && (
+  <div className="alert alert-success py-1 px-2 mt-2 mb-0 small">
+    <i className="bi bi-check-circle-fill me-1"></i>
+    Autorizado por: <strong>{authorizedBy}</strong>
+  </div>
+)}
                         </div>
                       )}
 
-                      <button className="btn btn-danger w-100 fw-bold" onClick={handleSubmit}
-                        disabled={loading || itemsCount === 0}>
-                        {loading ? 'Procesando...' :
-                         necesitaPin() && !authorizedBy ? '🔐 Solicitar PIN y Confirmar' :
-                         '↩️ Confirmar Devolución'}
-                      </button>
+                     <button
+  className="btn btn-danger w-100 fw-bold"
+  onClick={handleSubmit}
+  disabled={loading || itemsCount === 0}
+>
+  {loading ? (
+    'Procesando...'
+  ) : necesitaPin() && !authorizedBy ? (
+    <>
+      <i className="bi bi-shield-lock me-2"></i>
+      Solicitar PIN y Confirmar
+    </>
+  ) : (
+    <>
+      <i className="bi bi-arrow-return-left me-2"></i>
+      Confirmar Devolución
+    </>
+  )}
+</button>
                     </>
                   )}
                 </div>
@@ -492,8 +575,7 @@ const Returns = () => {
             {sale && (
               <div className="col-lg-7">
                 <div className="card border-0 shadow-sm" style={{ borderRadius:12 }}>
-                  <div className="card-header border-0 fw-bold bg-white" style={{ borderRadius:'12px 12px 0 0' }}>
-                    📦 Selecciona los productos a devolver
+                  <div className="card-header border-0 fw-bold bg-white bi-box-seam-fill" style={{ borderRadius:'12px 12px 0 0' }}>  Selecciona los productos a devolver
                   </div>
                   <div className="table-responsive">
                     <table className="table align-middle mb-0">
@@ -551,8 +633,23 @@ const Returns = () => {
                               </tr>
                               <tr style={{ background: diferencia > 0 ? '#fef3c7' : diferencia < 0 ? '#dbeafe' : '#dcfce7' }}>
                                 <td colSpan="4" className="text-end fw-bold">
-                                  {diferencia > 0 ? '⚠️ Cliente paga:' : diferencia < 0 ? '💵 Devolver al cliente:' : '✅ Sin diferencia:'}
-                                </td>
+  {diferencia > 0 ? (
+    <>
+      <i className="bi bi-exclamation-triangle-fill me-1"></i>
+      Cliente paga:
+    </>
+  ) : diferencia < 0 ? (
+    <>
+      <i className="bi bi-cash-coin me-1"></i>
+      Devolver al cliente:
+    </>
+  ) : (
+    <>
+      <i className="bi bi-check-circle-fill me-1"></i>
+      Sin diferencia:
+    </>
+  )}
+</td>
                                 <td className="text-end fw-bold">
                                   {diferencia !== 0 ? fmtMoney(Math.abs(diferencia)) : '$0'}
                                 </td>
@@ -600,9 +697,19 @@ const Returns = () => {
                           <td className="small">{r.cashier}</td>
                           <td className="small text-muted">{r.reason || '—'}</td>
                           <td>
-                            <span className={`badge ${r.mode==='cambio'?'bg-info text-dark':'bg-success'}`}>
-                              {r.mode==='cambio'?'🔄 Cambio':'💵 Dinero'}
-                            </span>
+                            <span className={`badge ${r.mode === 'cambio' ? 'bg-info text-dark' : 'bg-success'}`}>
+  {r.mode === 'cambio' ? (
+    <>
+      <i className="bi bi-arrow-left-right me-1"></i>
+      Cambio
+    </>
+  ) : (
+    <>
+      <i className="bi bi-cash-coin me-1"></i>
+      Dinero
+    </>
+  )}
+</span>
                           </td>
                           <td>
                             {r.authorized_by
@@ -625,7 +732,7 @@ const Returns = () => {
                               <div className="px-4 py-3 bg-light" style={{ borderBottom:'1px solid #dee2e6' }}>
                                 <div className="row g-3">
                                   <div className="col-md-6">
-                                    <div className="fw-semibold small mb-2">📦 Productos devueltos:</div>
+                                    <div className="fw-semibold small mb-2 bi-box-seam-fill"> Productos devueltos:</div>
                                     <table className="table table-sm table-bordered mb-0">
                                       <thead className="table-light">
                                         <tr><th>Producto</th><th className="text-center">Cant.</th><th className="text-end">Subtotal</th></tr>
@@ -650,15 +757,27 @@ const Returns = () => {
                                   <div className="col-md-6">
                                     {r.mode === 'cambio' && (
                                       <div className="alert py-2 mb-2" style={{ background:'#eff6ff', border:'1px solid #bfdbfe' }}>
-                                        <div className="fw-semibold small">🔄 Producto entregado a cambio:</div>
+                                        <div className="fw-semibold small bi-repeat"> Producto entregado a cambio:</div>
                                         <div className="fw-bold text-primary">{r.exchange_product || '—'}</div>
                                         {r.exchange_qty && <div className="small text-muted">Cantidad: {r.exchange_qty} — Precio: {fmtMoney(r.exchange_price)}</div>}
                                         {r.diferencia !== 0 && (
-                                          <div className={`small fw-bold mt-1 ${r.diferencia > 0 ? 'text-warning' : 'text-info'}`}>
-                                            {r.diferencia > 0
-                                              ? `⚠️ Cliente pagó ${fmtMoney(r.diferencia)} adicional`
-                                              : `💵 Negocio devolvió ${fmtMoney(Math.abs(r.diferencia))}`}
-                                          </div>
+                                         <div
+  className={`small fw-bold mt-1 ${
+    r.diferencia > 0 ? 'text-warning' : 'text-info'
+  }`}
+>
+  {r.diferencia > 0 ? (
+    <>
+      <i className="bi bi-exclamation-triangle-fill me-1"></i>
+      Cliente pagó {fmtMoney(r.diferencia)} adicional
+    </>
+  ) : (
+    <>
+      <i className="bi bi-cash-coin me-1"></i>
+      Negocio devolvió {fmtMoney(Math.abs(r.diferencia))}
+    </>
+  )}
+</div>
                                         )}
                                       </div>
                                     )}

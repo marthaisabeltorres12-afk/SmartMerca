@@ -299,7 +299,7 @@ const SalesHistory = () => {
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft: 240 }}>
 
-        <h4 className="fw-bold mb-1">📜 Historial de Ventas</h4>
+        <h4 className="fw-bold mb-1 bi-card-list"> Historial de Ventas</h4>
         <p className="text-muted mb-4 small">Mis ventas registradas</p>
 
         {/* Filtros */}
@@ -307,11 +307,11 @@ const SalesHistory = () => {
           <div className="card-body py-2">
             <div className="row g-2 align-items-end">
               <div className="col-md-3">
-                <label className="form-label small fw-semibold mb-1">📅 Desde</label>
+                <label className="form-label small fw-semibold mb-1 bi-calendar-event-fill"> Desde</label>
                 <input type="date" className="form-control form-control-sm" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
               </div>
               <div className="col-md-3">
-                <label className="form-label small fw-semibold mb-1">📅 Hasta</label>
+                <label className="form-label small fw-semibold mb-1 bi-calendar-event-fill"> Hasta</label>
                 <input type="date" className="form-control form-control-sm" value={dateTo} onChange={e => setDateTo(e.target.value)} />
               </div>
               <div className="col-auto">
@@ -338,12 +338,14 @@ const SalesHistory = () => {
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="text-center text-muted py-5">
-                      <div style={{ fontSize:'2rem' }}>🧾</div>
-                      Sin ventas en este período
-                    </td>
-                  </tr>
+                 <tr>
+  <td colSpan={5} className="text-center text-muted py-5">
+    <div style={{ fontSize: '2rem' }}>
+      <i className="bi bi-receipt"></i>
+    </div>
+    Sin ventas en este período
+  </td>
+</tr>
                 ) : filtered.map((s) => (
                   <React.Fragment key={s.id}>
                     <tr>
@@ -364,12 +366,13 @@ const SalesHistory = () => {
                             {expanded === s.id ? '▲ Ocultar' : '▼ Detalle'}
                           </button>
                           <button
-                            className="btn btn-outline-primary btn-sm"
-                            onClick={() => setInvoice(s)}
-                            title="Ver ticket"
-                          >
-                            🧾 Ticket
-                          </button>
+  className="btn btn-outline-primary btn-sm"
+  onClick={() => setInvoice(s)}
+  title="Ver ticket"
+>
+  <i className="bi bi-receipt me-1"></i>
+  Ticket
+</button>
                         </div>
                       </td>
                     </tr>

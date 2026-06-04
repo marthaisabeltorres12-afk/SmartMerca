@@ -1283,7 +1283,7 @@ setDianModal(true);
           <div className="modal-dialog" style={{ marginTop:'10vh' }}>
             <div className="modal-content">
               <div className="modal-header py-2" style={{ background:'#1e3a5f', color:'#fff' }}>
-                <h6 className="modal-title fw-bold">⌨️ Comandos de teclado</h6>
+                <h6 className="modal-title fw-bold bi-collection-fill"> Comandos de teclado</h6>
                 <button className="btn-close btn-close-white btn-sm" onClick={() => setHelpModal(false)} />
               </div>
               <div className="modal-body p-0">
@@ -1291,29 +1291,36 @@ setDianModal(true);
                   <thead className="table-light">
                     <tr><th style={{ width:60 }}>Tecla</th><th>Acción</th></tr>
                   </thead>
-                  <tbody>
-                    {[
-                      ['F1',    'Mostrar/ocultar esta ayuda'],
-                      ['F2',    'Consultar precio de un producto'],
-                      ['F3',    'Nueva venta sin factura DIAN (ticket interno)'],
-                      ['F4',    'Descuento a toda la venta (requiere PIN)'],
-                      ['F5',    'Suspender venta (guardar para después)'],
-                      ['F6',    'Recuperar venta suspendida'],
-                      ['F7',    'Ir a historial de ventas'],
-                      ['F8',    'Devoluciones'],
-                      ['F9',    'Abrir cajón de dinero'],
-                      ['F10',   'Ir a cierre de turno'],
-                      ['F11',   '🏷️ Etiquetas de productos'],
-                      ['F12',   'Cobrar'],
-                      ['Enter', 'Agregar producto escaneado'],
-                      ['ESC',   'Cerrar modal / cancelar búsqueda'],
-                    ].map(([key, action]) => (
-                      <tr key={key}>
-                        <td><kbd className="bg-dark text-white px-2 py-1 rounded" style={{ fontSize:12 }}>{key}</kbd></td>
-                        <td>{action}</td>
-                      </tr>
-                    ))}
-                  </tbody>
+                 <tbody>
+  {[
+    ['F1', 'Mostrar/ocultar esta ayuda'],
+    ['F2', 'Consultar precio de un producto'],
+    ['F3', 'Nueva venta sin factura DIAN (ticket interno)'],
+    ['F4', 'Descuento a toda la venta (requiere PIN)'],
+    ['F5', 'Suspender venta (guardar para después)'],
+    ['F6', 'Recuperar venta suspendida'],
+    ['F7', 'Ir a historial de ventas'],
+    ['F8', 'Devoluciones'],
+    ['F9', 'Abrir cajón de dinero'],
+    ['F10', 'Ir a cierre de turno'],
+    ['F11', <><i className="bi bi-tags me-2"></i>Etiquetas de productos</>],
+    ['F12', 'Cobrar'],
+    ['Enter', 'Agregar producto escaneado'],
+    ['ESC', 'Cerrar modal / cancelar búsqueda'],
+  ].map(([key, action]) => (
+    <tr key={key}>
+      <td>
+        <kbd
+          className="bg-dark text-white px-2 py-1 rounded"
+          style={{ fontSize: 12 }}
+        >
+          {key}
+        </kbd>
+      </td>
+      <td>{action}</td>
+    </tr>
+  ))}
+</tbody>
                 </table>
               </div>
               <div className="modal-footer py-2">
@@ -1665,7 +1672,7 @@ setDianModal(true);
                 <div>
                   <div className="fw-bold">{tab.selectedCustomer.full_name}
                     {tab.selectedCustomer.price_list_nombre && (
-                      <span className="badge bg-success ms-2" style={{fontSize:10}}>
+                      <span className="badge bg-success ms-2 bi-percent" style={{fontSize:10}}>
                         🏷️ {tab.selectedCustomer.price_list_nombre}
                       </span>
                     )}
@@ -1933,17 +1940,31 @@ setDianModal(true);
             </div>
 
             {/* Botón cobrar — cambia según sinDian */}
-            <button
-              className={`btn btn-lg w-100 mt-3 fw-bold ${tab.sinDian ? 'btn-secondary' : 'btn-success'}`}
-              onClick={handleSale}
-              disabled={loading || tab.cart.length === 0}
-              style={{ borderRadius:8 }}>
-              {loading
-                ? <><span className="spinner-border spinner-border-sm me-2"/>Procesando...</>
-                : tab.sinDian
-                  ? <>🧾 Cobrar (sin DIAN) — {fmtMoney(total)}</>
-                  : <>🧾 Cobrar con DIAN — {fmtMoney(total)}</>}
-            </button>
+           <button
+  className={`btn btn-lg w-100 mt-3 fw-bold ${
+    tab.sinDian ? 'btn-secondary' : 'btn-success'
+  }`}
+  onClick={handleSale}
+  disabled={loading || tab.cart.length === 0}
+  style={{ borderRadius: 8 }}
+>
+  {loading ? (
+    <>
+      <span className="spinner-border spinner-border-sm me-2" />
+      Procesando...
+    </>
+  ) : tab.sinDian ? (
+    <>
+      <i className="bi bi-receipt me-2"></i>
+      Cobrar (sin DIAN) — {fmtMoney(total)}
+    </>
+  ) : (
+    <>
+      <i className="bi bi-receipt-cutoff me-2"></i>
+      Cobrar con DIAN — {fmtMoney(total)}
+    </>
+  )}
+</button>
           </div>
         </div>
       </div>
@@ -2427,7 +2448,7 @@ const Sales = () => {
           <div className="modal-dialog" style={{ marginTop:'12vh', maxWidth:420 }}>
             <div className="modal-content border-0 shadow-lg">
               <div className="modal-header py-3" style={{ background:'#1e3a5f', color:'#fff' }}>
-                <h5 className="modal-title fw-bold">🔒 Cierre de turno</h5>
+                <h5 className="modal-title fw-bold bi bi-shield-lock me-2"> Cierre de turno</h5>
                 <button className="btn-close btn-close-white" onClick={() => setShowCierreModal(false)} />
               </div>
               <div className="modal-body text-center py-4">
@@ -2438,17 +2459,28 @@ const Sales = () => {
                 </p>
                 <div className="d-flex flex-column gap-2">
                   <a href="/cajero/turno" className="btn btn-primary fw-bold py-2">
-                    🏁 Ir a cierre de caja
-                  </a>
-                  <a href="/cajero/historial" className="btn btn-outline-secondary py-2">
-                    📜 Ver historial de ventas
-                  </a>
+  <i className="bi bi-flag-fill me-2"></i>
+  Ir a cierre de caja
+</a>
+
+<a href="/cajero/historial" className="btn btn-outline-secondary py-2">
+  <i className="bi bi-journal-text me-2"></i>
+  Ver historial de ventas
+</a>
                   <hr className="my-1"/>
                   <button
-                    className="btn btn-outline-danger py-2"
-                    onClick={() => { if (shiftOk) solicitarCierreTurno(); else { logout(); navigate('/login'); } }}>
-                    🚪 Cerrar sesión
-                  </button>
+  className="btn btn-outline-danger py-2"
+  onClick={() => {
+    if (shiftOk) solicitarCierreTurno();
+    else {
+      logout();
+      navigate('/login');
+    }
+  }}
+>
+  <i className="bi bi-box-arrow-right me-2"></i>
+  Cerrar sesión
+</button>
                 </div>
               </div>
               <div className="modal-footer py-2 justify-content-center">
@@ -2664,7 +2696,9 @@ const Sales = () => {
                 <h5 className="modal-title fw-bold">🟢 Abrir Turno de Caja</h5>
               </div>
               <div className="modal-body p-4 text-center">
-                <div style={{fontSize:52,marginBottom:12}}>💰</div>
+              <div style={{ fontSize: 52, marginBottom: 12 }}>
+  <i className="bi bi-cash-coin"></i>
+</div>
                 <p className="text-muted mb-4">
                   Bienvenido/a <strong>{user?.name}</strong>.<br/>
                   Presiona el botón para abrir tu turno y comenzar.

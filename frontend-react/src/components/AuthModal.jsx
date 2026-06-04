@@ -30,14 +30,36 @@ const AuthModal = ({ tipo = 'eliminar_producto', onAuthorized, onCancel, targetE
   const esDobleFacto = tipo === 'reset_password';
 
   const LABELS = {
-    eliminar_producto: { titulo:'🗑️ Eliminar producto',      sub:'Escanea la tarjeta o ingresa PIN del administrador' },
-    cancelar_venta:    { titulo:'❌ Cancelar venta',          sub:'Escanea la tarjeta o ingresa PIN del administrador' },
-    editar_precio:     { titulo:'✏️ Editar precio',           sub:'Escanea la tarjeta o ingresa PIN del administrador' },
-    devolucion:        { titulo:'↩️ Devolución',              sub:'Escanea la tarjeta o ingresa PIN del administrador' },
-    descuento_manual:  { titulo:'🏷️ Descuento manual',        sub:'Escanea la tarjeta o ingresa PIN del administrador' },
-    reset_password:    { titulo:'🔐 Restablecer contraseña',  sub:'⚠️ Requiere tarjeta Y PIN (doble factor)' },
-  };
-  const label = LABELS[tipo] || { titulo:'🔐 Autorización', sub:'Requiere autorización del administrador' };
+  eliminar_producto: {
+    titulo: <><i className="bi bi-trash me-2"></i>Eliminar producto</>,
+    sub: 'Escanea la tarjeta o ingresa PIN del administrador'
+  },
+  cancelar_venta: {
+    titulo: <><i className="bi bi-x-circle me-2"></i>Cancelar venta</>,
+    sub: 'Escanea la tarjeta o ingresa PIN del administrador'
+  },
+  editar_precio: {
+    titulo: <><i className="bi bi-pencil-square me-2"></i>Editar precio</>,
+    sub: 'Escanea la tarjeta o ingresa PIN del administrador'
+  },
+  devolucion: {
+    titulo: <><i className="bi bi-arrow-return-left me-2"></i>Devolución</>,
+    sub: 'Escanea la tarjeta o ingresa PIN del administrador'
+  },
+  descuento_manual: {
+    titulo: <><i className="bi bi-tags me-2"></i>Descuento manual</>,
+    sub: 'Escanea la tarjeta o ingresa PIN del administrador'
+  },
+  reset_password: {
+    titulo: <><i className="bi bi-shield-lock me-2"></i>Restablecer contraseña</>,
+    sub: '⚠️ Requiere tarjeta Y PIN (doble factor)'
+  },
+};
+
+const label = LABELS[tipo] || {
+  titulo: <><i className="bi bi-shield-lock me-2"></i>Autorización</>,
+  sub: 'Requiere autorización del administrador'
+};
 
   // Al abrir: enfocar campo tarjeta por defecto (lector USB actúa como teclado)
   useEffect(() => {
@@ -152,7 +174,9 @@ const AuthModal = ({ tipo = 'eliminar_producto', onAuthorized, onCancel, targetE
 
         {/* Header */}
         <div style={{ textAlign:'center', marginBottom:20 }}>
-          <div style={{ fontSize:40, marginBottom:8 }}>🔐</div>
+          <div style={{ fontSize: 40, marginBottom: 8 }}>
+  <i className="bi bi-shield-lock text-warning"></i>
+</div>
           <div style={{ color:'#f1f5f9', fontWeight:700, fontSize:18 }}>{label.titulo}</div>
           <div style={{ color:'#64748b', fontSize:13, marginTop:4 }}>{label.sub}</div>
           {detalle && (
@@ -164,39 +188,68 @@ const AuthModal = ({ tipo = 'eliminar_producto', onAuthorized, onCancel, targetE
         </div>
 
         {error && (
-          <div style={{ background:'#450a0a', border:'1px solid #dc2626', borderRadius:8,
-            padding:'8px 12px', color:'#fca5a5', fontSize:13, marginBottom:14 }}>
-            ⚠️ {error}
-          </div>
+         <div
+  style={{
+    background: '#450a0a',
+    border: '1px solid #dc2626',
+    borderRadius: 8,
+    padding: '8px 12px',
+    color: '#fca5a5',
+    fontSize: 13,
+    marginBottom: 14
+  }}
+>
+  <i className="bi bi-exclamation-triangle-fill me-2"></i>
+  {error}
+</div>
         )}
 
         <form onSubmit={handleSubmit}>
 
           {/* ── TARJETA — PRIMERO Y PRINCIPAL ── */}
           <div style={{ marginBottom:16 }}>
-            <label style={{ color:'#94a3b8', fontSize:11, fontWeight:700, display:'block',
-              marginBottom:6, textTransform:'uppercase', letterSpacing:'0.07em' }}>
-              {esDobleFacto ? '1️⃣ Tarjeta de autorización *' : '💳 Tarjeta de autorización'}
-            </label>
+            <label
+  style={{
+    color: '#94a3b8',
+    fontSize: 11,
+    fontWeight: 700,
+    display: 'block',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: '0.07em'
+  }}
+>
+  {esDobleFacto ? (
+    <>
+      <i className="bi bi-1-circle me-1"></i>
+      Tarjeta de autorización *
+    </>
+  ) : (
+    <>
+      <i className="bi bi-credit-card me-1"></i>
+      Tarjeta de autorización
+    </>
+  )}
+</label>
 
             {/* Zona de escaneo visual */}
             <div style={{ position:'relative' }}>
-              <input
-                ref={tarjetaRef}
-                type="password"
-                placeholder="📷 Escanear con lector o escribir ADMIN-XXXXXX"
-                value={tarjeta}
-                onChange={e => setTarjeta(e.target.value.toUpperCase().replace(/['’`´]/g, '-'))}
-                onFocus={() => setModoActivo('tarjeta')}
-                autoComplete="off"
-                name="tarjeta-admin"
-                style={{
-                  ...inp(modoActivo === 'tarjeta'),
-                  fontFamily: 'monospace',
-                  fontSize:   13,
-                  paddingRight: 40,
-                }}
-              />
+             <input
+  ref={tarjetaRef}
+  type="password"
+  placeholder="⎘ Escanear con lector o escribir ADMIN-XXXXXX"
+  value={tarjeta}
+  onChange={e => setTarjeta(e.target.value.toUpperCase().replace(/['’`´]/g, '-'))}
+  onFocus={() => setModoActivo('tarjeta')}
+  autoComplete="off"
+  name="tarjeta-admin"
+  style={{
+    ...inp(modoActivo === 'tarjeta'),
+    fontFamily: 'monospace',
+    fontSize: 13,
+    paddingRight: 40,
+  }}
+/>
               {/* Ícono de escaneo */}
               <div style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)',
                 fontSize:18, opacity: tarjeta ? 1 : 0.4 }}>
@@ -208,19 +261,20 @@ const AuthModal = ({ tipo = 'eliminar_producto', onAuthorized, onCancel, targetE
             {escaneando && (
               <div style={{ background:'#052e16', border:'1px solid #16a34a', borderRadius:6,
                 padding:'4px 10px', color:'#4ade80', fontSize:12, marginTop:6, textAlign:'center' }}>
-                ✅ Tarjeta detectada
+                 Tarjeta detectada
               </div>
             )}
 
             {tarjeta && !escaneando && (
               <div style={{ color:'#4ade80', fontSize:11, marginTop:4 }}>
-                ✅ Tarjeta ingresada
+                 Tarjeta ingresada
               </div>
             )}
 
-            <div style={{ color:'#475569', fontSize:11, marginTop:4 }}>
-              💡 El lector USB funciona automáticamente — solo apunta y escanea
-            </div>
+            <div style={{ color: '#475569', fontSize: 11, marginTop: 4 }}>
+  <i className="bi bi-lightbulb me-1"></i>
+  El lector USB funciona automáticamente — solo apunta y escanea
+</div>
           </div>
 
           {/* Separador */}
@@ -268,7 +322,7 @@ const AuthModal = ({ tipo = 'eliminar_producto', onAuthorized, onCancel, targetE
                 border:'none', borderRadius:8, color:'#fff', padding:'11px',
                 cursor: loading ? 'wait' : 'pointer', fontSize:14, fontWeight:700,
                 transition:'background 0.2s' }}>
-              {loading ? '⏳ Verificando...' : '✅ Autorizar'}
+              {loading ? ' Verificando...' : ' Autorizar'}
             </button>
           </div>
 

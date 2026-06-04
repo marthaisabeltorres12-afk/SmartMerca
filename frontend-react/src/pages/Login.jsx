@@ -105,16 +105,34 @@ const Login = () => {
           <p style={{ color:"#64748b", fontSize:15, marginBottom:40 }}>
             Sistema completo para administrar inventario, ventas y usuarios.
           </p>
-          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-            {[["📦","Control de inventario en tiempo real"],["🔍","Escaneo de códigos de barras"],
-              ["📊","Reportes detallados de ventas"],["📅","Control automático de vencimientos"]].map(([icon,text]) => (
-              <div key={text} style={{ display:"flex", alignItems:"center", gap:14 }}>
-                <div style={{ width:36, height:36, background:"#1e293b", borderRadius:10,
-                  display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, flexShrink:0 }}>{icon}</div>
-                <span style={{ color:"#cbd5e1", fontSize:14 }}>{text}</span>
-              </div>
-            ))}
-          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+  {[
+    ["bi-box-seam text-warning", "Control de inventario en tiempo real"],
+    ["bi-upc-scan text-success", "Escaneo de códigos de barras"],
+    ["bi-bar-chart-line text-primary", "Reportes detallados de ventas"],
+    ["bi-calendar-check text-white", "Control automático de vencimientos"]
+  ].map(([icon, text]) => (
+    <div key={text} style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      <div
+        style={{
+          width: 36,
+          height: 36,
+          background: "#1e293b",
+          borderRadius: 10,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 16,
+          flexShrink: 0
+        }}
+      >
+        <i className={`bi ${icon}`} />
+      </div>
+
+      <span style={{ color: "#ffffff", fontSize: 14 }}>{text}</span>
+    </div>
+  ))}
+</div>
         </div>
         <div style={{ borderTop:"1px solid #1e293b", paddingTop:24 }}>
           <div style={{ display:"flex", justifyContent:"space-around", textAlign:"center" }}>
