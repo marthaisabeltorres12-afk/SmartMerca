@@ -91,6 +91,7 @@ def create_app():
     app.register_blueprint(branches_bp,          url_prefix='/api/branches')
     app.register_blueprint(profitability_bp,     url_prefix='/api/profitability')
     app.register_blueprint(replenishment_bp,     url_prefix='/api/replenishment')
+    app.register_blueprint(coupons_bp,           url_prefix='/api/coupons')
     app.register_blueprint(auth_admin_bp,        url_prefix='/api/auth-admin')
     app.register_blueprint(import_export_bp,     url_prefix='/api/import-export')
     app.register_blueprint(datafono_bp, url_prefix='/api/datafono')

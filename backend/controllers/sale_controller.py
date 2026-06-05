@@ -173,28 +173,46 @@ def create_sale():
 
             item_price = price if price else float(product.final_price)
 
-            # ── Lista de precios del cliente ──────────────────────────────
-            if not price and data.get('customer_id'):
-                try:
-                    from models.customer import Customer
-                    from models.price_list import PriceList, PriceListItem
-                    customer = Customer.query.get(data['customer_id'])
-                    if customer and customer.price_list_id:
-                        pl = PriceList.query.get(customer.price_list_id)
-                        if pl and pl.is_active:
-                            item_especial = PriceListItem.query.filter_by(
-                                price_list_id=pl.id, product_id=product.id
-                            ).first()
-                            if item_especial:
-                                item_price = float(item_especial.precio_especial)
-                            elif pl.tipo == 'porcentaje' and pl.descuento_pct:
-                                item_price = round(float(product.final_price) * (1 - float(pl.descuento_pct) / 100), 0)
-                except Exception:
-                    pass
+            # ── Promoción activa ──────────────────────────────────────────
+            from datetime import date
+            from models.promotion import Promotion
 
-            total         += item_price * qty
+            today = date.today()
+
+            promo = Promotion.query.filter(
+                Promotion.product_id == product.id,
+                Promotion.is_active  == True
+            ).first()
+
+            cantidad_cobrada = qty  # default: se cobra todo
+
+            if promo and promo.is_valid_today:  # usa el @property del modelo
+                print(f"[PROMO] tipo={promo.type} buy={promo.buy_quantity} free={promo.free_quantity}")
+
+                if promo.type == 'descuento_pct':
+                    pct = float(promo.discount_value or 0)
+                    item_price = round(item_price * (1 - pct / 100), 2)
+
+                elif promo.type == 'descuento_fijo':
+                    fijo = float(promo.discount_value or 0)
+                    item_price = max(0, round(item_price - fijo, 2))
+
+                elif promo.type == 'lleva_gratis':
+                    buy  = int(promo.buy_quantity or 0)
+                    free = int(promo.free_quantity or 0)
+                    if buy > 0 and free > 0:
+                        grupo            = buy + free
+                        grupos_completos = int(qty // grupo)
+                        cantidad_gratis  = grupos_completos * free
+                        cantidad_cobrada = qty - cantidad_gratis
+                        print(f"[lleva_gratis] qty={qty} grupos={grupos_completos} "
+                              f"gratis={cantidad_gratis} cobrada={cantidad_cobrada}")
+
+            subtotal = item_price * cantidad_cobrada
+            total   += subtotal
+
             product.stock -= qty
-
+            # ── Lista de precios del cliente ──────────────────────────────    
             try:
                 from controllers.inventory_controller import descuento_fifo
                 descuento_fifo(product.id, qty)

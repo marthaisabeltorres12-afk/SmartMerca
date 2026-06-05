@@ -29,28 +29,66 @@ class Product(db.Model):
     def active_discount(self):
         from datetime import date
         today = date.today()
+
         if not self.discount or float(self.discount) == 0:
             return 0
+
         if self.discount_start and today < self.discount_start:
             return 0
+
         if self.discount_end and today > self.discount_end:
             return 0
+
         return float(self.discount)
+
+
+
 
     @property
     def final_price(self):
-        d = self.active_discount
-        if d > 0:
-            return round(float(self.price) * (1 - d/100), 2)
-        return float(self.price)
+        from datetime import date
+        from models.promotion import Promotion
 
+        today = date.today()
+
+        promo = Promotion.query.filter(
+            Promotion.product_id == self.id,
+            Promotion.is_active == True
+        ).first()
+
+        if promo:
+            if promo.date_from and today < promo.date_from:
+                return float(self.price)
+
+            if promo.date_to and today > promo.date_to:
+                return float(self.price)
+
+            if promo.type == 'descuento_pct':
+                return round(
+                float(self.price) * (1 - float(promo.discount_value) / 100),
+                2
+             )
+
+            if promo.type == 'descuento_fijo':
+                return max(
+                0,
+                float(self.price) - float(promo.discount_value)
+            )
+
+        # lleva_gratis no cambia el precio unitario
+            return float(self.price)
+
+    # SIN PROMOCIÓN
+        return float(self.price)
+    
     def _display_name(self):
         if self.gramaje_cantidad and self.gramaje_unidad:
             q = float(self.gramaje_cantidad)
             qty = int(q) if q == int(q) else q
             return f'{self.name} · {qty} {self.gramaje_unidad}'
         return self.name
-
+        
+    
     def to_dict(self):
         return {
             'id':          self.id,

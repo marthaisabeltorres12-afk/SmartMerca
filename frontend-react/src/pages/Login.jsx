@@ -288,7 +288,7 @@ const Login = () => {
                   <button onClick={handleReset} disabled={resetLoading}
                     style={{ flex:2, background:'#2563eb', border:'none', borderRadius:8,
                       color:'white', padding:'10px', cursor:'pointer', fontSize:14, fontWeight:700 }}>
-                    {resetLoading ? '⏳ Verificando...' : '🔐 Restablecer'}
+              t      {resetLoading ? '⏳ Verificando...' : '🔐 Restablecer'}
                   </button>
                 </div>
               </>
