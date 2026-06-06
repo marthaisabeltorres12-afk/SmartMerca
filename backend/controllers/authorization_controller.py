@@ -18,10 +18,19 @@ OPERACIONES = {
 
 def _log(user_id, operacion, exitoso, detalle=''):
     try:
+        # Buscar el nombre real del admin que autorizó
+        nombre = 'Sistema'
+        rol    = 'sistema'
+        if user_id:
+            admin = User.query.get(user_id)
+            if admin:
+                nombre = admin.name
+                rol    = admin.role
+
         log = AuditLog(
             user_id        = user_id,
-            usuario_nombre = 'Sistema',
-            rol            = 'sistema',
+            usuario_nombre = nombre,      # ← antes era 'Sistema' hardcodeado
+            rol            = rol,         # ← antes era 'sistema' hardcodeado
             accion         = 'autorizar' if exitoso else 'autorizar_fallo',
             descripcion    = f"Op: {operacion} — {'OK' if exitoso else 'FALLO'} {detalle}",
             fecha_hora     = datetime.now(),

@@ -8,10 +8,11 @@ def log_action(accion, descripcion, autorizador_nombre=None, autorizador_rol=Non
         claims = get_jwt()
         from models.user import User
         u = User.query.get(uid)
-        usuario_nombre = u.name if u else "Sistema"
+        usuario_nombre = u.name if u else "Desconocido"
         rol            = claims.get('role', 'desconocido')
         user_id        = uid
     except:
+        # Sin contexto JWT — intentar obtener el usuario del contexto de Flask
         usuario_nombre = "Sistema"
         rol            = "sistema"
         user_id        = None

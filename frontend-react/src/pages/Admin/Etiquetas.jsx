@@ -40,23 +40,23 @@ const Etiquetas = () => {
       .catch(() => setLoading(false));
   }, [token]);
 
-  useEffect(() => {
-    if (seleccionados.length === 0) return;
-    loadJsBarcode().then(() => {
-      seleccionados.forEach(({ producto }) => {
-        const code = producto.barcode || String(producto.id).padStart(8, '0');
-        const el   = document.getElementById(`bc-${producto.id}`);
-        if (el && window.JsBarcode) {
-          try {
-            window.JsBarcode(el, code, {
-              format: 'CODE128', width: 1.2, height: 28,
-              displayValue: true, fontSize: 9, margin: 2,
-            });
-          } catch {}
-        }
-      });
+ useEffect(() => {
+  if (seleccionados.length === 0) return;
+  loadJsBarcode().then(() => {
+    todasEtiquetas.forEach((producto, idx) => {
+      const code = producto.barcode || String(producto.id).padStart(8, '0');
+      const el   = document.getElementById(`bc-${producto.id}-${idx}`);
+      if (el && window.JsBarcode) {
+        try {
+          window.JsBarcode(el, code, {
+            format: 'CODE128', width: 1.2, height: 28,
+            displayValue: true, fontSize: 9, margin: 2,
+          });
+        } catch {}
+      }
     });
-  }, [seleccionados, tamaño, mostrarPrecio, mostrarNombre, mostrarGramaje]);
+  });
+}, [seleccionados, tamaño, mostrarPrecio, mostrarNombre, mostrarGramaje]);
 
   const prodFiltrados = productos.filter(p =>
     p.is_active && (
@@ -289,7 +289,7 @@ const Etiquetas = () => {
                               {prod.gramaje_cantidad}{prod.gramaje_unidad}
                             </div>
                           )}
-                          <svg id={`bc-${prod.id}`} style={{maxWidth:'95%'}}></svg>
+                         <svg id={`bc-${prod.id}-${idx}`} style={{maxWidth:'95%'}}></svg>
                           {mostrarPrecio && (
                             <div style={{ fontSize: tam.h > 25 ? 11 : 9, fontWeight: 900,
                               color: '#000', marginTop: 1 }}>
