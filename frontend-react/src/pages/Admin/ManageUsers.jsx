@@ -28,6 +28,7 @@ const ManageUsers = () => {
   const soloLectura     = me?.role === 'auditor'; // Auditor: solo puede ver, no editar
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
@@ -55,6 +56,8 @@ const ManageUsers = () => {
     setTimeout(setValidationMessages, 100);
   };
 
+
+    
   const openEdit = (u) => {
     setEditing(u);
     setForm({
@@ -157,13 +160,19 @@ const ManageUsers = () => {
   role === 'auditor'       ? <><i className="bi bi-search me-1"></i>Auditor</> :
   <><i className="bi bi-receipt me-1"></i>Cajero</>;
 
-  const filtered = users.filter(u => {
+  const filtered = users
+  .filter(u => {
     if (!esAdminTecnico && u.role === 'admin_tecnico') return false;
-    return true;
-  }).filter(u =>
-    u.name?.toLowerCase().includes(search.toLowerCase()) ||
-    u.email?.toLowerCase().includes(search.toLowerCase())
-  );
+
+    const coincideBusqueda =
+      u.name?.toLowerCase().includes(search.toLowerCase()) ||
+      u.email?.toLowerCase().includes(search.toLowerCase());
+
+    const coincideRol =
+      roleFilter === '' || u.role === roleFilter;
+
+    return coincideBusqueda && coincideRol;
+  });
 
   return (
     <div className="d-flex">
@@ -211,19 +220,36 @@ const ManageUsers = () => {
         </div>
 
         {/* Buscador + botón */}
-        <div className="input-group" style={{ maxWidth: 400 }}>
-  <span className="input-group-text bg-white border-end-0">
-    <i className="bi bi-search text-muted"></i>
-  </span>
-  <input className="form-control border-start-5 ps-0 me-7 ms-auto"
+       <div className="d-flex gap-2 mb-3">
+  <input
+    className="form-control me-auto shadow-sm w-25"
     placeholder="Buscar usuario..."
-    value={search} onChange={e=>setSearch(e.target.value)} />
-          {!soloLectura && (
-            <button className="btn btn-success ms-auto" onClick={openAdd}>
-              <i className="bi bi-plus-circle me-1"></i> Nuevo Usuario
-            </button>
-          )}
-        </div>
+    value={search}
+    onChange={e => setSearch(e.target.value)}
+  />
+
+  <select
+    className="form-select"
+    style={{ maxWidth: '220px' }}
+    value={roleFilter}
+    onChange={e => setRoleFilter(e.target.value)}
+  >
+    <option value="">Todos los roles</option>
+    <option value="admin">Administrador</option>
+    <option value="admin_tecnico">Administrador Técnico</option>
+    <option value="cajero">Cajero</option>
+    <option value="bodeguero">Bodeguero</option>
+    <option value="supervisor">Supervisor</option>
+    <option value="contador">Contador</option>
+    <option value="auditor">Auditor</option>
+  </select>
+
+  {!soloLectura && (
+    <button className="btn btn-success" onClick={openAdd}>
+      <i className="bi bi-plus-circle me-1"></i> Nuevo Usuario
+    </button>
+  )}
+</div>
 
         {/* Tabla */}
         <div className="card border-0 shadow-sm" style={{ borderRadius:12 }}>

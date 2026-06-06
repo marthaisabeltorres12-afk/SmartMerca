@@ -216,7 +216,7 @@ const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
   const p = r.product;
   const iva = p?.iva_type ?? r.iva_type ?? 19;
   const ivaRate = iva / 100;
-
+  const [errors, setErrors] = useState({});
   const set = (k, v) => {
     setR(prev => {
       const upd = { ...prev, [k]: v };
@@ -258,8 +258,20 @@ const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
         <div className="row g-2 mb-3 pb-3 border-bottom">
           <div className="col-md-6">
             <label className="form-label small fw-semibold">Nombre *</label>
-            <input className="form-control form-control-sm" value={r.name}
-              onChange={e => set('name', e.target.value)} placeholder="Ej: Arroz Diana" />
+            <input
+  className={`form-control form-control-sm ${
+    r.errors?.name ? 'is-invalid' : ''
+  }`}
+  value={r.name}
+  onChange={e => set('name', e.target.value)}
+  placeholder="Ej: Arroz Diana"
+/>
+
+{r.errors?.name && (
+  <div className="invalid-feedback d-block">
+    {r.errors.name}
+  </div>
+)}
           </div>
           <div className="col-md-6">
             <label className="form-label small fw-semibold">Código de barras</label>
@@ -584,6 +596,7 @@ const Inventory = () => {
       price_manual:false,
       expiry_date: '',
       numero_lote: '',
+      errors: {},
     });
     setEditing('editor');
   };
@@ -594,7 +607,16 @@ const Inventory = () => {
   /* Guardar fila desde el editor */
   const saveRow = (r) => {
     if (r.mode === 'existing' && !r.product_id) { showAlert('danger','Selecciona un producto'); return; }
-    if (r.mode === 'new' && !r.name) { showAlert('danger','El nombre es requerido'); return; }
+    if (r.mode === 'new' && !r.name?.trim()) {
+  setEditingRow(prev => ({
+    ...prev,
+    errors: {
+      ...prev.errors,
+      name: 'El nombre es obligatorio'
+    }
+  }));
+  return;
+}
     if (!r.quantity || !r.unit_cost || !r.price) { showAlert('danger','Completa cantidad, costo y precio de venta'); return; }
 
     setRows(prev => {

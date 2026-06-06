@@ -86,8 +86,10 @@ def reject_user(id):
 @jwt_required()
 def update_user(id):
     claims = get_jwt()
+
     if not _is_admin(claims):
         return jsonify({'message': 'Acceso denegado'}), 403
+
     user = User.query.get_or_404(id)
     data = request.get_json()
 
@@ -96,21 +98,48 @@ def update_user(id):
     else:
         data.pop('password', None)
 
-    if 'name'       in data: user.name       = data['name']
-    if 'email'      in data: user.email      = data['email']
-    if 'role'       in data: user.role       = data['role']
-    if 'is_active'  in data: user.is_active  = bool(data['is_active'])
-    if 'approved'   in data: user.approved   = bool(data['approved'])
-    if 'avatar'     in data: user.avatar     = data['avatar']
-    # Campos nuevos
-    if 'phone'      in data: user.phone      = data.get('phone', '')
-    if 'address'    in data: user.address    = data.get('address', '')
-    if 'doc_type'   in data: user.doc_type   = data.get('doc_type', 'CC')
-    if 'doc_number' in data: user.doc_number = data.get('doc_number', '')
+    if 'name' in data:
+        user.name = data['name']
+
+    if 'email' in data:
+        existing_user = User.query.filter(
+            User.email == data['email'],
+            User.id != user.id
+        ).first()
+
+        if existing_user:
+            return jsonify({
+                'message': 'El correo electrónico ya está en uso'
+            }), 400
+
+        user.email = data['email']
+
+    if 'role' in data:
+        user.role = data['role']
+
+    if 'is_active' in data:
+        user.is_active = bool(data['is_active'])
+
+    if 'approved' in data:
+        user.approved = bool(data['approved'])
+
+    if 'avatar' in data:
+        user.avatar = data['avatar']
+
+    if 'phone' in data:
+        user.phone = data.get('phone', '')
+
+    if 'address' in data:
+        user.address = data.get('address', '')
+
+    if 'doc_type' in data:
+        user.doc_type = data.get('doc_type', 'CC')
+
+    if 'doc_number' in data:
+        user.doc_number = data.get('doc_number', '')
 
     db.session.commit()
     return jsonify(user.to_dict()), 200
-
 @jwt_required()
 def _solo_admin_tecnico_puede_gestionar_admins(claims, role_objetivo):
     if role_objetivo in ('admin_tecnico', 'admin_tech'):
