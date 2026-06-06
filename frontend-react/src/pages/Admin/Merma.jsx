@@ -136,20 +136,22 @@ const Merma = () => {
               <div className="row g-3">
                 <div className="col-md-3">
                   <div className="card border-0 shadow-sm text-center py-3">
-                    <div className="fs-3 fw-bold text-danger">{fmtNum(report.total_unidades||0)}</div>
+                    <div className="fs-3 fw-bold text-danger">
+                      {fmtNum(report.por_causa?.reduce((a,c)=>a+c.cantidad,0)||0)}
+                    </div>
                     <div className="text-muted small">Unidades perdidas</div>
                   </div>
                 </div>
                 <div className="col-md-3">
                   <div className="card border-0 shadow-sm text-center py-3">
-                    <div className="fs-4 fw-bold text-danger">{fmt(report.total_costo||0)}</div>
+                    <div className="fs-4 fw-bold text-danger">{fmt(report.total_merma||0)}</div>
                     <div className="text-muted small">Costo total merma</div>
                   </div>
                 </div>
                 <div className="col-md-3">
                   <div className="card border-0 shadow-sm text-center py-3">
-                    <div className="fs-3 fw-bold text-warning">{report.total_registros||0}</div>
-                    <div className="text-muted small">Registros</div>
+                    <div className="fs-3 fw-bold text-warning">{report.por_causa?.length||0}</div>
+                    <div className="text-muted small">Causas distintas</div>
                   </div>
                 </div>
                 <div className="col-md-3">
@@ -159,19 +161,21 @@ const Merma = () => {
                   </div>
                 </div>
 
-                {report.por_causa && Object.keys(report.por_causa).length > 0 && (
+                {report.por_causa && report.por_causa.length > 0 && (
                   <div className="col-12">
                     <div className="card border-0 shadow-sm">
                       <div className="card-header fw-semibold py-2" style={{background:'#f8fafc'}}>Por causa</div>
                       <div className="card-body p-0">
                         <table className="table table-sm mb-0" style={{fontSize:13}}>
-                          <thead className="table-light"><tr><th>Causa</th><th className="text-end">Unidades</th><th className="text-end">Costo</th></tr></thead>
+                          <thead className="table-light">
+                            <tr><th>Causa</th><th className="text-end">Unidades</th><th className="text-end">Costo</th></tr>
+                          </thead>
                           <tbody>
-                            {Object.entries(report.por_causa).map(([causa, data])=>(
-                              <tr key={causa}>
-                                <td><span className={`badge bg-${causaColor(causa)}`}>{causaLabel(causa)}</span></td>
-                                <td className="text-end">{fmtNum(data.unidades||data)}</td>
-                                <td className="text-end text-danger">{fmt(data.costo||0)}</td>
+                            {report.por_causa.map(item => (
+                              <tr key={item.causa}>
+                                <td><span className={`badge bg-${causaColor(item.causa)}`}>{causaLabel(item.causa)}</span></td>
+                                <td className="text-end">{fmtNum(item.cantidad)}</td>
+                                <td className="text-end text-danger">{fmt(item.costo||0)}</td>
                               </tr>
                             ))}
                           </tbody>

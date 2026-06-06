@@ -45,12 +45,45 @@ const ManageCustomers = () => {
   };
 
   const handleSave = async (e) => {
-    e.preventDefault(); setLoading(true);
+    e.preventDefault();
+    if (!editing && form.doc_number?.trim()) {
+      // Verificar duplicado — primero en lista local, luego en backend
+      const duplicadoLocal = customers.find(c =>
+        String(c.doc_number).trim() === String(form.doc_number).trim()
+      );
+      if (duplicadoLocal) {
+        showAlert('danger', `Ya existe un cliente con ese documento: ${duplicadoLocal.full_name}`);
+        return;
+      }
+      // Verificar en backend por si hay más clientes no cargados
+      try {
+        const resultados = await customerService.search(form.doc_number.trim(), token);
+        const duplicadoBack = Array.isArray(resultados)
+          ? resultados.find(c => String(c.doc_number).trim() === String(form.doc_number).trim())
+          : null;
+        if (duplicadoBack) {
+          showAlert('danger', `Ya existe un cliente con ese documento: ${duplicadoBack.full_name}`);
+          return;
+        }
+      } catch(_) { /* si falla la búsqueda, continuar igual */ }
+    }
+    setLoading(true);
     try {
-      if (editing) { await customerService.update(editing.id, form, token); showAlert('success','Cliente actualizado'); }
-      else         { await customerService.create(form, token);             showAlert('success','Cliente registrado'); }
+      if (editing) {
+        if (!editing.id) throw new Error('ID de cliente inválido');
+        await customerService.update(editing.id, form, token);
+        showAlert('success','Cliente actualizado');
+      } else {
+        await customerService.create(form, token);
+        showAlert('success','Cliente registrado');
+      }
       setShowModal(false); load();
-    } catch(e) { showAlert('danger', e.message); }
+    } catch(e) {
+      const msg = (e.message === 'Failed to fetch' || e.message?.includes('NetworkError'))
+        ? 'Error de red — verifica que el backend esté corriendo'
+        : e.message.replace(/^Error \d+:\s*/, '');
+      showAlert('danger', msg);
+    }
     finally { setLoading(false); }
   };
 

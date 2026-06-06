@@ -216,3 +216,15 @@ def cajeros_disponibles():
         result.append({**u.to_dict(), 'cajas_autorizadas': cajas_auth})
 
     return jsonify(result), 200
+
+@jwt_required()
+def mis_cajas():
+    """Retorna las cajas donde el cajero autenticado está autorizado."""
+    user_id = int(get_jwt_identity())
+    from models.user import User
+    cajero = User.query.get(user_id)
+    if not cajero:
+        return jsonify([]), 200
+    cajas = [{'id': c.id, 'nombre': c.nombre, 'base_amount': float(c.base_amount or 0)}
+             for c in cajero.cajas_autorizadas if c.is_active]
+    return jsonify(cajas), 200

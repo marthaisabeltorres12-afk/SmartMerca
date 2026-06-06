@@ -1981,6 +1981,8 @@ const Sales = () => {
   const [showAbrirTurno, setShowAbrirTurno] = React.useState(false);
   const [showCerrarTurno,setShowCerrarTurno]= React.useState(false);
   const [efectivoInicial,setEfectivoInicial]= React.useState('');
+  const [cajasDisponibles, setCajasDisponibles] = React.useState([]);
+  const [cajaSeleccionada, setCajaSeleccionada] = React.useState('');
   const [efectivoContado,setEfectivoContado]= React.useState('');
   const [cierreLoading,  setCierreLoading]  = React.useState(false);
   const [products,       setProducts]       = useState([]);
@@ -2029,6 +2031,15 @@ const Sales = () => {
           setShiftData(data);
         } else {
           setShiftOk(false);
+          // Cargar cajas disponibles antes de mostrar el modal
+          fetch('http://localhost:5000/api/cajas/mis-cajas', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          }).then(r => r.ok ? r.json() : [])
+            .then(cajas => {
+              const lista = Array.isArray(cajas) ? cajas : [];
+              setCajasDisponibles(lista);
+              setCajaSeleccionada(lista.length >= 1 ? String(lista[0].id) : '');
+            }).catch(() => setCajasDisponibles([]));
           setShowAbrirTurno(true); // Mostrar modal automáticamente
         }
       })
@@ -2121,12 +2132,15 @@ const Sales = () => {
   const { isOnline, pendingCount, syncing, guardarVentaPendiente, sincronizarPendientes } = useOfflineMode(token, showAlert);
 
   const abrirTurno = async () => {
+    if (cajasDisponibles.length > 1 && !cajaSeleccionada) {
+      showAlert('danger', 'Selecciona una caja para continuar'); return;
+    }
     const monto = parseFloat(efectivoInicial) || 0;
     try {
       const res = await fetch('http://localhost:5000/api/shifts/open', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initial_cash: monto })
+        body: JSON.stringify({ initial_cash: monto, cash_register_id: cajaSeleccionada ? parseInt(cajaSeleccionada) : null })
       });
       if (res.ok) {
         const data = await res.json();
@@ -2371,7 +2385,15 @@ const Sales = () => {
               <p className="text-muted mb-4" style={{ maxWidth:400 }}>
                 Para comenzar a vender debes abrir tu turno de caja.
               </p>
-              <button className="btn btn-primary fw-bold px-4" onClick={()=>setShowAbrirTurno(true)}>
+              <button className="btn btn-primary fw-bold px-4" onClick={async ()=>{
+                try {
+                  const r = await fetch('http://localhost:5000/api/cajas/mis-cajas', {headers:{'Authorization':'Bearer '+token}});
+                  const cajas = r.ok ? (await r.json()) : [];
+                  setCajasDisponibles(Array.isArray(cajas) ? cajas : []);
+                  setCajaSeleccionada(cajas.length >= 1 ? String(cajas[0].id) : '');
+                } catch(e) { setCajasDisponibles([]); }
+                setShowAbrirTurno(true);
+              }}>
                 🟢 Abrir turno de caja
               </button>
             </div>
@@ -2699,11 +2721,29 @@ const Sales = () => {
               <div style={{ fontSize: 52, marginBottom: 12 }}>
   <i className="bi bi-cash-coin"></i>
 </div>
-                <p className="text-muted mb-4">
-                  Bienvenido/a <strong>{user?.name}</strong>.<br/>
-                  Presiona el botón para abrir tu turno y comenzar.
+                <p className="text-muted mb-3">
+                  Bienvenido/a <strong>{user?.name}</strong>.
                 </p>
-                <p className="small text-muted">El efectivo inicial lo configura el administrador.</p>
+                {cajasDisponibles.length > 1 && (
+                  <div className="mb-3 text-start">
+                    <label className="form-label fw-semibold small">
+                      <i className="bi bi-display me-1"></i>¿En qué caja vas a trabajar? *
+                    </label>
+                    <select className="form-select" value={cajaSeleccionada}
+                      onChange={e => setCajaSeleccionada(e.target.value)}>
+                      <option value="">— Selecciona una caja —</option>
+                      {cajasDisponibles.map(cj => (
+                        <option key={cj.id} value={String(cj.id)}>{cj.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {cajasDisponibles.length === 1 && (
+                  <div className="alert alert-success py-2 small mb-3">
+                    <i className="bi bi-display me-1"></i>
+                    Caja: <strong>{cajasDisponibles[0].nombre}</strong>
+                  </div>
+                )}
               </div>
               <div className="modal-footer justify-content-center border-0 pb-4">
                 <button className="btn btn-success btn-lg fw-bold px-5" onClick={abrirTurno}>

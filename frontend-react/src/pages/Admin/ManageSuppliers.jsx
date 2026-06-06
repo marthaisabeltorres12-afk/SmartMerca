@@ -44,12 +44,18 @@ const ManageSuppliers = () => {
   };
 
   const handleSave = async (e) => {
-    e.preventDefault(); setLoading(true);
+    e.preventDefault();
+    // Validar campos obligatorios
+    if (!form.company_name?.trim()) { showAlertMsg('danger', 'El nombre de la empresa es obligatorio'); return; }
+    if (!form.name?.trim())         { showAlertMsg('danger', 'El nombre del proveedor es obligatorio'); return; }
+    setLoading(true);
     try {
       if (editing) { await supplierService.update(editing.id, form, token); showAlertMsg('success','Proveedor actualizado'); }
       else         { await supplierService.create(form, token);             showAlertMsg('success','Proveedor creado'); }
       setShowModal(false); load();
-    } catch (e) { showAlertMsg('danger', e.message); }
+    } catch (e) {
+      showAlertMsg('danger', e.message.replace(/^Error \d+:\s*/, ''));
+    }
     finally { setLoading(false); }
   };
 
@@ -92,16 +98,38 @@ const ManageSuppliers = () => {
       <main className="flex-grow-1 p-4" style={{ marginLeft: 240 }}>
         <h4 className="fw-bold mb-4"><i className="bi bi-truck me-2"></i>Gestión de Proveedores</h4>
 
-        {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+        {/* Toast estándar fijo */}
+        {alert && (
+          <div style={{
+            position:'fixed', bottom:28, right:28, zIndex:9999,
+            minWidth:350, borderRadius:12, padding:'14px 20px',
+            fontWeight:600, fontSize:15,
+            boxShadow: alert.type==='success' ? '0 4px 20px rgba(34,197,94,0.35)' : '0 4px 20px rgba(239,68,68,0.35)',
+            background: alert.type==='success' ? '#f0fdf4' : '#fef2f2',
+            color: alert.type==='success' ? '#166534' : '#991b1b',
+            border: `1.5px solid ${alert.type==='success' ? '#86efac' : '#fca5a5'}`,
+            animation:'slideDown 0.3s ease',
+          }}>
+            <i className={`bi me-2 ${alert.type==='success' ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}`}></i>
+            {alert.msg}
+          </div>
+        )}
+        <style>{`@keyframes slideDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
-        <div className="input-group" style={{ maxWidth: 320 }}>
-  <span className="input-group-text bg-white border-end-0">
-    <i className="bi bi-search text-muted"></i>
-  </span>
-  <input className="form-control border-start-0 ps-0"
-    placeholder="Buscar proveedor..." value={search}
-    onChange={e => setSearch(e.target.value)} />
-</div>
+        {/* Barra búsqueda + botón crear */}
+        <div className="d-flex justify-content-between align-items-center mb-2 gap-3">
+          <div className="input-group" style={{ maxWidth: 320 }}>
+            <span className="input-group-text bg-white border-end-0">
+              <i className="bi bi-search text-muted"></i>
+            </span>
+            <input className="form-control border-start-0 ps-0"
+              placeholder="Buscar proveedor..." value={search}
+              onChange={e => setSearch(e.target.value)} />
+          </div>
+          <button className="btn btn-success fw-bold" onClick={openAdd}>
+            <i className="bi bi-plus-circle me-2"></i>Nuevo Proveedor
+          </button>
+        </div>
 
         <p className="text-muted small mb-2">
           Mostrando <strong>{filtered.length}</strong> de <strong>{suppliers.length}</strong> proveedores

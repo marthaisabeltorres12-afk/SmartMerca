@@ -41,15 +41,16 @@ def create_customer():
     if Customer.query.filter_by(doc_number=data.get('doc_number')).first():
         return jsonify({'message': 'Ya existe un cliente con ese número de documento'}), 400
     customer = Customer(
-        nid        = _gen_nid(),
-        doc_type   = data.get('doc_type', 'CC'),
-        doc_number = data['doc_number'],
-        full_name  = data['full_name'],
-        email      = data.get('email'),
-        phone      = data.get('phone'),
-        address    = data.get('address'),
-        points     = 0,
-        is_active  = True
+        nid           = _gen_nid(),
+        doc_type      = data.get('doc_type', 'CC'),
+        doc_number    = data['doc_number'],
+        full_name     = data['full_name'],
+        email         = data.get('email') or None,
+        phone         = data.get('phone') or None,
+        address       = data.get('address') or None,
+        price_list_id = int(data['price_list_id']) if data.get('price_list_id') else None,
+        points        = 0,
+        is_active     = True
     )
     db.session.add(customer)
     db.session.commit()
@@ -62,10 +63,29 @@ def update_customer(id):
         return jsonify({'message': 'Acceso denegado'}), 403
     customer = Customer.query.get_or_404(id)
     data = request.get_json()
-    for key in ['doc_type','doc_number','full_name','email','phone','address','is_active']:
+
+    # Validar que el doc_number no exista en OTRO cliente distinto
+    nuevo_doc = data.get('doc_number', customer.doc_number)
+    duplicado = Customer.query.filter(
+        Customer.doc_number == nuevo_doc,
+        Customer.id != id
+    ).first()
+    if duplicado:
+        return jsonify({'message': f'Ya existe otro cliente con ese documento: {duplicado.full_name}'}), 400
+
+    for key in ['doc_type', 'doc_number', 'full_name', 'email', 'phone', 'address', 'is_active']:
         if key in data:
-            setattr(customer, key, data[key])
-    db.session.commit()
+            val = data[key]
+            setattr(customer, key, val if val != '' else (None if key not in ('doc_type', 'doc_number', 'full_name') else val))
+    if 'price_list_id' in data:
+        customer.price_list_id = int(data['price_list_id']) if data['price_list_id'] else None
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Error al actualizar: documento ya existe en otro cliente'}), 400
+
     return jsonify(customer.to_dict()), 200
 
 @jwt_required()

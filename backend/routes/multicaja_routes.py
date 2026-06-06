@@ -3,10 +3,12 @@ from controllers.multicaja_controller import (
     get_cajas, get_caja, crear_caja, editar_caja,
     eliminar_caja, dashboard_cajas, historial_caja,
     cajeros_disponibles, agregar_cajero, quitar_cajero,
+    mis_cajas,
 )
 
 multicaja_bp = Blueprint('multicaja', __name__)
 
+multicaja_bp.route('/mis-cajas',                     methods=['GET'])(mis_cajas)
 multicaja_bp.route('/',                              methods=['GET'])(get_cajas)
 multicaja_bp.route('/dashboard',                     methods=['GET'])(dashboard_cajas)
 multicaja_bp.route('/cajeros',                       methods=['GET'])(cajeros_disponibles)

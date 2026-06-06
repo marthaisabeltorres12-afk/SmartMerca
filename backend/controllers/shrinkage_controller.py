@@ -56,9 +56,6 @@ def create_shrinkage():
 
     product = Product.query.get_or_404(product_id)
 
-    if product.stock < cantidad:
-        return jsonify({'message': f'Stock insuficiente. Hay {product.stock} unidades de {product.name}'}), 400
-
     # Obtener costo unitario del último movimiento de entrada
     ultimo_costo = db.session.query(InventoryMovement.unit_cost).filter(
         InventoryMovement.product_id == product_id,
@@ -82,17 +79,21 @@ def create_shrinkage():
     )
     db.session.add(record)
 
-    # Descontar stock
-    product.stock -= cantidad
-
-    # Crear movimiento de inventario tipo salida
-    db.session.add(InventoryMovement(
-        product_id = product_id,
-        type       = 'salida',
-        quantity   = cantidad,
-        unit_cost  = costo_unit,
-        reason     = f'Merma: {causa.replace("_"," ")}',
-    ))
+    # NOTA: NO se descuenta stock aquí porque cuando se llama desde
+    # Inventario → Registrar Salida, el endpoint /salida ya lo descontó.
+    # Solo descontar si se registra merma manualmente (sin salida previa).
+    from_inventory = data.get('from_inventory_exit', False)
+    if not from_inventory:
+        if product.stock < cantidad:
+            return jsonify({'message': f'Stock insuficiente. Hay {product.stock} unidades de {product.name}'}), 400
+        product.stock -= cantidad
+        db.session.add(InventoryMovement(
+            product_id = product_id,
+            type       = 'salida',
+            quantity   = cantidad,
+            unit_cost  = costo_unit,
+            reason     = f'Merma: {causa.replace("_"," ")}',
+        ))
 
     db.session.flush()
     log_action('merma', f'Merma {product.name} — {cantidad} uds — Causa: {causa} — Costo: ${costo_total:,.0f}')

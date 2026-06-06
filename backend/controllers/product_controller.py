@@ -75,7 +75,29 @@ def create_product():
         return jsonify({'message': 'Acceso denegado'}), 403
 
     data = request.get_json()
-    if not data.get('barcode'):
+
+    # Validar nombre obligatorio
+    if not data.get('name') or str(data.get('name','')).strip() == '':
+        return jsonify({'message': 'El nombre del producto es obligatorio'}), 400
+
+    # Validar precio obligatorio y mayor a 0
+    price_val = data.get('price')
+    if price_val is None or str(price_val).strip() == '':
+        return jsonify({'message': 'El precio del producto es obligatorio'}), 400
+    try:
+        price_float = float(price_val)
+    except (ValueError, TypeError):
+        return jsonify({'message': 'El precio debe ser un número válido'}), 400
+    if price_float <= 0:
+        return jsonify({'message': 'El precio debe ser mayor a 0'}), 400
+
+    # Validar barcode duplicado
+    barcode = data.get('barcode')
+    if barcode and str(barcode).strip() != '':
+        existing = Product.query.filter_by(barcode=str(barcode).strip()).first()
+        if existing:
+            return jsonify({'message': f"Barcode ya existe en: {existing.name}"}), 400
+    else:
         data.pop('barcode', None)
 
     # Campos válidos del modelo Product
@@ -90,7 +112,16 @@ def create_product():
 
     product = Product(**clean)
     db.session.add(product)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        err_str = str(e).lower()
+        if 'duplicate' in err_str and 'barcode' in err_str:
+            existing2 = Product.query.filter_by(barcode=data.get('barcode')).first()
+            nombre_ex = existing2.name if existing2 else 'otro producto'
+            return jsonify({'message': f"Barcode ya existe en: {nombre_ex}"}), 400
+        return jsonify({'message': f'Error al crear producto: {str(e)}'}), 500
 
     # ✅ LOG
     log_action("crear", f"{_nombre_usuario()} creó el producto {product.name} — Precio ${product.price}")

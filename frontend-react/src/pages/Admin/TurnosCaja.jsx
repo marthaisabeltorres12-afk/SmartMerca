@@ -528,13 +528,7 @@ const AdminView = ({ token }) => {
     } catch(e) { showAlert('danger', e.message); }
   };
 
-  const handleRequestCount = async (shift) => {
-    try {
-      await shiftService.requestCount(shift.id, token);
-      showAlert('success','Se solicitó el conteo al cajero');
-      load();
-    } catch(e) { showAlert('danger', e.message); }
-  };
+
 
   const handleClose = async () => {
     setLoading(true);
@@ -550,6 +544,12 @@ const AdminView = ({ token }) => {
   const handleWithdrawal = async () => {
     if (!wdAmount || parseFloat(wdAmount)<=0) { showAlert('danger','Monto inválido'); return; }
     if (!wdReason.trim()) { showAlert('danger','Ingresa el motivo'); return; }
+    // Validar que el retiro no supere el efectivo disponible
+    const efectivoDisponible = parseFloat(wdModal.base_amount||0) + parseFloat(wdModal.total_cash||0) - parseFloat(wdModal.total_withdrawals||0);
+    if (parseFloat(wdAmount) > efectivoDisponible) {
+      setPinError(`El retiro ($${Number(wdAmount).toLocaleString('es-CO')}) supera el efectivo disponible ($${efectivoDisponible.toLocaleString('es-CO')})`);
+      return;
+    }
     if (!pinValue.trim()) { setPinError('Ingresa el PIN'); return; }
     setPinLoading(true); setPinError('');
     try {
@@ -699,16 +699,7 @@ const AdminView = ({ token }) => {
                       onClick={()=>{ setWdModal(s); setWdAmount(''); setWdReason(''); setPinValue(''); setPinError(''); }}>
                       <i className="bi bi-box-arrow-up me-1"></i> Retiro
                     </button>
-                    {!s.cashier_count_requested
-                      ? <button className="btn btn-sm btn-outline-info" onClick={()=>handleRequestCount(s)}>
-                          <i className="bi bi-clipboard-check me-1"></i> Pedir conteo
-                        </button>
-                      : !s.cash_counted_by_cashier
-                        ? <span className="badge bg-warning text-dark align-self-center"><i className="bi bi-hourglass-split me-1"></i> Esperando conteo del cajero</span>
-                        : <button className="btn btn-sm btn-danger fw-bold" onClick={()=>setCloseModal(s)}>
-                           <i className="bi bi-stop-circle me-1"></i>
-                          </button>
-                    }
+
                   </div>
                 </div>
                 <div className="card-body">
@@ -866,6 +857,11 @@ const AdminView = ({ token }) => {
                 <button className="btn-close btn-close-white" onClick={()=>setWdModal(null)} />
               </div>
               <div className="modal-body">
+                <div className="alert alert-info py-2 small mb-3">
+                  <i className="bi bi-info-circle me-1"></i>
+                  Efectivo disponible:{' '}
+                  <strong>{fmt(parseFloat(wdModal.base_amount||0) + parseFloat(wdModal.total_cash||0) - parseFloat(wdModal.total_withdrawals||0))}</strong>
+                </div>
                 <div className="mb-3">
                   <label className="form-label fw-semibold">Monto *</label>
                   <div className="input-group"><span className="input-group-text">$</span>

@@ -60,9 +60,8 @@ def _calc_totals(shift):
 
 def _shift_dict(shift):
     d = shift.to_dict()
-    if shift.status == 'abierto':
-        t = _calc_totals(shift)
-        d.update(t)
+    t = _calc_totals(shift)
+    d.update(t)
     return d
 
 # ── AUTO-ABRIR TURNO al iniciar sesión ───────────────────────────────────
@@ -134,6 +133,23 @@ def get_all_shifts():
         shifts = Shift.query.order_by(Shift.opened_at.desc()).all()
     else:
         shifts = Shift.query.filter_by(cashier_id=user_id).order_by(Shift.opened_at.desc()).all()
+    # Cerrar huérfanos: múltiples abiertos del mismo cajero
+    from collections import defaultdict
+    por_cajero = defaultdict(list)
+    for s in shifts:
+        if s.status == 'abierto':
+            por_cajero[s.cashier_id].append(s)
+    updated = False
+    for cajero_id, turnos in por_cajero.items():
+        if len(turnos) > 1:
+            for t in sorted(turnos, key=lambda x: x.id, reverse=True)[1:]:
+                t.status = 'cerrado'
+                t.closed_at = t.closed_at or _now_colombia()
+                updated = True
+    if updated:
+        db.session.commit()
+        shifts = Shift.query.order_by(Shift.opened_at.desc()).all() if role in ('admin','admin_tecnico','supervisor','contador','auditor') else Shift.query.filter_by(cashier_id=user_id).order_by(Shift.opened_at.desc()).all()
+
     return jsonify([_shift_dict(s) for s in shifts]), 200
 
 # ── Abrir turno manual (admin — por si acaso) ─────────────────────────────
@@ -145,20 +161,34 @@ def open_shift():
     # Cajero abre su propio turno
     if not _admin(claims):
         user_id  = int(get_jwt_identity())
-        existing = Shift.query.filter_by(cashier_id=user_id, status='abierto').first()
+        existing = Shift.query.filter(
+            Shift.cashier_id == user_id,
+            Shift.status.in_(['abierto', 'pendiente_cierre'])
+        ).first()
         if existing:
             return jsonify({'shift': _shift_dict(existing), 'message': 'Turno ya abierto'}), 200
-        # Buscar primera caja disponible sin depender del modelo
+        # Usar caja enviada por el frontend, o la primera autorizada del cajero
+        register_id = None
+        base = 0.0
         try:
             from models.cash_register import CashRegister
-            caja = CashRegister.query.filter_by(is_active=True).first()
-            register_id = caja.id if caja else 1
+            from models.user import User
+            crid = data.get('cash_register_id')
+            if crid:
+                caja = CashRegister.query.get(int(crid))
+            else:
+                cajero = User.query.get(user_id)
+                cajas = [c for c in cajero.cajas_autorizadas if c.is_active] if cajero else []
+                caja = cajas[0] if cajas else CashRegister.query.filter_by(is_active=True).first()
+            if caja:
+                register_id = caja.id
+                base = float(caja.base_amount or 0)
         except Exception:
-            register_id = 1
+            pass
         shift = Shift(
             cashier_id       = user_id,
             cash_register_id = register_id,
-            base_amount      = float(data.get('initial_cash', 0)),
+            base_amount      = base,
             status           = 'abierto',
         )
         db.session.add(shift)

@@ -10,6 +10,41 @@ def _staff(claims):
 @jwt_required()
 def get_notificaciones():
     """Retorna notificaciones no resueltas para mostrar en el navbar."""
+    try:
+        from models.product import Product
+        from models.shift import Shift
+        from datetime import datetime as dt
+
+        # Auto-resolver vencimientos de productos con stock=0 o inactivos
+        notifs_venc = Notificacion.query.filter_by(tipo='vencimiento', resuelta=False).all()
+        for n in notifs_venc:
+            nombre = n.titulo.replace('📅 Vencimiento: ', '').strip()
+            p = Product.query.filter_by(name=nombre).first()
+            if not p or not p.is_active or p.stock <= 0:
+                n.resuelta = True; n.resuelto_at = dt.now()
+
+        # Auto-resolver stock bajo de productos que ya tienen stock suficiente
+        notifs_stock = Notificacion.query.filter_by(tipo='stock_bajo', resuelta=False).all()
+        for n in notifs_stock:
+            nombre = n.titulo.replace('📉 Stock bajo: ', '').strip()
+            p = Product.query.filter_by(name=nombre, is_active=True).first()
+            if not p or p.stock > (p.min_stock or 5):
+                n.resuelta = True; n.resuelto_at = dt.now()
+
+        # Auto-resolver turnos largos ya cerrados
+        notifs_turno = Notificacion.query.filter_by(tipo='cierre_turno', resuelta=False).all()
+        for n in notifs_turno:
+            nombre_cajero = n.titulo.replace('🔒 Turno largo: ', '').strip()
+            turno = Shift.query.join(Shift.cashier).filter(
+                Shift.status == 'abierto'
+            ).first()
+            if not turno:
+                n.resuelta = True; n.resuelto_at = dt.now()
+
+        db.session.commit()
+    except Exception:
+        pass
+
     solo_pendientes = request.args.get('pendientes', 'true') == 'true'
     q = Notificacion.query
     if solo_pendientes:
@@ -68,7 +103,45 @@ def generar_alertas_automaticas():
         from datetime import date, timedelta, datetime as dt
 
         creadas = 0
+        resueltas = 0
         hoy = date.today()
+
+        # ── Auto-resolver notificaciones que ya no aplican ──────────────────
+
+        # Stock bajo resuelto: producto con stock > min_stock
+        try:
+            notifs_stock = Notificacion.query.filter_by(tipo='stock_bajo', resuelta=False).all()
+            for n in notifs_stock:
+                # Extraer nombre del producto del título "📉 Stock bajo: NombreProducto"
+                nombre = n.titulo.replace('📉 Stock bajo: ', '').strip()
+                p = Product.query.filter_by(name=nombre, is_active=True).first()
+                # Resolver si: producto no existe, está inactivo, stock=0 (agotado a propósito) o stock > min_stock
+                if not p or p.stock > (p.min_stock or 5):
+                    n.resuelta = True; n.resuelto_at = dt.now(); resueltas += 1
+        except Exception: pass
+
+        # Vencimiento resuelto: producto con stock=0 (vendido/dado de baja) o is_active=False
+        try:
+            notifs_venc = Notificacion.query.filter_by(tipo='vencimiento', resuelta=False).all()
+            for n in notifs_venc:
+                nombre = n.titulo.replace('📅 Vencimiento: ', '').strip()
+                p = Product.query.filter_by(name=nombre).first()
+                # Resolver si: producto no existe, inactivo, o stock=0
+                if not p or not p.is_active or p.stock <= 0:
+                    n.resuelta = True; n.resuelto_at = dt.now(); resueltas += 1
+        except Exception: pass
+
+        # Turno largo resuelto: turno ya cerrado
+        try:
+            notifs_turno = Notificacion.query.filter_by(tipo='cierre_turno', resuelta=False).all()
+            for n in notifs_turno:
+                nombre = n.titulo.replace('🔒 Turno largo: ', '').strip()
+                turno_abierto = Shift.query.join(Shift.cashier).filter(
+                    Shift.status == 'abierto'
+                ).first()
+                if not turno_abierto:
+                    n.resuelta = True; n.resuelto_at = dt.now(); resueltas += 1
+        except Exception: pass
 
         # 1. Stock bajo
         try:
@@ -143,7 +216,27 @@ def generar_alertas_automaticas():
         except Exception: pass
 
         db.session.commit()
-        return jsonify({'message': f'{creadas} alerta(s) generada(s)', 'creadas': creadas}), 200
+
+        # Limpiar duplicados: dejar solo la más reciente por tipo+titulo
+        try:
+            from sqlalchemy import func
+            subq = db.session.query(
+                Notificacion.tipo, Notificacion.titulo,
+                func.max(Notificacion.id).label('max_id')
+            ).filter_by(resuelta=False).group_by(Notificacion.tipo, Notificacion.titulo).subquery()
+
+            duplicados = Notificacion.query.filter(
+                Notificacion.resuelta == False,
+                ~Notificacion.id.in_(
+                    db.session.query(subq.c.max_id)
+                )
+            ).all()
+            for d in duplicados:
+                d.resuelta = True; d.resuelto_at = dt.now()
+            db.session.commit()
+        except Exception: pass
+
+        return jsonify({'message': f'{creadas} alerta(s) generada(s), {resueltas} resuelta(s)', 'creadas': creadas}), 200
 
     except Exception as e:
         return jsonify({'message': f'Error: {str(e)}', 'creadas': 0}), 200

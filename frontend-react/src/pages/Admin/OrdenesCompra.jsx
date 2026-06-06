@@ -34,8 +34,6 @@ const OrdenesCompra = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [editedQty,   setEditedQty]   = useState({});
   const [creatingAuto, setCreatingAuto] = useState(null);
-  const [sugIA,        setSugIA]        = useState(null);
-  const [loadingIA,    setLoadingIA]    = useState(false);
   // eslint-disable-next-line no-unused-vars
   const [confirmApprove, setConfirmApprove] = useState(null);
   const [confirmCancel,  setConfirmCancel]  = useState(null);
@@ -212,10 +210,6 @@ const OrdenesCompra = () => {
       <i className="bi bi-arrow-repeat me-2"></i>
       Sugerencias auto
     </>],
-    ['ia', <>
-      <i className="bi bi-robot me-2"></i>
-      IA Predictiva
-    </>]
   ].map(([k, l]) => (
     <li key={k} className="nav-item">
       <button
@@ -256,20 +250,19 @@ const OrdenesCompra = () => {
                   <thead className="table-light">
                     <tr><th>Orden</th><th>Proveedor</th><th>Fecha esperada</th>
                       <th className="text-center">Productos</th><th className="text-end">Valor total</th>
-                      <th>Estado</th><th></th></tr>
+                      <th></th></tr>
                   </thead>
                   <tbody>
                     {!filteredOrders.length ? (
-                      <tr><td colSpan="7" className="text-center text-muted py-4">Sin órdenes</td></tr>
+                      <tr><td colSpan="6" className="text-center text-muted py-4">Sin órdenes</td></tr>
                     ) : filteredOrders.map(o => (
                       <React.Fragment key={o.id}>
                         <tr>
                           <td className="fw-semibold">{o.numero_orden}</td>
-                          <td>🏭 {o.supplier_name}</td>
+                          <td>{o.supplier_name}</td>
                           <td className="text-muted">{o.fecha_esperada || '—'}</td>
                           <td className="text-center">{o.total_items}</td>
                           <td className="text-end fw-bold">{fmt(o.valor_total)}</td>
-                          <td>{statusBadge(o.status)}</td>
                           <td>
                             <div className="d-flex gap-1 flex-wrap">
                               <button className="btn btn-sm btn-outline-secondary py-0 px-2"
@@ -303,7 +296,7 @@ const OrdenesCompra = () => {
                           </td>
                         </tr>
                         {expanded === o.id && (
-                          <tr><td colSpan="7" className="p-0">
+                          <tr><td colSpan="6" className="p-0">
                             <div className="bg-light p-3">
                               {(!o.items || !o.items.length) ? (
                                 <div className="text-muted small">Sin productos registrados</div>
@@ -379,18 +372,7 @@ const OrdenesCompra = () => {
 
         {/* Tab sugerencias automáticas */}
         {/* Tab IA Predictiva */}
-        {tab === 'ia' && (
-          <div className="text-center py-5">
-            <div style={{fontSize:64}}>🤖</div>
-            <div className="fw-bold fs-5 mb-2">IA Predictiva</div>
-            <div className="text-muted mb-4">El análisis predictivo completo está en el Dashboard Predictivo IA</div>
-            <a href="/admin/dashboard-predictivo" className="btn btn-primary btn-lg fw-bold">
-              🤖 Ir al Dashboard Predictivo IA →
-            </a>
-          </div>
-        )}
-
-                {tab === 'sugerencias' && (
+                        {tab === 'sugerencias' && (
           <div>
             {!suggestions.length ? (
               <div className="text-center text-muted py-5">

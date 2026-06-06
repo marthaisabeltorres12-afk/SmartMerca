@@ -260,23 +260,24 @@ const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
             <label className="form-label small fw-semibold">Nombre *</label>
             <input
   className={`form-control form-control-sm ${
-    r.errors?.name ? 'is-invalid' : ''
+    r.errors?.name || errors.name ? 'is-invalid' : ''
   }`}
   value={r.name}
-  onChange={e => set('name', e.target.value)}
+  onChange={e => { set('name', e.target.value); setErrors(prev => ({...prev, name: null})); }}
   placeholder="Ej: Arroz Diana"
 />
 
-{r.errors?.name && (
+{(r.errors?.name || errors.name) && (
   <div className="invalid-feedback d-block">
-    {r.errors.name}
+    {r.errors?.name || errors.name}
   </div>
 )}
           </div>
           <div className="col-md-6">
             <label className="form-label small fw-semibold">Código de barras</label>
-            <input className="form-control form-control-sm" value={r.barcode}
-              onChange={e => set('barcode', e.target.value)} placeholder="Opcional" />
+            <input className={`form-control form-control-sm ${errors.barcode ? 'is-invalid' : ''}`} value={r.barcode}
+              onChange={e => { set('barcode', e.target.value); setErrors(prev => ({...prev, barcode: null})); }} placeholder="Opcional" />
+            {errors.barcode && <div className="invalid-feedback d-block" style={{fontSize:11}}>{errors.barcode}</div>}
           </div>
           <div className="col-md-6">
             <label className="form-label small fw-semibold">Categoría</label>
@@ -324,16 +325,18 @@ const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
       <div className="row g-2 align-items-end mb-3">
         <div className="col-6 col-md-3">
           <label className="form-label small fw-semibold">Cantidad *</label>
-          <input className="form-control form-control-sm" type="number" min="1" placeholder="0"
-            value={r.quantity} onChange={e => set('quantity', e.target.value)} />
+          <input className={`form-control form-control-sm ${errors.quantity ? 'is-invalid' : ''}`} type="number" min="1" placeholder="0"
+            value={r.quantity} onChange={e => { set('quantity', e.target.value); setErrors(prev => ({...prev, quantity: null})); }} />
+          {errors.quantity && <div className="invalid-feedback d-block" style={{fontSize:11}}>{errors.quantity}</div>}
         </div>
         <div className="col-6 col-md-3">
           <label className="form-label small fw-semibold">Precio llegada *</label>
-          <div className="input-group input-group-sm">
+          <div className={`input-group input-group-sm ${errors.unit_cost ? 'is-invalid' : ''}`}>
             <span className="input-group-text">$</span>
-            <input className="form-control" type="number" min="0" step="1" placeholder="0"
-              value={r.unit_cost} onChange={e => set('unit_cost', e.target.value)} />
+            <input className={`form-control ${errors.unit_cost ? 'is-invalid' : ''}`} type="number" min="0" step="1" placeholder="0"
+              value={r.unit_cost} onChange={e => { set('unit_cost', e.target.value); setErrors(prev => ({...prev, unit_cost: null})); }} />
           </div>
+          {errors.unit_cost && <div className="invalid-feedback d-block" style={{fontSize:11}}>{errors.unit_cost}</div>}
         </div>
         <div className="col-6 col-md-2">
           <label className="form-label small fw-semibold">% Ganancia</label>
@@ -353,8 +356,8 @@ const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
           </label>
           <div className="input-group input-group-sm">
             <span className="input-group-text">$</span>
-            <input className="form-control" type="number" min="0" step="1" value={r.price}
-              onChange={e => setR(prev => ({ ...prev, price: e.target.value, price_manual: true }))} />
+            <input className={`form-control ${errors.price ? 'is-invalid' : ''}`} type="number" min="0" step="1" value={r.price}
+              onChange={e => { setR(prev => ({ ...prev, price: e.target.value, price_manual: true })); setErrors(prev => ({...prev, price: null})); }} />
             {r.price_manual && (
               <button type="button" className="btn btn-outline-secondary btn-sm" title="Recalcular automático"
                 onClick={() => {
@@ -363,6 +366,7 @@ const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
                 }}><i className="bi bi-arrow-repeat"></i></button>
             )}
           </div>
+          {errors.price && <div className="invalid-feedback d-block" style={{fontSize:11}}>{errors.price}</div>}
         </div>
         <div className="col-md-4">
           <label className="form-label small fw-semibold"><i className="bi bi-calendar"></i> Vencimiento del lote</label>
@@ -397,7 +401,24 @@ const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
       {/* Acciones */}
       <div className="d-flex gap-2">
         <button type="button" className="btn btn-success btn-sm px-4 fw-bold"
-          onClick={() => onSave(r)}>
+          onClick={() => {
+            // Validaciones locales dentro del editor
+            const errs = {};
+            if (r.mode === 'new' && !r.name?.trim()) errs.name = 'El nombre es obligatorio';
+            if (!r.quantity || parseInt(r.quantity) <= 0) errs.quantity = 'La cantidad es obligatoria';
+            if (!r.unit_cost || parseCOP(r.unit_cost) <= 0) errs.unit_cost = 'El precio de llegada es obligatorio';
+            const pVenta = parseFloat(r.price);
+            if (!r.price || isNaN(pVenta)) errs.price = 'El precio de venta es obligatorio';
+            else if (pVenta < 1) errs.price = 'El precio de venta debe ser mínimo $1';
+            // CP-046: barcode duplicado — validar contra productos existentes en memoria
+            if (r.barcode && r.barcode.trim() !== '') {
+              const existente = products.find(p => p.barcode === r.barcode.trim());
+              if (existente) errs.barcode = `Barcode ya existe en: ${existente.name}`;
+            }
+            if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+            setErrors({});
+            onSave(r);
+          }}>
            Guardar en pedido
         </button>
         <button type="button" className="btn btn-outline-secondary btn-sm"
@@ -405,6 +426,7 @@ const RowEditor = ({ row, products, categorias = [], onSave, onCancel }) => {
           Cancelar
         </button> 
       </div>
+      
     </div>
   );
 };
@@ -607,17 +629,6 @@ const Inventory = () => {
   /* Guardar fila desde el editor */
   const saveRow = (r) => {
     if (r.mode === 'existing' && !r.product_id) { showAlert('danger','Selecciona un producto'); return; }
-    if (r.mode === 'new' && !r.name?.trim()) {
-  setEditingRow(prev => ({
-    ...prev,
-    errors: {
-      ...prev.errors,
-      name: 'El nombre es obligatorio'
-    }
-  }));
-  return;
-}
-    if (!r.quantity || !r.unit_cost || !r.price) { showAlert('danger','Completa cantidad, costo y precio de venta'); return; }
 
     setRows(prev => {
       const exists = prev.find(x => x._id === r._id);
@@ -733,25 +744,25 @@ const Inventory = () => {
       }, token);
 
       // Si el motivo es de merma, registrar automáticamente
-      const motivosMerma = ['Producto dañado','Producto vencido','Robo o pérdida','Muestra/degustación'];
-      if (motivosMerma.some(m => exitReason.includes(m.split('/')[0]))) {
+      const motivosMerma = ['Producto dañado', 'Vencimiento', 'Robo o pérdida', 'Muestra o degustación'];
+      if (motivosMerma.includes(exitReason)) {
         try {
           await apiFetch('/shrinkage/', {
             method: 'POST',
             body: JSON.stringify({
-              product_id:  exitProduct.id,
-              tipo:        exitReason.includes('dañado') ? 'averia' :
-                           exitReason.includes('vencido') ? 'vencimiento' :
-                           exitReason.includes('Robo') ? 'robo' : 'merma',
-              cantidad:    parseInt(exitQty),
-              costo_total: parseFloat(exitProduct.price || 0) * parseInt(exitQty),
-              descripcion: `Registrado automáticamente desde salida de inventario`,
+              product_id:          exitProduct.id,
+              causa:               exitReason === 'Producto dañado'  ? 'daño_fisico' :
+                                   exitReason === 'Vencimiento'      ? 'vencimiento' :
+                                   exitReason === 'Robo o pérdida'  ? 'robo' : 'deterioro',
+              cantidad:            parseInt(exitQty),
+              from_inventory_exit: true,
+              observaciones:       `Registrado automáticamente desde salida de inventario`,
             })
           }, token);
-        } catch(me) { console.warn('Merma no registrada:', me.message); }
+        } catch(me) { showAlert('danger', 'Salida registrada pero error en merma: ' + me.message); }
       }
 
-      showAlert('success','Salida registrada' + (motivosMerma.some(m=>exitReason.includes(m.split('/')[0])) ? ' y merma registrada automáticamente' : ''));
+      showAlert('success','Salida registrada' + (motivosMerma.includes(exitReason) ? ' y merma registrada automáticamente' : ''));
       setExitProduct(null); setExitQty(''); setExitReason('Producto dañado');
       load();
     } catch(e) { showAlert('danger',e.message); }
@@ -786,7 +797,28 @@ const Inventory = () => {
       <main className="flex-grow-1 p-4" style={{ marginLeft:240, minHeight:'100vh', background:'#f8fafc' }}>
         <h4 className="bi-boxes"> Inventario</h4>
 
-        {alert && <div className={`alert alert-${alert.type} alert-dismissible mb-3`}>{alert.msg}</div>}
+        {/* Toast estándar SmartMerca — posición fija */}
+        {alert && (
+          <div style={{
+            position:'fixed', bottom:28, right:28, zIndex:9999,
+            minWidth:350, borderRadius:12, padding:'14px 20px',
+            fontWeight:600, fontSize:15,
+            boxShadow: alert.type==='success' ? '0 4px 20px rgba(34,197,94,0.35)'
+              : alert.type==='danger' ? '0 4px 20px rgba(239,68,68,0.35)'
+              : '0 4px 20px rgba(234,179,8,0.35)',
+            background: alert.type==='success' ? '#f0fdf4'
+              : alert.type==='danger' ? '#fef2f2' : '#fefce8',
+            color: alert.type==='success' ? '#166534'
+              : alert.type==='danger' ? '#991b1b' : '#854d0e',
+            border: `1.5px solid ${alert.type==='success' ? '#86efac'
+              : alert.type==='danger' ? '#fca5a5' : '#fde047'}`,
+            animation:'slideDown 0.3s ease',
+          }}>
+            <i className={`bi me-2 ${alert.type==='success' ? 'bi-check-circle-fill' : alert.type==='danger' ? 'bi-x-circle-fill' : 'bi-exclamation-triangle-fill'}`}></i>
+            {alert.msg}
+          </div>
+        )}
+        <style>{`@keyframes slideDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
         {/* Tabs */}
         <ul className="nav nav-tabs mb-4">
