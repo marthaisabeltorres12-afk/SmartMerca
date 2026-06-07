@@ -1,3 +1,12 @@
+def round_cop(n):
+    import math
+    n = float(n or 0)
+    centena = math.floor(n / 100) * 100
+    t = n - centena
+    if t <= 24:   return int(centena)
+    elif t <= 74: return int(centena + 50)
+    else:         return int(centena + 100)
+
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.sale import Sale, SaleItem
@@ -206,11 +215,11 @@ def create_sale():
 
                 if promo.type == 'descuento_pct':
                     pct = float(promo.discount_value or 0)
-                    item_price = round(item_price * (1 - pct / 100))
+                    item_price = round_cop(item_price * (1 - pct / 100))
 
                 elif promo.type == 'descuento_fijo':
                     fijo = float(promo.discount_value or 0)
-                    item_price = max(0, round(item_price - fijo))
+                    item_price = max(0, round_cop(item_price - fijo))
 
                 elif promo.type == 'lleva_gratis':
                     buy  = int(promo.buy_quantity or 0)
@@ -223,7 +232,7 @@ def create_sale():
                         print(f"[lleva_gratis] qty={qty} grupos={grupos_completos} "
                               f"gratis={cantidad_gratis} cobrada={cantidad_cobrada}")
 
-            subtotal = round(item_price * cantidad_cobrada)
+            subtotal = round_cop(item_price * cantidad_cobrada)
             total   += subtotal
 
             product.stock -= qty
@@ -249,6 +258,20 @@ def create_sale():
             ))
 
     sale.total = total
+
+    # ── Descuento de cupón ────────────────────────────────────────────────
+    cupon_id       = data.get('cupon_id')
+    descuento_cupon = float(data.get('descuento_cupon', 0))
+    if cupon_id and descuento_cupon > 0:
+        try:
+            from models.coupon import LoyaltyCoupon
+            cupon = LoyaltyCoupon.query.get(cupon_id)
+            if cupon and not cupon.usado and cupon.is_vigente:
+                sale.total = max(0, total - round(descuento_cupon))
+                cupon.usado   = True
+                cupon.sale_id = sale.id
+        except Exception:
+            pass
 
     # ── Pagos ─────────────────────────────────────────────────────────────
     payments = data.get('payments', [])

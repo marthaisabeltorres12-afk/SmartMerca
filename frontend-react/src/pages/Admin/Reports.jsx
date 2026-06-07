@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { saleService } from '../../services/saleService';
 import { productService } from '../../services/productService';
 import { inventoryService } from '../../services/inventoryService';
+import PlanGuard from '../../components/PlanGuard';
 import { exportVentasPDF, exportVentasExcel } from '../../services/exportService';
 
 // Muestra gramaje junto al nombre si existe
@@ -35,6 +36,7 @@ const Reports = () => {
   const [products,  setProducts]  = useState([]);
   const [movements, setMovements] = useState([]);
   const [byCashier, setByCashier] = useState([]);
+  const [expandedSucursal, setExpandedSucursal] = useState(null);
   const [tab,       setTab]       = useState('diarias');
   const [dateFrom,  setDateFrom]  = useState('');
   const [dateTo,    setDateTo]    = useState('');
@@ -53,6 +55,7 @@ const Reports = () => {
   const [prodCajero, setProdCajero] = useState('');
   const [prodPago,   setProdPago]   = useState('');
   const [prodSucursal, setProdSucursal] = useState('');
+  const [businessName,  setBusinessName]  = useState('SmartMerca');
   const [prodSort,   setProdSort]   = useState('fecha_desc');
   const [prodPage,   setProdPage]   = useState(1);
   const PAGE_SIZE = 50;
@@ -66,6 +69,11 @@ const Reports = () => {
     ]).then(([s, p, bc, mv]) => {
       setSales(s); setProducts(p); setByCashier(bc); setMovements(mv);
     }).catch(console.error);
+    // Cargar nombre del negocio independientemente
+    fetch('http://localhost:5000/api/policy/', {headers:{'Authorization':'Bearer '+token}})
+      .then(r => r.ok ? r.json() : {})
+      .then(pol => { if (pol?.business_name) setBusinessName(pol.business_name); })
+      .catch(() => {});
   }, [token]);
 
   const today   = new Date().toISOString().slice(0, 10);
@@ -189,6 +197,27 @@ const Reports = () => {
   }, [filtered, products]);
 
   // Opciones únicas para filtros
+  // Datos por sucursal para el tab Por Sucursal
+  const bySucursal = useMemo(() => {
+    const map = {};
+    filtered.forEach(sale => {
+      const key = sale.branch_name || '— Sin sucursal —';
+      if (!map[key]) map[key] = { sucursal: key, ventas: 0, total: 0, cajeros: new Set(), productos: {} };
+      map[key].ventas += 1;
+      map[key].total  += parseFloat(sale.total || 0);
+      if (sale.cashier) map[key].cajeros.add(sale.cashier);
+      (sale.items || []).forEach(item => {
+        const pname = item.product || item.product_name || 'Desconocido';
+        if (!map[key].productos[pname]) map[key].productos[pname] = { product: pname, quantity: 0, subtotal: 0 };
+        map[key].productos[pname].quantity += parseFloat(item.quantity || 0);
+        map[key].productos[pname].subtotal += parseFloat(item.subtotal || 0);
+      });
+    });
+    return Object.values(map)
+      .map(s => ({ ...s, cajeros: s.cajeros.size, productos: Object.values(s.productos).sort((a,b) => b.subtotal - a.subtotal) }))
+      .sort((a, b) => b.total - a.total);
+  }, [filtered]);
+
   const opcionesCats    = useMemo(() => [...new Set(allRows.map(r => r.categoria).filter(v => v !== '—'))].sort(), [allRows]);
   const opcionesCajeros = useMemo(() => [...new Set(allRows.map(r => r.cajero).filter(v => v !== '—'))].sort(), [allRows]);
   const opcionesPagos      = useMemo(() => [...new Set(allRows.map(r => r.pago))].sort(), [allRows]);
@@ -256,7 +285,8 @@ const TABS = [
   ['proveedores', (<>  <i className="bi bi-truck me-1"></i>  Proveedores</>)],
   ['stock', (<>  <i className="bi bi-exclamation-triangle me-1"></i>  Stock </>)],
   ['vencidos', (<>  <i className="bi bi-calendar-x me-1"></i>  Vencimientos</>)],
-  ['cajeros', (<>  <i className="bi bi-cash-coin me-1"></i>  Por Cajero </> )],
+  ['cajeros',    (<>  <i className="bi bi-cash-coin me-1"></i>  Por Cajero </> )],
+  ['sucursales', (<>  <i className="bi bi-geo-alt me-1"></i>  Por Sucursal</>)],
 ];
 
   return (
@@ -332,8 +362,16 @@ const TABS = [
                 <span className="badge bg-primary py-2">{dateFrom} → {dateTo || 'hoy'} · {filtered.length} ventas</span>
               </div>}
               <div className="col-auto align-self-end d-flex gap-2">
-                <button className="btn btn-danger"  onClick={() => exportVentasPDF(filtered, dateFrom, dateTo)}   disabled={!filtered.length}><i className="bi bi-file-pdf"></i> PDF</button>
-                <button className="btn btn-success" onClick={() => exportVentasExcel(filtered, dateFrom, dateTo)} disabled={!filtered.length}><i className="bi bi-file-earmark-excel"></i> Excel</button>
+                <PlanGuard feature="reportes_pdf" btn label="PDF">
+                  <button className="btn btn-danger" onClick={() => exportVentasPDF(filtered, dateFrom, dateTo, businessName)} disabled={!filtered.length}>
+                    <i className="bi bi-file-pdf"></i> PDF
+                  </button>
+                </PlanGuard>
+                <PlanGuard feature="reportes_excel" btn label="Excel">
+                  <button className="btn btn-success" onClick={() => exportVentasExcel(filtered, dateFrom, dateTo, businessName)} disabled={!filtered.length}>
+                    <i className="bi bi-file-earmark-excel"></i> Excel
+                  </button>
+                </PlanGuard>
               </div>
             </div>
           </div>
@@ -1026,6 +1064,113 @@ const ganAct  = actual.ventas - costoMesActual;
                     ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {tab === 'sucursales' && (
+          <div>
+            {/* KPIs de sucursales */}
+            {bySucursal.length > 0 && (
+              <div className="row g-3 mb-4">
+                {bySucursal.map((s, i) => (
+                  <div key={i} className="col-md-4">
+                    <div className="card border-0 shadow-sm h-100">
+                      <div className="card-body">
+                        <div className="d-flex align-items-center gap-2 mb-2">
+                          <div className="rounded-circle d-flex align-items-center justify-content-center"
+                            style={{ width:36, height:36, background:'#eff6ff', flexShrink:0 }}>
+                            <i className="bi bi-geo-alt-fill text-primary"></i>
+                          </div>
+                          <div className="fw-bold">{s.sucursal}</div>
+                        </div>
+                        <div className="row g-2 text-center">
+                          <div className="col-4">
+                            <div className="small text-muted">Ventas</div>
+                            <div className="fw-bold text-primary">{s.ventas}</div>
+                          </div>
+                          <div className="col-4">
+                            <div className="small text-muted">Total</div>
+                            <div className="fw-bold text-success">{fmtMoney(s.total)}</div>
+                          </div>
+                          <div className="col-4">
+                            <div className="small text-muted">Cajeros</div>
+                            <div className="fw-bold">{s.cajeros}</div>
+                          </div>
+                        </div>
+                        {/* Barra de progreso relativa */}
+                        {bySucursal[0]?.total > 0 && (
+                          <div className="mt-3">
+                            <div className="d-flex justify-content-between small text-muted mb-1">
+                              <span>Participación</span>
+                              <span>{Math.round((s.total / bySucursal.reduce((a,x)=>a+x.total,0))*100)}%</span>
+                            </div>
+                            <div className="progress" style={{height:6}}>
+                              <div className="progress-bar bg-primary"
+                                style={{width: `${(s.total / bySucursal.reduce((a,x)=>a+x.total,0))*100}%`}}/>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Tabla detalle por sucursal */}
+            <div className="card border-0 shadow-sm">
+              <div className="card-header fw-semibold">
+                <i className="bi bi-geo-alt me-2"></i>Detalle por sucursal
+              </div>
+              <div className="table-responsive">
+                <table className="table table-hover align-middle mb-0">
+                  <thead className="table-light">
+                    <tr><th>Sucursal</th><th>Ventas</th><th>Total</th><th>Cajeros activos</th><th>Ticket promedio</th><th>Más vendido</th></tr>
+                  </thead>
+                  <tbody>
+                    {!bySucursal.length
+                      ? <tr><td colSpan="6" className="text-center text-muted py-4">Sin datos en el período seleccionado</td></tr>
+                      : bySucursal.map((s, i) => (
+                        <React.Fragment key={i}>
+                          <tr style={{cursor:'pointer'}} onClick={() => setExpandedSucursal(expandedSucursal===i?null:i)}>
+                            <td className="fw-semibold">
+                              <i className="bi bi-geo-alt me-1 text-primary"></i>{s.sucursal}
+                            </td>
+                            <td><span className="badge bg-primary">{s.ventas}</span></td>
+                            <td className="text-success fw-bold">{fmtMoney(s.total)}</td>
+                            <td><span className="badge bg-secondary">{s.cajeros}</span></td>
+                            <td className="text-muted">{s.ventas > 0 ? fmtMoney(s.total / s.ventas) : '—'}</td>
+                            <td className="text-muted small">
+                              {s.productos[0]?.product || '—'}
+                              <span className="ms-2 text-primary">{expandedSucursal===i?'▲':'▼'}</span>
+                            </td>
+                          </tr>
+                          {expandedSucursal === i && (
+                            <tr><td colSpan="6" className="p-0">
+                              <div className="bg-light px-4 py-2">
+                                <div className="small fw-semibold mb-2 text-muted">Top productos vendidos en {s.sucursal}</div>
+                                <table className="table table-sm mb-0">
+                                  <thead><tr><th>Producto</th><th>Cantidad</th><th>Subtotal</th></tr></thead>
+                                  <tbody>
+                                    {s.productos.slice(0,10).map((p, j) => (
+                                      <tr key={j}>
+                                        <td>{p.product}</td>
+                                        <td><span className="badge bg-secondary">{p.quantity}</span></td>
+                                        <td className="text-success">{fmtMoney(p.subtotal)}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td></tr>
+                          )}
+                        </React.Fragment>
+                      ))
+                    }
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

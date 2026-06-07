@@ -164,6 +164,17 @@ const Promotions = () => {
   // ── Funciones cupones ──────────────────────────────────────────────────
   const handleSaveCupon = async (e) => {
     e.preventDefault();
+    // Validar fechas no pasadas
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    if (cuponForm.fecha_fin) {
+      const fin = new Date(cuponForm.fecha_fin + 'T00:00:00');
+      if (fin < hoy) { showMsg('danger', 'La fecha de fin no puede ser una fecha pasada'); return; }
+    }
+    if (cuponForm.fecha_inicio && cuponForm.fecha_fin) {
+      if (new Date(cuponForm.fecha_inicio + 'T00:00:00') > new Date(cuponForm.fecha_fin + 'T00:00:00')) {
+        showMsg('danger', 'La fecha de inicio no puede ser posterior a la fecha de fin'); return;
+      }
+    }
     try {
       await apiFetch('/coupons/', { method:'POST', body: JSON.stringify(cuponForm) }, token);
       showMsg('success', 'Cupón creado');
@@ -870,11 +881,15 @@ const Promotions = () => {
                       </div>
                       <div className="col-6">
                         <label className="form-label fw-semibold">Fecha inicio *</label>
-                        <input type="date" className="form-control" required value={cuponForm.fecha_inicio} onChange={e=>setCuponForm({...cuponForm,fecha_inicio:e.target.value})} />
+                        <input type="date" className="form-control" required value={cuponForm.fecha_inicio}
+                          min={new Date().toISOString().slice(0,10)}
+                          onChange={e=>setCuponForm({...cuponForm,fecha_inicio:e.target.value})} />
                       </div>
                       <div className="col-6">
                         <label className="form-label fw-semibold">Fecha fin *</label>
-                        <input type="date" className="form-control" required value={cuponForm.fecha_fin} onChange={e=>setCuponForm({...cuponForm,fecha_fin:e.target.value})} />
+                        <input type="date" className="form-control" required value={cuponForm.fecha_fin}
+                          min={cuponForm.fecha_inicio || new Date().toISOString().slice(0,10)}
+                          onChange={e=>setCuponForm({...cuponForm,fecha_fin:e.target.value})} />
                       </div>
                       <div className="col-12">
                         <label className="form-label fw-semibold">Cliente específico</label>

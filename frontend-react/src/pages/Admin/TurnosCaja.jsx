@@ -1,3 +1,4 @@
+import { usePlan } from '../../context/PlanContext';
 import React, { useEffect, useState, useCallback } from 'react';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
@@ -9,7 +10,13 @@ import { exportCierresPDF, exportCierresExcel } from '../../services/exportServi
 import { cashAdjustmentService } from '../../services/cashAdjustmentService';
 import { apiFetch } from '../../services/api';
 
-const fmt   = n => Number(n||0).toLocaleString('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
+const round50 = n => {
+  const v = Number(n||0);
+  const centena = Math.floor(v / 100) * 100;
+  const t = v - centena;
+  return t <= 24 ? centena : t <= 74 ? centena + 50 : centena + 100;
+};
+const fmt   = n => round50(n).toLocaleString('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
 const fmtDt = s => s ? new Date(s).toLocaleString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
 
 // ══════════════════════════════════════════════
@@ -135,6 +142,8 @@ const CashierView = ({ token, user }) => {
 // PANEL MULTI-CAJA (dentro de AdminView)
 // ══════════════════════════════════════════════
 const PanelCajas = ({ token, cajas, users, onRefresh, branches = [] }) => {
+  const { hasFeature } = usePlan();
+  const limiteMaxCajas = hasFeature('cajas_ilimitadas') ? 999 : hasFeature('multicaja') ? 6 : 1;
   const [modalNueva, setModalNueva] = useState(false);
   const [modalEditar,setModalEditar]= useState(null);
   const [formNueva,  setFormNueva]  = useState({ nombre:'', descripcion:'', cajero_ids:[], base_amount:'', branch_id:'' });
@@ -238,9 +247,21 @@ const PanelCajas = ({ token, cajas, users, onRefresh, branches = [] }) => {
 
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h6 className="fw-bold mb-0">Estado en tiempo real</h6>
-        <button className="btn btn-primary btn-sm fw-bold" onClick={() => setModalNueva(true)}>
-          + Nueva caja
-        </button>
+        <div className="d-flex align-items-center gap-2">
+          {cajas.length >= limiteMaxCajas && (
+            <span className="badge bg-warning text-dark">
+              <i className="bi bi-lock-fill me-1"></i>
+              Límite: {limiteMaxCajas} caja{limiteMaxCajas > 1 ? 's' : ''} — Plan {hasFeature('cajas_ilimitadas') ? 'Premium' : hasFeature('multicaja') ? 'Estándar' : 'Básico'}
+            </span>
+          )}
+          <button className="btn btn-primary btn-sm fw-bold"
+            disabled={cajas.length >= limiteMaxCajas}
+            title={cajas.length >= limiteMaxCajas ? `Tu plan permite máximo ${limiteMaxCajas} caja${limiteMaxCajas > 1 ? 's' : ''}` : ''}
+            onClick={() => setModalNueva(true)}>
+            <i className="bi bi-plus-circle me-1"></i>
+            Nueva caja
+          </button>
+        </div>
       </div>
 
       {/* Tarjetas de cajas */}
@@ -372,7 +393,7 @@ const PanelCajas = ({ token, cajas, users, onRefresh, branches = [] }) => {
                         onChange={e=>setFormNueva(f=>({...f,base_amount:e.target.value}))}/>
                     </div>
                   </div>
-                  {branches.length > 0 && (
+                  {branches.length > 0 && hasFeature('sucursales_2') && (
                   <div className="mb-3">
                     <label className="form-label fw-semibold small"><i className="bi bi-geo-alt me-1"></i>Sucursal</label>
                     <select className="form-select" value={formNueva.branch_id}
@@ -428,7 +449,7 @@ const PanelCajas = ({ token, cajas, users, onRefresh, branches = [] }) => {
                         onChange={e=>setModalEditar(m=>({...m,base_amount:e.target.value}))}/>
                     </div>
                   </div>
-                  {branches.length > 0 && (
+                  {branches.length > 0 && hasFeature('sucursales_2') && (
                   <div className="mb-3">
                     <label className="form-label fw-semibold small"><i className="bi bi-geo-alt me-1"></i>Sucursal</label>
                     <select className="form-select" value={modalEditar.branch_id||''}
@@ -1161,6 +1182,7 @@ const AdminView = ({ token }) => {
 // ══════════════════════════════════════════════
 const ShiftManager = () => {
   const { token, user } = useAuth();
+  const { hasFeature } = usePlan();
   const isAdmin = user?.role === 'admin' || user?.role === 'admin_tecnico';
   return (
     <div className="d-flex">

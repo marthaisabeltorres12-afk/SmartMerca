@@ -28,14 +28,18 @@ def save_config():
         config = SystemConfig()
         db.session.add(config)
 
-    if 'min_stock' in data:
-        config.min_stock = int(data['min_stock'])
-    if 'session_hours' in data:
-        config.session_hours = int(data['session_hours'])
-    if 'jwt_active' in data:
-        config.jwt_active = bool(data['jwt_active'])
-    if 'cors_active' in data:
-        config.cors_active = bool(data['cors_active'])
+    if 'min_stock'     in data: config.min_stock     = int(data['min_stock'])
+    if 'session_hours' in data: config.session_hours = int(data['session_hours'])
+    if 'jwt_active'    in data: config.jwt_active    = bool(data['jwt_active'])
+    if 'cors_active'   in data: config.cors_active   = bool(data['cors_active'])
+    if 'plan_actual'   in data: config.plan_actual   = data['plan_actual']
+    if 'plan_cliente'  in data: config.plan_cliente  = data['plan_cliente'] or ''
+    if 'plan_vence'    in data:
+        from datetime import date
+        try:
+            config.plan_vence = date.fromisoformat(data['plan_vence']) if data['plan_vence'] else None
+        except Exception:
+            pass
 
     db.session.commit()
     return jsonify(config.to_dict()), 200

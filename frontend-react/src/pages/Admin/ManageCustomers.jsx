@@ -1,3 +1,4 @@
+import { usePlan } from '../../context/PlanContext';
 import React, { useEffect, useState } from 'react';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
@@ -11,6 +12,7 @@ const DOC_TYPES = ['CC','CE','NIT','Pasaporte','TI'];
 
 const ManageCustomers = () => {
   const { token } = useAuth();
+  const { hasFeature } = usePlan();
   const [customers,     setCustomers]     = useState([]);
   const [priceLists,    setPriceLists]    = useState([]);
   const [search,        setSearch]        = useState('');
@@ -162,8 +164,8 @@ const ManageCustomers = () => {
           {[
             { icon: <i className="bi bi-people"></i>, label:'Total clientes',  value: customers.length,                       color:'primary' },
             { icon: <i className="bi bi-person-check"></i>, label:'Activos',          value: customers.filter(c=>c.is_active).length, color:'success' },
-            {  icon: <i className="bi-star-fill" style={{ color: '#f59e0b' }}></i>, label:'Puntos totales',   value: totalPoints.toLocaleString('es-CO'),    color:'warning' },
-            {icon: <i className="bi bi-cash-stack"></i>, label:'Valor en puntos',  value: `$${((totalPoints/100)*1000).toLocaleString('es-CO')}`, color:'info' },
+            { icon: <i className="bi-star-fill" style={{ color: '#f59e0b' }}></i>, label:'Puntos totales', value: hasFeature('cupones') ? totalPoints.toLocaleString('es-CO') : <span className="badge bg-warning text-dark" style={{fontSize:11}}><i className="bi bi-lock-fill me-1"></i>Plan Estándar</span>, color:'warning' },
+            { icon: <i className="bi bi-cash-stack"></i>, label:'Valor en puntos', value: hasFeature('cupones') ? `$${((totalPoints/100)*1000).toLocaleString('es-CO')}` : <span className="badge bg-secondary" style={{fontSize:11}}><i className="bi bi-lock-fill me-1"></i>Plan Estándar</span>, color:'info' },
           ].map((k,i) => (
             <div key={i} className="col-md-3">
               <div className={`card border-${k.color} border-2 text-center`}>
@@ -208,7 +210,7 @@ const ManageCustomers = () => {
                   <th>Teléfono</th>
                   <th>Correo</th>
                   <th>Dirección</th>
-                  <th className="text-center">Puntos</th>
+                  {hasFeature('cupones') && <th className="text-center">Puntos</th>}
                   <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
@@ -224,9 +226,11 @@ const ManageCustomers = () => {
                       <td className="text-muted small">{c.phone || '—'}</td>
                       <td className="text-muted small">{c.email || '—'}</td>
                       <td className="text-muted small" style={{maxWidth:140,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c.address || '—'}</td>
+                      {hasFeature('cupones') && (
                       <td className="text-center">
-                        <span  className="badge bg-warning text-dark"> <i className="bi bi-star"></i>,  {c.points||0}</span>
+                        <span className="badge bg-warning text-dark"><i className="bi bi-star me-1"></i>{c.points||0}</span>
                       </td>
+                      )}
                       <td>
   <span className={`badge ${c.is_active ? 'bg-success' : 'bg-secondary'}`}>
     {c.is_active ? 'Activo' : 'Inactivo'}
@@ -236,7 +240,7 @@ const ManageCustomers = () => {
 <td>
   <div className="d-flex gap-1">
     <button className="btn btn-warning btn-sm" onClick={() => openEdit(c)} title="Editar"><i className="bi bi-pencil"></i></button>
-    <button className="btn btn-info btn-sm text-white" onClick={() => { setPointsModal(c); setPointsInput('');}}title="Puntos">
+    <button className="btn btn-info btn-sm text-white" disabled={!hasFeature('cupones')} title={hasFeature('cupones') ? "Puntos" : "Requiere Plan Estándar"} onClick={() => { if(hasFeature('cupones')){ setPointsModal(c); setPointsInput('');} }}>
       <i className="bi bi-star"></i>
     </button>
     <button className={`btn btn-sm ${c.is_active

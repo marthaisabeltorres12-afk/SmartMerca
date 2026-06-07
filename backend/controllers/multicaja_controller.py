@@ -159,20 +159,33 @@ def dashboard_cajas():
     for caja in cajas:
         turno = caja.shifts.filter_by(status='abierto').first()
 
-        # Ventas del día
-        ventas_hoy = []
+        # Ventas del día — buscar cajeros con turno activo O turno abierto hoy
+        cajero_ids = set()
+
+        # Turno activo actual (sin importar fecha de apertura)
+        if turno:
+            cajero_ids.add(turno.cashier_id)
+
+        # También turnos abiertos hoy
         turnos_hoy = Shift.query.filter(
             Shift.cash_register_id == caja.id,
             db.func.date(Shift.opened_at) == hoy
         ).all()
         for t in turnos_hoy:
-            ventas_hoy += Sale.query.filter(
-                Sale.cashier_id == t.cashier_id,
-                Sale.created_at >= t.opened_at,
-                Sale.created_at <= (t.closed_at or datetime.now())
-            ).all()
+            if t.cashier_id:
+                cajero_ids.add(t.cashier_id)
 
-        total_caja = sum(float(v.total) for v in ventas_hoy)
+        cajero_ids = list(cajero_ids)
+
+        if cajero_ids:
+            ventas_hoy_q = Sale.query.filter(
+                Sale.cashier_id.in_(cajero_ids),
+                db.func.date(Sale.created_at) == hoy
+            ).all()
+        else:
+            ventas_hoy_q = []
+
+        total_caja = sum(float(v.total) for v in ventas_hoy_q)
         total_dia += total_caja
 
         resultado.append({
@@ -181,7 +194,7 @@ def dashboard_cajas():
             'cajero_actual': turno.cashier.name if turno else None,
             'cajeros_auth':  [{'id': c.id, 'name': c.name} for c in caja.cajeros],
             'abierta_desde': str(turno.opened_at) if turno else None,
-            'ventas_hoy':    len(ventas_hoy),
+            'ventas_hoy':    len(ventas_hoy_q),
             'total_hoy':     total_caja,
             'status':        'ocupada' if turno else ('asignada' if caja.cajeros else 'disponible'),
         })

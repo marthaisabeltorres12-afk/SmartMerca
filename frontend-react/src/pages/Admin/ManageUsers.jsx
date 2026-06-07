@@ -1,3 +1,4 @@
+import { usePlan } from '../../context/PlanContext';
 import React, { useEffect, useState } from 'react';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
@@ -24,6 +25,7 @@ const EMPTY = { name:'', email:'', password:'', role:'cajero', phone:'', address
 
 const ManageUsers = () => {
   const { token, user: me } = useAuth();
+  const { hasFeature } = usePlan();
   const esAdminTecnico = me?.role === 'admin_tecnico' || me?.role === 'admin_tech';
   const soloLectura     = me?.role === 'auditor'; // Auditor: solo puede ver, no editar
   const [users, setUsers] = useState([]);
@@ -238,10 +240,10 @@ const ManageUsers = () => {
     <option value="admin">Administrador</option>
     <option value="admin_tecnico">Administrador Técnico</option>
     <option value="cajero">Cajero</option>
-    <option value="bodeguero">Bodeguero</option>
-    <option value="supervisor">Supervisor</option>
-    <option value="contador">Contador</option>
-    <option value="auditor">Auditor</option>
+    <option value="bodeguero" disabled={!hasFeature('bodeguero')}>Bodeguero{!hasFeature('bodeguero') ? ' 🔒' : ''}</option>
+    <option value="supervisor" disabled={!hasFeature('supervisor')}>Supervisor{!hasFeature('supervisor') ? ' 🔒' : ''}</option>
+    <option value="contador" disabled={!hasFeature('contador')}>Contador{!hasFeature('contador') ? ' 🔒 Plan Premium' : ''}</option>
+    <option value="auditor" disabled={!hasFeature('auditor')}>Auditor{!hasFeature('auditor') ? ' 🔒 Plan Premium' : ''}</option>
   </select>
 
   {!soloLectura && (
@@ -394,10 +396,18 @@ const ManageUsers = () => {
                         value={form.role}
                         onChange={e=>setForm({...form,role:e.target.value})}>
                         <option value="cajero">Cajero — Registra ventas y devoluciones</option>
-<option value="bodeguero">Bodeguero — Recibe mercancía, traslados y conteo</option>
-<option value="supervisor">Supervisor — Ve reportes y aprueba descuentos</option>
-<option value="contador">Contador — Acceso a finanzas, nómina y reportes</option>
-<option value="auditor">Auditor externo — Solo lectura, auditoría y reportes</option>
+<option value="bodeguero" disabled={!hasFeature('bodeguero')}>
+                          Bodeguero — Recibe mercancía{!hasFeature('bodeguero') ? ' 🔒 Plan Estándar' : ''}
+                        </option>
+                        <option value="supervisor" disabled={!hasFeature('supervisor')}>
+                          Supervisor — Ve reportes{!hasFeature('supervisor') ? ' 🔒 Plan Estándar' : ''}
+                        </option>
+<option value="contador" disabled={!hasFeature('contador')}>
+                          Contador — Acceso a finanzas{!hasFeature('contador') ? ' 🔒 Plan Premium' : ''}
+                        </option>
+<option value="auditor" disabled={!hasFeature('auditor')}>
+                          Auditor externo — Solo lectura{!hasFeature('auditor') ? ' 🔒 Plan Premium' : ''}
+                        </option>
 <option value="admin">Administrador de tienda — Gestión completa</option>
 {esAdminTecnico && (
   <option value="admin_tecnico">Administrador técnico — Acceso total al sistema</option>

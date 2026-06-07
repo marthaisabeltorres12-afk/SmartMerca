@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import Navbar from '../../components/Navbar';
+import { usePlan } from '../../context/PlanContext';
+import PlanVencimientoAlert from '../../components/PlanVencimientoAlert';
 import { useAuth } from '../../context/AuthContext';
 import { apiFetch } from '../../services/api';
 
@@ -22,6 +24,7 @@ const KpiCard = ({ icon, label, value, sub, subColor }) => (
 // ── Dashboard principal ────────────────────────────────────────────────────
 const AdminDashboard = () => {
   const { token } = useAuth();
+  const { hasFeature } = usePlan();
   const [data,       setData]       = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [loading,    setLoading]    = useState(true);
@@ -62,6 +65,7 @@ const AdminDashboard = () => {
     <div className="d-flex">
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft:240 }}>
+        <PlanVencimientoAlert />
         <div className="d-flex align-items-center justify-content-between mb-4">
           <div>
         <h4 className="fw-bold mb-0"> <i className="bi bi-speedometer2 me-2"></i> Dashboard</h4>
@@ -173,7 +177,7 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {data?.por_sucursal?.length > 0 && (
+            {data?.por_sucursal?.length > 0 && hasFeature('sucursales_2') && (
             <div className="card border-0 shadow-sm">
               <div className="card-header fw-semibold py-3" style={{ background:'#1e3a5f', color:'#fff' }}>
                 <i className="bi bi-geo-alt-fill me-2"></i> Ventas por sucursal hoy

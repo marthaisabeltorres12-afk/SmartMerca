@@ -29,29 +29,90 @@ class Shift(db.Model):
     branch       = db.relationship('Branch', foreign_keys=[branch_id])
     withdrawals  = db.relationship('ShiftWithdrawal', backref='shift', cascade='all, delete-orphan')
 
-    def to_dict(self):
+    def to_dict(self, next_opened_at=None):
+        from models.sale import Sale
+        from models.sale_payment import SalePayment
+
+        def r50(n):
+            import math
+            n = float(n or 0)
+            centena = math.floor(n / 100) * 100
+            t = n - centena
+            if t <= 24:   return int(centena)
+            elif t <= 74: return int(centena + 50)
+            else:         return int(centena + 100)
+
+        q = Sale.query.filter(
+            Sale.cashier_id == self.cashier_id,
+            Sale.created_at >= self.opened_at
+        )
+        if self.closed_at:
+            q = q.filter(Sale.created_at <= self.closed_at)
+        elif next_opened_at:
+            q = q.filter(Sale.created_at < next_opened_at)
+        sales = q.all()
+
+        total_sales = r50(sum(float(s.total) for s in sales))
+        total_wd    = r50(sum(float(w.amount) for w in self.withdrawals))
+
+        # Usar Sale.total por método — no SalePayment.monto que incluye cambio
+        def pm(s, kw): return kw in (s.payment_method or '')
+        total_cash     = r50(sum(float(s.total) for s in sales if pm(s,'efectivo') and not pm(s,'mixto')))
+        total_card     = r50(sum(float(s.total) for s in sales if pm(s,'tarjeta')))
+        total_nequi    = r50(sum(float(s.total) for s in sales if pm(s,'nequi') and not pm(s,'mixto')))
+        total_transfer = r50(sum(float(s.total) for s in sales if pm(s,'transferencia') and not pm(s,'mixto')))
+        total_credit   = r50(sum(float(s.total) for s in sales if pm(s,'credito')))
+
+        # Pagos mixtos — distribuir por proporción
+        sale_ids_mixto = [s.id for s in sales if pm(s,'mixto')]
+        if sale_ids_mixto:
+            from collections import defaultdict
+            payments = SalePayment.query.filter(SalePayment.sale_id.in_(sale_ids_mixto)).all()
+            by_sale = defaultdict(list)
+            for p in payments:
+                by_sale[p.sale_id].append(p)
+            for sid, ps in by_sale.items():
+                sale = next((s for s in sales if s.id == sid), None)
+                if not sale: continue
+                total_pagado = sum(float(p.monto) for p in ps)
+                for p in ps:
+                    m = (p.metodo or '').lower()
+                    prop = float(p.monto) / total_pagado if total_pagado > 0 else 0
+                    parte = float(sale.total) * prop
+                    if m == 'efectivo':        total_cash     += r50(parte)
+                    elif m == 'tarjeta':       total_card     += r50(parte)
+                    elif m == 'nequi':         total_nequi    += r50(parte)
+                    elif m == 'transferencia': total_transfer += r50(parte)
+
+        cash_exp = r50(float(self.base_amount or 0) + total_cash - total_wd)
+        if self.cash_counted_by_cashier is not None:
+            difference = r50(float(self.cash_counted_by_cashier) - cash_exp)
+        else:
+            difference = r50(float(self.difference)) if self.difference is not None else None
+
         return {
             'id':               self.id,
             'cashier_id':       self.cashier_id,
             'cashier':          self.cashier.name if self.cashier else None,
             'cash_register_id': self.cash_register_id,
             'cash_register':    self.cash_register.nombre if hasattr(self, 'cash_register') and self.cash_register else None,
-            'base_amount':      float(self.base_amount),
+            'base_amount':      r50(self.base_amount),
             'opened_at':        str(self.opened_at),
             'closed_at':        str(self.closed_at) if self.closed_at else None,
-            'cash_counted':     float(self.cash_counted) if self.cash_counted is not None else None,
-            'total_sales':      float(self.total_sales),
-            'total_cash':       float(self.total_cash),
-            'total_card':       float(self.total_card),
-            'total_nequi':      float(self.total_nequi),
-            'total_transfer':   float(self.total_transfer),
-            'total_credit':     float(self.total_credit),
-            'total_withdrawals':float(self.total_withdrawals),
-            'difference':       float(self.difference) if self.difference is not None else None,
+            'cash_counted':     r50(self.cash_counted) if self.cash_counted is not None else None,
+            'total_sales':      total_sales,
+            'total_cash':       total_cash,
+            'total_card':       total_card,
+            'total_nequi':      total_nequi,
+            'total_transfer':   total_transfer,
+            'total_credit':     total_credit,
+            'total_withdrawals':total_wd,
+            'sales_count':      len(sales),
+            'difference':       difference,
             'notes':            self.notes,
             'status':                     self.status,
             'cashier_count_requested':    self.cashier_count_requested,
-            'cash_counted_by_cashier':    float(self.cash_counted_by_cashier) if self.cash_counted_by_cashier is not None else None,
+            'cash_counted_by_cashier':    r50(self.cash_counted_by_cashier) if self.cash_counted_by_cashier is not None else None,
             'branch_id':    self.branch_id,
             'branch_name':  self.branch.nombre if self.branch else None,
             'points_earned':self.points_earned or 0,

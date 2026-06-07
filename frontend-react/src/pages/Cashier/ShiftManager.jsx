@@ -32,13 +32,14 @@ const CashierView = ({ token, user }) => {
 
   useEffect(() => { load(); }, [load]);
 
-  const fmt = n => '$' + Number(n||0).toLocaleString('es-CO');
+  const round50 = n => Math.round(Number(n||0) / 50) * 50;
+  const fmt = n => '$' + round50(n).toLocaleString('es-CO');
 
   const efectivoEsperado = shift
-    ? (parseFloat(shift.base_amount||0) + parseFloat(shift.total_cash||0) - parseFloat(shift.total_withdrawals||0))
+    ? round50(parseFloat(shift.base_amount||0) + parseFloat(shift.total_cash||0) - parseFloat(shift.total_withdrawals||0))
     : 0;
 
-  const diferencia = conteo !== '' ? parseFloat(conteo||0) - efectivoEsperado : null;
+  const diferencia = conteo !== '' ? round50(parseFloat(conteo||0) - efectivoEsperado) : null;
 
   const handleClose = async (e) => {
     e.preventDefault();

@@ -2,7 +2,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
-const fmtMoney = (n) => `$${Number(n||0).toLocaleString('es-CO')}`;
+const round50  = n => Math.round(Number(n||0) / 50) * 50;
+const fmtMoney = (n) => `$${round50(n).toLocaleString('es-CO')}`;
 const fmtDate  = (d) => d?.slice(0,10) || '';
 const NOW      = () => new Date().toLocaleDateString('es-CO');
 
@@ -12,13 +13,13 @@ const formatDate = (d) =>
 const formatDateFile = (d) =>
   d ? new Date(d).toLocaleDateString('es-CO').replace(/\//g,'-') : '';
 
-const pdfHeader = (doc, title) => {
+const pdfHeader = (doc, title, businessName = 'SmartMerca') => {
   doc.setFillColor(26, 107, 60);
   doc.rect(0, 0, 210, 22, 'F');
   doc.setTextColor(255,255,255);
   doc.setFontSize(14);
   doc.setFont('helvetica','bold');
-  doc.text('SmartMerca', 14, 10);
+  doc.text(businessName, 14, 10);
   doc.setFontSize(10);
   doc.setFont('helvetica','normal');
   doc.text(title, 14, 17);
@@ -26,12 +27,12 @@ const pdfHeader = (doc, title) => {
   doc.setTextColor(0,0,0);
 };
 
-export const exportVentasPDF = (sales, dateFrom, dateTo) => {
+export const exportVentasPDF = (sales, dateFrom, dateTo, businessName = 'SmartMerca') => {
   const doc = new jsPDF();
   const titulo = dateFrom && dateTo
     ? `Reporte de ventas del ${formatDate(dateFrom)} al ${formatDate(dateTo)}`
     : 'Reporte de Ventas';
-  pdfHeader(doc, titulo);
+  pdfHeader(doc, titulo, businessName);
   autoTable(doc, {
     startY: 28,
     head: [['#Venta','Fecha','Cajero','Cliente','Método','Total']],
@@ -41,11 +42,11 @@ export const exportVentasPDF = (sales, dateFrom, dateTo) => {
       s.cashier || s.cashier_name || '—',
       s.customer?.full_name || '—',
       s.payment_method || 'efectivo',
-      fmtMoney(s.total * 1.19),
+      fmtMoney(s.total),
     ]),
-    foot: [[' ',' ',' ',' ','TOTAL', fmtMoney(sales.reduce((a,s)=>a+s.total*1.19,0))]],
+    foot: [[' ',' ',' ',' ','TOTAL', fmtMoney(sales.reduce((a,s)=>a+Number(s.total||0),0))]],
     headStyles:  { fillColor: [26,107,60] },
-    footStyles:  { fillColor: [240,240,240], fontStyle:'bold' },
+    footStyles:  { fillColor: [26,107,60], textColor:[255,255,255], fontStyle:'bold' },
     alternateRowStyles: { fillColor: [248,250,252] },
   });
   const nombre = dateFrom && dateTo
@@ -54,7 +55,7 @@ export const exportVentasPDF = (sales, dateFrom, dateTo) => {
   doc.save(`${nombre}.pdf`);
 };
 
-export const exportVentasExcel = (sales, dateFrom, dateTo) => {
+export const exportVentasExcel = (sales, dateFrom, dateTo, businessName = 'SmartMerca') => {
   const data = sales.map(s => ({
     'Venta':         `#${String(s.id).padStart(6,'0')}`,
     'Fecha':         fmtDate(s.created_at),
@@ -62,8 +63,7 @@ export const exportVentasExcel = (sales, dateFrom, dateTo) => {
     'Cliente':       s.customer?.full_name || '—',
     'Método pago':   s.payment_method || 'efectivo',
     'Subtotal':      s.total,
-    'IVA 19%':       s.total * 0.19,
-    'Total':         s.total * 1.19,
+    'Total':         Math.round(Number(s.total||0)),
   }));
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
@@ -74,9 +74,9 @@ export const exportVentasExcel = (sales, dateFrom, dateTo) => {
   XLSX.writeFile(wb, `${nombre}.xlsx`);
 };
 
-export const exportInventarioPDF = (products) => {
+export const exportInventarioPDF = (products, businessName = 'SmartMerca') => {
   const doc = new jsPDF();
-  pdfHeader(doc, 'Reporte de Inventario');
+  pdfHeader(doc, 'Reporte de Inventario', businessName);
   autoTable(doc, {
     startY: 28,
     head: [['Producto','Categoría','Stock','Precio venta','Vencimiento','Estado']],
@@ -107,13 +107,13 @@ export const exportCierresExcel  = (closes)    => { console.log("Exportando cier
 export const exportClientesPDF   = (customers) => { console.log("Exportando clientes PDF", customers); };
 export const exportClientesExcel = (customers) => { console.log("Exportando clientes Excel", customers); };
 
-export const exportOrdenCompraPDF = (order) => {
+export const exportOrdenCompraPDF = (order, businessName = 'SmartMerca') => {
   const doc = new jsPDF();
   doc.setFillColor(30, 58, 95);
   doc.rect(0, 0, 210, 28, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(16); doc.setFont('helvetica', 'bold');
-  doc.text('SmartMerca', 14, 12);
+  doc.text(businessName, 14, 12);
   doc.setFontSize(11); doc.setFont('helvetica', 'normal');
   doc.text('ORDEN DE COMPRA', 14, 20);
   doc.text(`Generado: ${NOW()}`, 196, 20, { align: 'right' });
@@ -142,7 +142,7 @@ export const exportOrdenCompraPDF = (order) => {
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i); doc.setFontSize(8); doc.setTextColor(150);
-    doc.text('SmartMerca — Documento interno', 14, 290);
+    doc.text(`${businessName} — Documento interno`, 14, 290);
     doc.text(`Página ${i} de ${pageCount}`, 196, 290, { align: 'right' });
   }
   doc.save(`orden_compra_${order.numero_orden}.pdf`);
@@ -183,9 +183,9 @@ export const exportViewPDF = async (elementId, fileName = 'reporte') => {
 
 // ── Exportaciones para roles (Supervisor, Contador, Auditor) ────────────────
 
-export const exportSupervisorPDF = (ventas, shifts, dateFrom, dateTo) => {
+export const exportSupervisorPDF = (ventas, shifts, dateFrom, dateTo, businessName = 'SmartMerca') => {
   const doc = new jsPDF();
-  pdfHeader(doc, `Reporte Supervisor — ${dateFrom || 'Todos'} al ${dateTo || 'hoy'}`);
+  pdfHeader(doc, `Reporte Supervisor — ${dateFrom || 'Todos'} al ${dateTo || 'hoy'}`, businessName);
   let y = 28;
 
   // Ventas
@@ -204,7 +204,7 @@ export const exportSupervisorPDF = (ventas, shifts, dateFrom, dateTo) => {
     ]),
     foot: [[' ',' ',' ',' ','TOTAL', fmtMoney(ventas.reduce((a,s)=>a+Number(s.total||0),0))]],
     headStyles:  { fillColor: [26,107,60] },
-    footStyles:  { fillColor: [240,240,240], fontStyle:'bold' },
+    footStyles:  { fillColor: [26,107,60], textColor:[255,255,255], fontStyle:'bold' },
     alternateRowStyles: { fillColor: [248,250,252] },
   });
   y = doc.lastAutoTable.finalY + 10;
@@ -268,9 +268,9 @@ export const exportSupervisorExcel = (ventas, shifts, dateFrom, dateTo) => {
   XLSX.writeFile(wb, `supervisor_${formatDateFile(dateFrom) || NOW().replace(/\//g,'-')}.xlsx`);
 };
 
-export const exportContadorPDF = (ventas, facturas, dateFrom, dateTo) => {
+export const exportContadorPDF = (ventas, facturas, dateFrom, dateTo, businessName = 'SmartMerca') => {
   const doc = new jsPDF();
-  pdfHeader(doc, `Reporte Financiero — ${dateFrom || 'Todos'} al ${dateTo || 'hoy'}`);
+  pdfHeader(doc, `Reporte Financiero — ${dateFrom || 'Todos'} al ${dateTo || 'hoy'}`, businessName);
   let y = 28;
 
   // KPIs financieros
@@ -298,7 +298,7 @@ export const exportContadorPDF = (ventas, facturas, dateFrom, dateTo) => {
     ]),
     foot: [[' ',' ',' ',' ','TOTAL INGRESOS', fmtMoney(totalVentas)]],
     headStyles:  { fillColor: [26,107,60] },
-    footStyles:  { fillColor: [240,240,240], fontStyle:'bold' },
+    footStyles:  { fillColor: [26,107,60], textColor:[255,255,255], fontStyle:'bold' },
     alternateRowStyles: { fillColor: [248,250,252] },
   });
   y = doc.lastAutoTable.finalY + 10;
@@ -355,9 +355,9 @@ export const exportContadorExcel = (ventas, facturas, dateFrom, dateTo) => {
   XLSX.writeFile(wb, `contador_financiero_${formatDateFile(dateFrom) || NOW().replace(/\//g,'-')}.xlsx`);
 };
 
-export const exportAuditorPDF = (logs, dateFrom, dateTo) => {
+export const exportAuditorPDF = (logs, dateFrom, dateTo, businessName = 'SmartMerca') => {
   const doc = new jsPDF();
-  pdfHeader(doc, `Bitácora de Auditoría — ${dateFrom || 'Todos'} al ${dateTo || 'hoy'}`);
+  pdfHeader(doc, `Bitácora de Auditoría — ${dateFrom || 'Todos'} al ${dateTo || 'hoy'}`, businessName);
   autoTable(doc, {
     startY: 28,
     head: [['Fecha','Usuario','Rol','Acción','Descripción']],
@@ -376,7 +376,7 @@ export const exportAuditorPDF = (logs, dateFrom, dateTo) => {
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i); doc.setFontSize(8); doc.setTextColor(150);
-    doc.text('SmartMerca — Documento confidencial de auditoría', 14, 290);
+    doc.text(`${businessName} — Documento confidencial de auditoría`, 14, 290);
     doc.text(`Página ${i} de ${pageCount}`, 196, 290, { align:'right' });
   }
   doc.save(`auditoria_${formatDateFile(dateFrom) || NOW().replace(/\//g,'-')}.pdf`);

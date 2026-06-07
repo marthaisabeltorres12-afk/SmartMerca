@@ -51,17 +51,21 @@ def download_backup():
         cmd.insert(4, f'--password={db_password}')
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        result = subprocess.run(cmd, capture_output=True, timeout=60)
         if result.returncode != 0:
-            return jsonify({'message': f'Error al generar backup: {result.stderr}'}), 500
+            error_msg = result.stderr.decode('utf-8', errors='replace') if result.stderr else 'Error desconocido'
+            return jsonify({'message': f'Error al generar backup: {error_msg}'}), 500
 
         sql_content = result.stdout
+        if not sql_content:
+            return jsonify({'message': 'El backup está vacío. Verifica la conexión a la BD.'}), 500
+
         return Response(
             sql_content,
             mimetype='application/octet-stream',
             headers={
                 'Content-Disposition': f'attachment; filename={filename}',
-                'Content-Length': len(sql_content.encode('utf-8'))
+                'Content-Length': len(sql_content),
             }
         )
     except subprocess.TimeoutExpired:

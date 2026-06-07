@@ -23,29 +23,39 @@ def _calc_totals(shift):
     if shift.closed_at:
         q = q.filter(Sale.created_at <= shift.closed_at)
     sales    = q.all()
-    sale_ids = [s.id for s in sales]
 
     total_sales = sum(float(s.total) for s in sales)
     total_wd    = sum(float(w.amount) for w in shift.withdrawals)
 
-    total_cash = total_card = total_nequi = total_transfer = total_credit = 0.0
+    # Usar Sale.total por método — no SalePayment.monto que incluye cambio del cliente
+    def pm(s, kw): return kw in (s.payment_method or '')
+    total_cash     = sum(float(s.total) for s in sales if pm(s,'efectivo') and not pm(s,'mixto'))
+    total_card     = sum(float(s.total) for s in sales if pm(s,'tarjeta'))
+    total_nequi    = sum(float(s.total) for s in sales if pm(s,'nequi') and not pm(s,'mixto'))
+    total_transfer = sum(float(s.total) for s in sales if pm(s,'transferencia') and not pm(s,'mixto'))
+    total_credit   = sum(float(s.total) for s in sales if pm(s,'credito'))
+
+    # Para pagos mixtos, distribuir proporcionalmente por los pagos registrados
+    sale_ids = [s.id for s in sales if pm(s,'mixto')]
     if sale_ids:
         payments = SalePayment.query.filter(SalePayment.sale_id.in_(sale_ids)).all()
+        # Agrupar por venta y calcular proporción
+        from collections import defaultdict
+        by_sale = defaultdict(list)
         for p in payments:
-            m = (p.metodo or '').lower()
-            if m == 'efectivo':        total_cash     += float(p.monto)
-            elif m == 'tarjeta':       total_card     += float(p.monto)
-            elif m == 'nequi':         total_nequi    += float(p.monto)
-            elif m == 'transferencia': total_transfer += float(p.monto)
-            elif m == 'credito':       total_credit   += float(p.monto)
-
-    if not sale_ids or total_cash + total_card + total_nequi + total_transfer + total_credit == 0:
-        def pm(s, kw): return kw in (s.payment_method or '')
-        total_cash     = sum(float(s.total) for s in sales if pm(s,'efectivo') or pm(s,'mixto'))
-        total_card     = sum(float(s.total) for s in sales if pm(s,'tarjeta'))
-        total_nequi    = sum(float(s.total) for s in sales if pm(s,'nequi'))
-        total_transfer = sum(float(s.total) for s in sales if pm(s,'transferencia'))
-        total_credit   = sum(float(s.total) for s in sales if pm(s,'credito'))
+            by_sale[p.sale_id].append(p)
+        for sid, ps in by_sale.items():
+            sale = next((s for s in sales if s.id == sid), None)
+            if not sale: continue
+            total_pagado = sum(float(p.monto) for p in ps)
+            for p in ps:
+                m = (p.metodo or '').lower()
+                proporcion = float(p.monto) / total_pagado if total_pagado > 0 else 0
+                parte = float(sale.total) * proporcion
+                if m == 'efectivo':        total_cash     += parte
+                elif m == 'tarjeta':       total_card     += parte
+                elif m == 'nequi':         total_nequi    += parte
+                elif m == 'transferencia': total_transfer += parte
 
     return {
         'total_sales':      total_sales,

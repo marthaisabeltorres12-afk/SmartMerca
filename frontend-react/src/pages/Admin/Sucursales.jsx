@@ -1,3 +1,4 @@
+import { usePlan, PLANES_INFO } from '../../context/PlanContext';
 import React, { useEffect, useState, useCallback } from 'react';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
@@ -10,6 +11,8 @@ const EMPTY = { nombre:'', direccion:'', ciudad:'', telefono:'', meta_ventas_men
 
 const Sucursales = () => {
   const { token } = useAuth();
+  const { hasFeature, plan, planInfo } = usePlan();
+  const limiteMax = hasFeature('sucursales_ilimitadas') ? 999 : hasFeature('sucursales_2') ? 2 : 1;
   const [branches,  setBranches]  = useState([]);
   const [ranking,   setRanking]   = useState([]);
   const [comparison, setComparison] = useState([]);
@@ -72,10 +75,20 @@ const Sucursales = () => {
             <h4 className="fw-bold mb-0"><i className="bi bi-shop me-2"></i> Sucursales y Ranking</h4>
             <p className="text-muted small mb-0">Gestión de puntos de venta y desempeño de cajeros</p>
           </div>
-          <button className="btn btn-primary fw-bold"
-            onClick={()=>{ setEditing(null); setForm(EMPTY); setShowModal(true); }}>
-            + Nueva sucursal
-          </button>
+          <div className="d-flex align-items-center gap-2">
+            {branches.length >= limiteMax && (
+              <span className="badge bg-warning text-dark">
+                <i className="bi bi-lock-fill me-1"></i>
+                Límite: {limiteMax} sucursal{limiteMax > 1 ? 'es' : ''} — Plan {planInfo?.nombre}
+              </span>
+            )}
+            <button className="btn btn-primary fw-bold"
+              disabled={branches.length >= limiteMax}
+              title={branches.length >= limiteMax ? `Tu plan permite máximo ${limiteMax} sucursal${limiteMax > 1 ? 'es' : ''}. Actualiza a Plan ${hasFeature('sucursales_2') ? 'Premium' : 'Estándar'}.` : ''}
+              onClick={()=>{ if(branches.length < limiteMax){ setEditing(null); setForm(EMPTY); setShowModal(true); } }}>
+              <i className="bi bi-plus-circle me-1"></i>Nueva sucursal
+            </button>
+          </div>
         </div>
 
         {alert && <div className={`alert alert-${alert.type} py-2`}>{alert.msg}</div>}
@@ -316,7 +329,7 @@ const Sucursales = () => {
                   <div className="modal-footer">
                     <button type="button" className="btn btn-secondary" onClick={()=>setShowModal(false)}>Cancelar</button>
                     <button type="submit" className="btn btn-primary fw-bold" disabled={loading}>
-                      {loading?'Guardando...':' Guardar'}
+                      {loading?'Guardando...':'<i className="bi bi-save me-2"></i> Guardar'}
                     </button>
                   </div>
                 </form>

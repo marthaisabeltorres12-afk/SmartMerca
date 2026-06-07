@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { PlanProvider } from './context/PlanContext';
+import PlanGuard from './components/PlanGuard';
 import NotifBanner           from './components/NotifBanner';
 import Login                 from './pages/Login';
 import ForgotPassword        from './pages/ForgotPassword';
@@ -75,6 +77,7 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
+        <PlanProvider>
         <Router>
           <NotifBanner />
           <Routes>
@@ -85,7 +88,7 @@ function App() {
             <Route path="/reset-password"  element={<ResetPassword />} />
             
             {/* ── Supervisor ── */}
-            <Route path="/supervisor"           element={<PrivateRoute roles={['supervisor']}><SupervisorDashboard /></PrivateRoute>} />
+            <Route path="/supervisor"           element={<PrivateRoute roles={['supervisor']}><PlanGuard feature="supervisor"><SupervisorDashboard /></PlanGuard></PrivateRoute>} />
             <Route path="/supervisor/ventas"    element={<PrivateRoute roles={['supervisor']}><SupervisorDashboard /></PrivateRoute>} />
             <Route path="/supervisor/productos" element={<PrivateRoute roles={['supervisor']}><SupervisorDashboard /></PrivateRoute>} />
             <Route path="/supervisor/clientes"  element={<PrivateRoute roles={['supervisor']}><SupervisorDashboard /></PrivateRoute>} />
@@ -116,27 +119,27 @@ function App() {
             <Route path="/admin/alertas"           element={<PrivateRoute roles={['admin','admin_tecnico']}><Alerts /></PrivateRoute>} />
             <Route path="/admin/reportes"          element={<PrivateRoute roles={['admin','admin_tecnico']}><Reports /></PrivateRoute>} />
             <Route path="/admin/auditoria"         element={<PrivateRoute roles={['admin','admin_tecnico']}><AuditLogs /></PrivateRoute>} />
-            <Route path="/admin/pin"               element={<PrivateRoute roles={['admin','admin_tecnico']}><AdminPinSetup /></PrivateRoute>} />
+            <Route path="/admin/pin"               element={<PrivateRoute roles={['admin','admin_tecnico']}><PlanGuard feature="pin_autorizacion"><AdminPinSetup /></PlanGuard></PrivateRoute>} />
             <Route path="/admin/cartera"           element={<PrivateRoute roles={['admin','admin_tecnico','contador']}><Cartera /></PrivateRoute>} />
             <Route path="/admin/presentaciones"    element={<PrivateRoute roles={['admin','admin_tecnico']}><ManagePresentations /></PrivateRoute>} />
             <Route path="/admin/lineas"            element={<PrivateRoute roles={['admin','admin_tecnico']}><LinesOverview /></PrivateRoute>} />
             <Route path="/admin/lineas/:categoria" element={<PrivateRoute roles={['admin','admin_tecnico']}><LineDashboard /></PrivateRoute>} />
             <Route path="/admin/turno"             element={<PrivateRoute roles={['admin','admin_tecnico']}><ShiftManager /></PrivateRoute>} />
-            <Route path="/admin/promociones"       element={<PrivateRoute roles={['admin','admin_tecnico']}><Promotions /></PrivateRoute>} />
-            <Route path="/admin/catalogo"          element={<PrivateRoute roles={['admin','admin_tecnico']}><Catalogo /></PrivateRoute>} />
-            <Route path="/admin/etiquetas"         element={<PrivateRoute roles={['admin','admin_tecnico','cajero']}><Etiquetas /></PrivateRoute>} />
+            <Route path="/admin/promociones"       element={<PrivateRoute roles={['admin','admin_tecnico']}><PlanGuard feature="promociones"><Promotions /></PlanGuard></PrivateRoute>} />
+            <Route path="/admin/catalogo"          element={<PrivateRoute roles={['admin','admin_tecnico']}><PlanGuard feature="catalogo_qr"><Catalogo /></PlanGuard></PrivateRoute>} />
+            <Route path="/admin/etiquetas"         element={<PrivateRoute roles={['admin','admin_tecnico','cajero']}><PlanGuard feature="etiquetas"><Etiquetas /></PlanGuard></PrivateRoute>} />
             <Route path="/admin/reporte-clientes"  element={<PrivateRoute roles={['admin','admin_tecnico']}><CustomerReport /></PrivateRoute>} />
-            <Route path="/admin/analisis-ventas"   element={<PrivateRoute roles={['admin','admin_tecnico']}><SalesAnalysis /></PrivateRoute>} />
-            <Route path="/admin/finanzas"          element={<PrivateRoute roles={['admin','admin_tecnico']}><AdvancedFinance /></PrivateRoute>} />
-            <Route path="/admin/cuentas-pagar"     element={<PrivateRoute roles={['admin','admin_tecnico']}><CuentasPagar /></PrivateRoute>} />
+            <Route path="/admin/analisis-ventas"   element={<PrivateRoute roles={['admin','admin_tecnico']}><PlanGuard feature="analisis_ventas"><SalesAnalysis /></PlanGuard></PrivateRoute>} />
+            <Route path="/admin/finanzas"          element={<PrivateRoute roles={['admin','admin_tecnico']}><PlanGuard feature="reportes_pdf"><AdvancedFinance /></PlanGuard></PrivateRoute>} />
+            <Route path="/admin/cuentas-pagar"     element={<PrivateRoute roles={['admin','admin_tecnico']}><PlanGuard feature="ordenes_compra"><CuentasPagar /></PlanGuard></PrivateRoute>} />
             <Route path="/admin/merma"             element={<PrivateRoute roles={['admin','admin_tecnico']}><Merma /></PrivateRoute>} />
-            <Route path="/admin/ordenes-compra"    element={<PrivateRoute roles={['admin','admin_tecnico','bodeguero']}><OrdenesCompra /></PrivateRoute>} />
-            <Route path="/admin/conteo"            element={<PrivateRoute roles={['admin','admin_tecnico','bodeguero']}><ConteoInventario /></PrivateRoute>} />
-            <Route path="/admin/bodegas"           element={<PrivateRoute roles={['admin','admin_tecnico','bodeguero']}><Bodegas /></PrivateRoute>} />
-            <Route path="/admin/sucursales"        element={<PrivateRoute roles={['admin','admin_tecnico']}><Sucursales /></PrivateRoute>} />
+            <Route path="/admin/ordenes-compra"    element={<PrivateRoute roles={['admin','admin_tecnico','bodeguero']}><PlanGuard feature="ordenes_compra"><OrdenesCompra /></PlanGuard></PrivateRoute>} />
+            <Route path="/admin/conteo"            element={<PrivateRoute roles={['admin','admin_tecnico','bodeguero']}><PlanGuard feature="etiquetas"><ConteoInventario /></PlanGuard></PrivateRoute>} />
+            <Route path="/admin/bodegas"           element={<PrivateRoute roles={['admin','admin_tecnico','bodeguero']}><PlanGuard feature="bodeguero"><Bodegas /></PlanGuard></PrivateRoute>} />
+            <Route path="/admin/sucursales"        element={<PrivateRoute roles={['admin','admin_tecnico']}><PlanGuard feature="sucursales_2"><Sucursales /></PlanGuard></PrivateRoute>} />
             <Route path="/admin/mi-plan" element={<PrivateRoute roles={['admin','admin_tecnico']}><MiPlan /></PrivateRoute>} />
            
-            <Route path="/admin/domicilios" element={<PrivateRoute roles={['admin','admin_tecnico','supervisor','cajero']}><DomiciliosAdmin /></PrivateRoute>} />
+            <Route path="/admin/domicilios" element={<PrivateRoute roles={['admin','admin_tecnico','supervisor','cajero']}><PlanGuard feature="domicilios"><DomiciliosAdmin /></PlanGuard></PrivateRoute>} />
             
             <Route path="/admin/politicas"         element={<PrivateRoute roles={['admin','admin_tecnico']}><BusinessPolicy /></PrivateRoute>} />
             <Route path="/admin/importar" element={<PrivateRoute roles={['admin','admin_tecnico']}><ImportarProductos /></PrivateRoute>} />
@@ -144,8 +147,8 @@ function App() {
             {/* ── Cajero ── */}
             <Route path="/cajero/ventas"       element={<PrivateRoute roles={['cajero']}><Sales /></PrivateRoute>} />
             <Route path="/cajero/historial"    element={<PrivateRoute roles={['cajero']}><SalesHistory /></PrivateRoute>} />
-            <Route path="/cajero/devoluciones" element={<PrivateRoute roles={['cajero']}><Returns /></PrivateRoute>} />
-            <Route path="/admin/devoluciones"  element={<PrivateRoute roles={['admin','admin_tecnico','supervisor','contador','auditor']}><DevolucionesAdmin /></PrivateRoute>} />
+            <Route path="/cajero/devoluciones" element={<PrivateRoute roles={['cajero']}><PlanGuard feature="devoluciones"><Returns /></PlanGuard></PrivateRoute>} />
+            <Route path="/admin/devoluciones"  element={<PrivateRoute roles={['admin','admin_tecnico','supervisor','contador','auditor']}><PlanGuard feature="devoluciones"><DevolucionesAdmin /></PlanGuard></PrivateRoute>} />
             <Route path="/cajero/turno"        element={<PrivateRoute roles={['cajero']}><CashierShift /></PrivateRoute>} />
             <Route path="/cajero"              element={<Navigate to="/cajero/ventas" />} />
 
@@ -165,6 +168,7 @@ function App() {
             <Route path="/" element={<Navigate to="/login" />} />
           </Routes>
         </Router>
+        </PlanProvider>
       </AuthProvider>
     </ThemeProvider>
   );

@@ -84,21 +84,18 @@ def get_dashboard_today():
     # ── Ventas por método de pago hoy ────────────────────────────────────
     try:
         from models.sale_payment import SalePayment
-        pagos_hoy = db.session.query(
-            SalePayment.metodo,
-            func.sum(SalePayment.monto).label('total')
-        ).join(Sale, Sale.id == SalePayment.sale_id)\
-         .filter(func.date(Sale.created_at) == today)\
-         .group_by(SalePayment.metodo).all()
-        metodos = {r.metodo: float(r.total) for r in pagos_hoy}
-        # Fallback: si no hay tabla sale_payments, usar payment_method de Sale
-        if not metodos:
-            ventas_metodo = db.session.query(
-                Sale.payment_method,
-                func.sum(Sale.total).label('total')
-            ).filter(func.date(Sale.created_at) == today)\
-             .group_by(Sale.payment_method).all()
-            metodos = {r.payment_method: float(r.total) for r in ventas_metodo if r.payment_method}
+        # Usar Sale.total agrupado por método, no SalePayment.monto que incluye cambio
+        ventas_metodo = db.session.query(
+            Sale.payment_method,
+            func.sum(Sale.total).label('total')
+        ).filter(func.date(Sale.created_at) == today)\
+         .group_by(Sale.payment_method).all()
+        metodos = {}
+        for r in ventas_metodo:
+            if not r.payment_method:
+                continue
+            pm = r.payment_method.replace('mixto:', '').split('+')[0] if 'mixto:' in (r.payment_method or '') else r.payment_method
+            metodos[pm] = metodos.get(pm, 0) + float(r.total or 0)
     except Exception:
         metodos = {}
 
@@ -106,21 +103,70 @@ def get_dashboard_today():
     por_sucursal = []
     try:
         from models.branch import Branch
+        from models.shift import Shift
+        from models.cash_register import CashRegister
         sucursales = Branch.query.filter_by(is_active=True).all()
+
+        # Detectar si Sale tiene branch_id
+        try:
+            from sqlalchemy import inspect as sa_inspect
+            cols = [c.key for c in sa_inspect(Sale).mapper.column_attrs]
+            tiene_branch = 'branch_id' in cols
+        except Exception:
+            tiene_branch = False
+
         for suc in sucursales:
-            q_suc = db.session.query(
-                func.count(Sale.id).label('count'),
-                func.sum(Sale.total).label('total')
-            ).filter(
-                func.date(Sale.created_at) == today,
-                Sale.branch_id == suc.id
-            ).first()
+            ventas = 0
+            total_suc = 0.0
+
+            if tiene_branch:
+                # Método 1: branch_id en Sale
+                q = db.session.query(
+                    func.count(Sale.id).label('count'),
+                    func.sum(Sale.total).label('total')
+                ).filter(
+                    func.date(Sale.created_at) == today,
+                    Sale.branch_id == suc.id
+                ).first()
+                ventas = int(q.count or 0)
+                total_suc = float(q.total or 0)
+
+            if ventas == 0:
+                # Método 2: turnos con branch_id hoy
+                turnos = Shift.query.filter(
+                    Shift.branch_id == suc.id,
+                    func.date(Shift.opened_at) == today
+                ).all()
+                cajero_ids = list({t.cashier_id for t in turnos if t.cashier_id})
+
+                if not cajero_ids:
+                    # Método 3: cajas asignadas a esta sucursal
+                    cajas = CashRegister.query.filter_by(branch_id=suc.id, is_active=True).all()
+                    caja_ids = [c.id for c in cajas]
+                    if caja_ids:
+                        turnos2 = Shift.query.filter(
+                            Shift.cash_register_id.in_(caja_ids),
+                            func.date(Shift.opened_at) == today
+                        ).all()
+                        cajero_ids = list({t.cashier_id for t in turnos2 if t.cashier_id})
+
+                if cajero_ids:
+                    q2 = db.session.query(
+                        func.count(Sale.id).label('count'),
+                        func.sum(Sale.total).label('total')
+                    ).filter(
+                        func.date(Sale.created_at) == today,
+                        Sale.cashier_id.in_(cajero_ids)
+                    ).first()
+                    ventas = int(q2.count or 0)
+                    total_suc = float(q2.total or 0)
+
             por_sucursal.append({
                 'nombre': suc.nombre,
-                'ventas': int(q_suc.count or 0),
-                'total':  float(q_suc.total or 0),
+                'ventas': ventas,
+                'total':  total_suc,
             })
-    except Exception:
+    except Exception as e:
         por_sucursal = []
 
     # ── Cajero top del día ───────────────────────────────────────────────

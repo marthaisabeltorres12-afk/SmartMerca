@@ -56,7 +56,8 @@ const InvoiceModal = ({ sale, cashierName, onClose }) => {
     }, 300);
   };
 
-  const total = sale.items?.reduce((a, i) => a + Number(i.subtotal), 0) || Number(sale.total) || 0;
+  const subtotalItems = sale.items?.reduce((a, i) => a + Number(i.subtotal), 0) || 0;
+  const total = sale.total ? Math.round(parseFloat(sale.total)) : subtotalItems;
 
   return (
     <div className="modal d-block" style={{ background:'rgba(0,0,0,0.6)', zIndex:9999 }}>
@@ -178,6 +179,12 @@ const InvoiceModal = ({ sale, cashierName, onClose }) => {
                       </tbody></table>
                     ))}
                     <table className="tot-table"><tbody>
+                      {subtotalItems > total && (
+                        <tr>
+                          <td>Descuento cupón:</td>
+                          <td style={{textAlign:'right', color:'#16a34a'}}>-${(subtotalItems - total).toLocaleString('es-CO')}</td>
+                        </tr>
+                      )}
                       <tr>
                         <td>TOTAL:</td>
                         <td>${Number(total).toLocaleString('es-CO')}</td>
@@ -262,7 +269,7 @@ const InvoiceModal = ({ sale, cashierName, onClose }) => {
           <div className="modal-footer py-2 gap-2">
             <button className="btn btn-outline-secondary btn-sm" onClick={onClose}>Cerrar</button>
             <button className="btn btn-dark btn-sm fw-bold" onClick={handlePrint}>
-              🖨️ Imprimir {isDian ? 'factura' : 'ticket'}
+              <i className="bi bi-printer me-1"></i> Imprimir {isDian ? 'factura' : 'ticket'}
             </button>
           </div>
         </div>

@@ -1,5 +1,15 @@
 from extensions import db
 
+def round_cop(n):
+    """Redondeo oficial Banco de la República Colombia"""
+    import math
+    n = float(n or 0)
+    centena = math.floor(n / 100) * 100
+    t = n - centena
+    if t <= 24:   return int(centena)
+    elif t <= 74: return int(centena + 50)
+    else:         return int(centena + 100)
+
 class Product(db.Model):
     __tablename__ = 'products'
 
@@ -64,16 +74,16 @@ class Product(db.Model):
                 return round(float(self.price))
 
             if promo.type == 'descuento_pct':
-                return round(float(self.price) * (1 - float(promo.discount_value) / 100))
+                return round_cop(float(self.price) * (1 - float(promo.discount_value) / 100))
 
             if promo.type == 'descuento_fijo':
-                return max(0, round(float(self.price) - float(promo.discount_value)))
+                return max(0, round_cop(float(self.price) - float(promo.discount_value)))
 
             # lleva_gratis no cambia el precio unitario
-            return round(float(self.price))
+            return round_cop(float(self.price))
 
         # SIN PROMOCIÓN
-        return round(float(self.price))
+        return round_cop(float(self.price))
     
     def _display_name(self):
         if self.gramaje_cantidad and self.gramaje_unidad:

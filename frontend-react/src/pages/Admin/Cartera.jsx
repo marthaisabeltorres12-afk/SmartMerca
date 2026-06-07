@@ -1,3 +1,4 @@
+import { usePlan } from '../../context/PlanContext';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
@@ -89,6 +90,7 @@ const Comprobante = ({ data, onClose }) => {
 // ── Componente principal ──────────────────────────────────────────────────
 const Cartera = () => {
   const { token } = useAuth();
+  const { hasFeature } = usePlan();
   const [cartera,    setCartera]    = useState([]);
   const [customers,  setCustomers]  = useState([]);
   const [alert,      setAlert]      = useState(null);
@@ -328,7 +330,14 @@ const Cartera = () => {
         {/* ── CONFIGURAR CRÉDITOS ── */}
         {tab === 'limites' && (
           <div className="card border-0 shadow-sm">
-            <div className="card-header fw-semibold">⚙️ Tope de crédito por cliente</div>
+            <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
+              <span><i className="bi bi-sliders me-2"></i>Tope de crédito por cliente</span>
+              {!hasFeature('credito_avanzado') && (
+                <span className="badge bg-warning text-dark">
+                  <i className="bi bi-lock-fill me-1"></i>Plan Estándar
+                </span>
+              )}
+            </div>
             <div className="table-responsive">
               <table className="table table-hover align-middle mb-0">
                 <thead className="table-light">
@@ -358,7 +367,9 @@ const Cartera = () => {
                       </td>
                       <td>
                         <button className="btn btn-sm btn-outline-primary"
-                          onClick={() => { setTopeModal(c); setTopeValor(String(c.credit_limit||'')); }}>
+                          disabled={!hasFeature('credito_avanzado')}
+                          title={!hasFeature('credito_avanzado') ? 'Requiere Plan Estándar' : ''}
+                          onClick={() => { if(hasFeature('credito_avanzado')) { setTopeModal(c); setTopeValor(String(c.credit_limit||'')); } }}>
                          <><i className="bi bi-pencil me-1"></i>Configurar</>
                         </button>
                       </td>

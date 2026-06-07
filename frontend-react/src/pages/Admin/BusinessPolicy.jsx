@@ -1,3 +1,4 @@
+import { usePlan } from '../../context/PlanContext';
 import React, { useEffect, useState } from 'react';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
@@ -8,6 +9,7 @@ const API = 'http://localhost:5000/api/policy/';
 
 const BusinessPolicy = () => {
   const { token } = useAuth();
+  const { hasFeature } = usePlan();
   const [form,    setForm]    = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving,  setSaving]  = useState(false);
@@ -73,13 +75,18 @@ const BusinessPolicy = () => {
         <form onSubmit={handleSave}>
           <div className="row g-4">
 
-            {/* ── Devoluciones ── */}
+            {/* ── Devoluciones — solo Plan Estándar+ ── */}
             <div className="col-lg-6">
               <div className="card border-0 shadow-sm h-100">
-                <div className="card-header border-0 bg-white fw-bold pt-3">
-                  Política de Devoluciones
+                <div className="card-header border-0 bg-white fw-bold pt-3 d-flex justify-content-between align-items-center">
+                  <span>Política de Devoluciones</span>
+                  {!hasFeature('devoluciones') && (
+                    <span className="badge bg-warning text-dark">
+                      <i className="bi bi-lock-fill me-1"></i>Plan Estándar
+                    </span>
+                  )}
                 </div>
-                <div className="card-body">
+                <div className="card-body" style={{pointerEvents: hasFeature('devoluciones') ? 'auto' : 'none', opacity: hasFeature('devoluciones') ? 1 : 0.4}}>
 
                   <div className="mb-4">
                     <label className="form-label fw-semibold">Tipo de devolución permitida</label>
@@ -143,7 +150,8 @@ const BusinessPolicy = () => {
               </div>
             </div>
 
-                  {/* PIN en devoluciones */}
+                  {/* PIN en devoluciones — solo Plan Estándar+ */}
+                  {hasFeature('devoluciones') && (<>
                   <hr className="my-3"/>
                   <div className="fw-semibold mb-3"><i className="bi bi-lock-fill me-2"></i> Autorización PIN en Devoluciones</div>
 
@@ -174,6 +182,7 @@ const BusinessPolicy = () => {
                     </div>
                     <div className="form-text">Si devuelven 2+ productos de una factura, se pide PIN sin importar el monto.</div>
                   </div>
+                  </>)}
 
             {/* ── Alertas de inventario + Info negocio ── */}
             <div className="col-lg-6 d-flex flex-column gap-4">

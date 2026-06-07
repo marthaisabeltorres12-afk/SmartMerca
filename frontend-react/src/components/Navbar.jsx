@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNotifications } from "../hooks/useNotifications";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { usePlan } from '../context/PlanContext';
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -8,7 +9,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 const adminLinks = [
   { path: "/admin", icon: "bi-speedometer2", label: "Dashboard" },
-   { path: "/admin/domicilios", icon: "bi-bicycle", label: "Domicilios", badge: "pendientes" },
+   { path: "/admin/domicilios", feature: "domicilios", icon: "bi-bicycle", label: "Domicilios", badge: "pendientes" },
   
 
   //  INVENTARIO
@@ -25,7 +26,7 @@ const adminLinks = [
       { path: "/admin/bodegas",        icon: "bi-building",     label: "Bodegas" },
       { path: "/admin/conteo",         icon: "bi-clipboard-check", label: "Conteo Físico" },
       { path: "/admin/merma",          icon: "bi-exclamation-triangle", label: "Merma" },
-      { path: "/admin/ordenes-compra", icon: "bi-cart-plus",    label: "Órdenes de Compra" },
+      { path: "/admin/ordenes-compra", feature: "ordenes_compra", icon: "bi-cart-plus",    label: "Órdenes de Compra" },
     ]
   },
 
@@ -55,14 +56,14 @@ const adminLinks = [
     group: true, label: "Operaciones", icon: "bi-gear", key: "operaciones",
     children: [
       { path: "/admin/usuarios",   icon: "bi-person-badge",    label: "Usuarios" },
-      { path: "/admin/sucursales", icon: "bi-shop",            label: "Sucursales" },
+      { path: "/admin/sucursales", icon: "bi-shop", label: "Sucursales", feature: "sucursales_2" },
       { path: "/admin/turno",      icon: "bi-toggle-on",       label: "Turnos y Cierres" },
-      { path: "/admin/promociones",icon: "bi-gift-fill",       label: "Promociones" },
+      { path: "/admin/promociones", feature: "promociones",icon: "bi-gift-fill",       label: "Promociones" },
       { path: "/admin/catalogo",   icon: "bi-shop-window",     label: "Catálogo en línea" },
-      { path: "/admin/etiquetas",  icon: "bi-tag",             label: "Etiquetas" },
+      { path: "/admin/etiquetas", feature: "etiquetas",  icon: "bi-tag",             label: "Etiquetas" },
       { path: "/admin/pin",        icon: "bi-shield-lock",     label: "Mi PIN" },
       { path: "/admin/politicas",  icon: "bi-clipboard-check", label: "Políticas" },
-      { path: "/admin/devoluciones", icon: "bi-arrow-return-left", label: "Devoluciones" },
+      { path: "/admin/devoluciones", feature: "devoluciones", icon: "bi-arrow-return-left", label: "Devoluciones" },
     ]
   },
 
@@ -85,8 +86,8 @@ const cajeroLinks = [
   { separator: true, label: "HISTORIAL" },
   { path: "/cajero/historial",    icon: "bi-receipt",           label: "Historial Tickets" },
   { separator: true, label: "OPERACIONES" },
-  { path: "/cajero/devoluciones", icon: "bi-arrow-return-left", label: "Devoluciones" },
-  { path: "/admin/etiquetas",       icon: "bi-tag",              label: "Etiquetas (F11)" },
+  { path: "/cajero/devoluciones", feature: "devoluciones", icon: "bi-arrow-return-left", label: "Devoluciones" },
+  { path: "/admin/etiquetas", feature: "etiquetas",       icon: "bi-tag",              label: "Etiquetas (F11)" },
   { path: "/cajero/turno",        icon: "bi-toggle-on",         label: "Mi Turno / Cierre" },
 ];
 
@@ -110,7 +111,7 @@ const tecnicoLinks = [
 const bodegueroLinks = [
   { path: "/admin/inventario",     icon: "bi-archive",         label: "Inventario" },
   { separator: true, label: "OPERACIONES" },
-  { path: "/admin/ordenes-compra", icon: "bi-cart-plus",       label: "Órdenes de Compra" },
+  { path: "/admin/ordenes-compra", feature: "ordenes_compra", icon: "bi-cart-plus",       label: "Órdenes de Compra" },
   { path: "/admin/conteo",         icon: "bi-clipboard-check", label: "Conteo Físico" },
   { path: "/admin/bodegas",        icon: "bi-building",        label: "Bodegas" },
   { separator: true, label: "PRODUCTOS" },
@@ -130,7 +131,7 @@ const supervisorLinks = [
   { separator: true, label: "CLIENTES" },
   { path: "/supervisor/clientes",  icon: "bi-people",         label: "Clientes" },
   { separator: true, label: "OPERACIONES" },
-  { path: "/admin/devoluciones",   icon: "bi-arrow-return-left", label: "Devoluciones" },
+  { path: "/admin/devoluciones", feature: "devoluciones",   icon: "bi-arrow-return-left", label: "Devoluciones" },
 ];
 
 const contadorLinks = [
@@ -140,7 +141,7 @@ const contadorLinks = [
   { path: "/contador/ventas",      icon: "bi-receipt",           label: "Ventas" },
   { path: "/contador/cuentas",     icon: "bi-credit-card",       label: "Cuentas por pagar" },
   { path: "/admin/cartera",        icon: "bi-wallet2",           label: "Cartera — Créditos" },
-  { path: "/admin/devoluciones",   icon: "bi-arrow-return-left", label: "Devoluciones" },
+  { path: "/admin/devoluciones", feature: "devoluciones",   icon: "bi-arrow-return-left", label: "Devoluciones" },
   { separator: true, label: "AUDITORÍA" },
   { path: "/contador/auditoria",   icon: "bi-shield-check",      label: "Auditoría" },
 ];
@@ -149,7 +150,7 @@ const auditorLinks = [
   { path: "/auditor",              icon: "bi-speedometer2",      label: "Dashboard" },
   { separator: true, label: "AUDITORÍA" },
   { path: "/auditor/logs",         icon: "bi-shield-check",      label: "Logs del sistema" },
-  { path: "/admin/devoluciones",   icon: "bi-arrow-return-left", label: "Devoluciones" },
+  { path: "/admin/devoluciones", feature: "devoluciones",   icon: "bi-arrow-return-left", label: "Devoluciones" },
   { path: "/admin/usuarios",       icon: "bi-person-badge",      label: "Usuarios (lectura)" },
   { separator: true, label: "REPORTES" },
   { path: "/auditor/ventas",       icon: "bi-receipt",           label: "Ventas (lectura)" },

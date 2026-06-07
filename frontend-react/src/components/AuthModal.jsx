@@ -1,3 +1,4 @@
+import { usePlan } from '../context/PlanContext';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { apiFetch } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -18,11 +19,12 @@ const AuthModal = ({ tipo = 'eliminar_producto', onAuthorized, onCancel, targetE
   const { token } = useAuth();
 
   const [pin,          setPin]          = useState('');
+  const { hasFeature } = usePlan();
   const [tarjeta,      setTarjeta]      = useState('');
   const [error,        setError]        = useState('');
   const [loading,      setLoading]      = useState(false);
   const [escaneando,   setEscaneando]   = useState(false); // badge visual al detectar escaneo
-  const [modoActivo,   setModoActivo]   = useState('tarjeta'); // 'tarjeta' | 'pin' — tarjeta primero
+  const [modoActivo,   setModoActivo]   = useState('pin'); // 'tarjeta' | 'pin'
 
   const pinRef     = useRef();
   const tarjetaRef = useRef();
@@ -42,7 +44,6 @@ const AuthModal = ({ tipo = 'eliminar_producto', onAuthorized, onCancel, targetE
     titulo: <><i className="bi bi-pencil-square me-2"></i>Editar precio</>,
     sub: 'Escanea la tarjeta o ingresa PIN del administrador'
   },
-
   devolucion: {
     titulo: <><i className="bi bi-arrow-return-left me-2"></i>Devolución</>,
     sub: 'Escanea la tarjeta o ingresa PIN del administrador'
@@ -51,27 +52,18 @@ const AuthModal = ({ tipo = 'eliminar_producto', onAuthorized, onCancel, targetE
     titulo: <><i className="bi bi-tags me-2"></i>Descuento manual</>,
     sub: 'Escanea la tarjeta o ingresa PIN del administrador'
   },
-  reset_password: {
-    titulo: <><i className="bi bi-shield-lock me-2"></i>Restablecer contraseña</>,
-    sub: ' Requiere tarjeta Y PIN (doble factor)'
-  },
-
-
-  devolucion: {
-    titulo: <><i className="bi bi-arrow-counterclockwise me-2"></i>Devolución</>,
+  descuento_venta: {
+    titulo: <><i className="bi bi-percent me-2"></i>Descuento a la venta</>,
     sub: 'Escanea la tarjeta o ingresa PIN del administrador'
   },
-
-  descuento_manual: {
-    titulo: <><i className="bi bi-tag me-2"></i>Descuento manual</>,
+  retiro_efectivo: {
+    titulo: <><i className="bi bi-box-arrow-up me-2"></i>Retiro de efectivo</>,
     sub: 'Escanea la tarjeta o ingresa PIN del administrador'
   },
-
   reset_password: {
     titulo: <><i className="bi bi-key me-2"></i>Restablecer contraseña</>,
     sub: <><i className="bi bi-exclamation-triangle text-warning me-2"></i>Requiere tarjeta y PIN (doble factor)</>
   }
-
 };
 
 const label = LABELS[tipo] || {
@@ -164,6 +156,8 @@ const label = LABELS[tipo] || {
     setError('');
 
     if (!pin && !tarjeta) { setError('Escanea la tarjeta o ingresa el PIN'); return; }
+    if (pin && pin.length < 4) { setError('El PIN debe tener al menos 4 dígitos'); return; }
+    if (pin && pin.length > 6) { setError('El PIN no puede tener más de 6 dígitos'); return; }
     if (esDobleFacto && (!pin || !tarjeta)) {
       setError('Esta acción requiere AMBOS: tarjeta y PIN'); return;
     }
@@ -224,8 +218,8 @@ const label = LABELS[tipo] || {
 
         <form onSubmit={handleSubmit}>
 
-          {/* ── TARJETA — PRIMERO Y PRINCIPAL ── */}
-          <div style={{ marginBottom:16 }}>
+          {/* ── TARJETA — solo Plan Estándar+ ── */}
+          {hasFeature('pin_autorizacion') && <div style={{ marginBottom:16 }}>
             <label
   style={{
     color: '#94a3b8',
@@ -293,14 +287,15 @@ const label = LABELS[tipo] || {
   <i className="bi bi-lightbulb me-1"></i>
   El lector USB funciona automáticamente — solo apunta y escanea
 </div>
-          </div>
+          </div>}
 
-          {/* Separador */}
+          {hasFeature('pin_autorizacion') && (
           <div style={{ display:'flex', alignItems:'center', gap:10, margin:'12px 0', color:'#475569', fontSize:12 }}>
             <div style={{ flex:1, height:1, background:'#334155' }} />
             {esDobleFacto ? 'Y TAMBIÉN' : 'O'}
             <div style={{ flex:1, height:1, background:'#334155' }} />
           </div>
+          )}
 
           {/* ── PIN ── */}
           <div style={{ marginBottom:20 }}>
@@ -345,7 +340,7 @@ const label = LABELS[tipo] || {
           </div>
 
           {/* Hint modo simple */}
-          {!esDobleFacto && (
+          {!esDobleFacto && hasFeature('pin_autorizacion') && (
             <div style={{ textAlign:'center', color:'#475569', fontSize:11, marginTop:12 }}>
               Con tarjeta se autoriza automáticamente al escanear
             </div>

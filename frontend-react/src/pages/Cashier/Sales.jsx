@@ -1,3 +1,5 @@
+import PlanGuard from '../../components/PlanGuard';
+import { usePlan } from '../../context/PlanContext';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -50,6 +52,16 @@ const displayName = (p) => {
 const PESO_CATS = ['Frutas y verduras', 'Carnes y embutidos'];
 const esPorPeso = (cat) => PESO_CATS.includes(cat);
 
+const roundCOP = n => {
+  const v = Math.abs(Number(n || 0));
+  const neg = Number(n || 0) < 0;
+  const centena = Math.floor(v / 100) * 100;
+  const t = v - centena;
+  let r = t <= 24 ? centena : t <= 74 ? centena + 50 : centena + 100;
+  return neg ? -r : r;
+};
+const round50 = roundCOP;
+
 let _tabCounter = 1;
 // sinDian = true → pestaña creada con F5, no emite factura DIAN
 const newTab = (sinDian = false) => ({
@@ -69,6 +81,9 @@ const newTab = (sinDian = false) => ({
   showNewCustomer:  false,
   newCustomerForm:  { doc_type:'CC', doc_number:'', full_name:'', phone:'', email:'' },
   catFilter:        '',
+  cuponCode:        '',
+  cuponData:        null,
+  cuponLoading:     false,
 });
 
 // ─── Ticket ────────────────────────────────────────────────────────────────
@@ -120,7 +135,8 @@ const Invoice = ({ sale, cashierName, onClose, mode = 'sin_dian' }) => {
     }, 300);
   };
 
-  const total = sale.items?.reduce((a, i) => a + i.subtotal, 0) || 0;
+  const subtotalItems = sale.items?.reduce((a, i) => a + i.subtotal, 0) || 0;
+  const total = sale.total ? Math.round(parseFloat(sale.total)) : subtotalItems;
 
   return (
     <div className="modal d-block" style={{ background:'rgba(0,0,0,0.6)', zIndex:9999 }}>
@@ -235,6 +251,9 @@ const Invoice = ({ sale, cashierName, onClose, mode = 'sin_dian' }) => {
                     </tbody></table>
                   ))}
                   <table className="tot-table"><tbody>
+                    {subtotalItems > total && (
+                      <tr><td>Descuento cupón:</td><td style={{textAlign:'right', color:'#16a34a'}}>-${(subtotalItems - total).toLocaleString('es-CO')}</td></tr>
+                    )}
                     <tr><td>TOTAL:</td><td>${Number(total).toLocaleString('es-CO')}</td></tr>
                   </tbody></table>
                 </>);
@@ -299,6 +318,7 @@ const SalePanel = ({
   guardarVentaPendiente, tabs = [],
   camaraProductoPeso, onClearCamaraProductoPeso,
 }) => {
+  const { hasFeature } = usePlan();
   const queryRef  = useRef();
   const weightRef = useRef();
   const pinRef    = useRef();
@@ -420,6 +440,32 @@ const SalePanel = ({
     queryRef.current?.focus();
   };
 
+  const applyCupon = async () => {
+    if (!tab.cuponCode) return;
+    onUpdate(tab.id, d => ({ ...d, cuponLoading: true }));
+    try {
+      const res = await fetch('http://localhost:5000/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codigo:      tab.cuponCode,
+          customer_id: tab.selectedCustomer?.id || null,
+          total:       total,
+        })
+      });
+      const data = await res.json();
+      if (data.valid) {
+        onUpdate(tab.id, d => ({ ...d, cuponData: data, cuponLoading: false }));
+      } else {
+        showAlert('danger', data.message || 'Cupón no válido');
+        onUpdate(tab.id, d => ({ ...d, cuponData: null, cuponLoading: false }));
+      }
+    } catch(e) {
+      showAlert('danger', 'Error al validar el cupón');
+      onUpdate(tab.id, d => ({ ...d, cuponLoading: false }));
+    }
+  };
+
   const stockDisponible = useCallback((productId, cart, prods) => {
     const prod = (prods || products).find(p => p.id === productId);
     if (!prod) return 0;
@@ -529,10 +575,10 @@ const SalePanel = ({
             if (promo && promo.is_valid_today) {
               if (promo.type === 'descuento_pct' && promo.discount_value > 0) {
                 descPct = promo.discount_value;
-                precio  = Math.round(precioBase * (1 - promo.discount_value / 100));
+                precio  = round50(precioBase * (1 - promo.discount_value / 100));
                 promoLabel = `-${promo.discount_value}%`;
               } else if (promo.type === 'descuento_fijo' && promo.discount_value > 0) {
-                precio  = Math.max(0, Math.round(precioBase - promo.discount_value));
+                precio  = Math.max(0, round50(precioBase - promo.discount_value));
                 descPct = Math.round((promo.discount_value / precioBase) * 100);
                 promoLabel = `-$${Number(promo.discount_value).toLocaleString('es-CO')}`;
               }
@@ -685,11 +731,15 @@ const SalePanel = ({
   const _ejecutarVenta = async (mode, dianCliente = null) => {
     if (handleSaleRef) handleSaleRef.current = () => _ejecutarVenta(mode, dianCliente);
 
+    // Aplicar descuento de cupón si existe
+    const descuentoCupon = tab.cuponData ? Math.round(tab.cuponData.descuento) : 0;
+    const totalFinal = Math.max(0, total - descuentoCupon);
+
     if (tab.isMixto) {
       const ef2 = parseFloat(tab.mixtoEfectivo || 0);
       const m2  = parseFloat(tab.mixtoMonto2   || 0);
-      if (ef2 + m2 < total) {
-        showAlert('danger', 'La suma ' + fmtMoney(ef2+m2) + ' es menor al total ' + fmtMoney(total));
+      if (ef2 + m2 < totalFinal) {
+        showAlert('danger', 'La suma ' + fmtMoney(ef2+m2) + ' es menor al total ' + fmtMoney(totalFinal));
         return;
       }
       if (!tab.mixtoRef && (tab.mixtoSegundo === 'nequi' || tab.mixtoSegundo === 'transferencia')) {
@@ -707,7 +757,7 @@ const SalePanel = ({
         return;
       }
     } else if (tab.paymentMethod === 'efectivo') {
-      if (parseFloat(tab.cashReceived || 0) < total) {
+      if (parseFloat(tab.cashReceived || 0) < totalFinal) {
         showAlert('danger', 'El efectivo recibido es insuficiente');
         return;
       }
@@ -722,8 +772,8 @@ const SalePanel = ({
       const ef2 = parseFloat(tab.mixtoEfectivo || 0);
       const m2  = parseFloat(tab.mixtoMonto2   || 0);
       const cambioEfectivo = tab.isMixto
-        ? Math.max(0, Math.round(ef2 - (total - m2)))
-        : Math.max(0, Math.round(parseFloat(tab.cashReceived||0) - total));
+        ? Math.max(0, round50(ef2 - (totalFinal - m2)))
+        : Math.max(0, round50(parseFloat(tab.cashReceived||0) - totalFinal));
 
       const payments = tab.isMixto ? [
         { metodo: 'efectivo',       monto: ef2,   cambio: cambioEfectivo, referencia: null },
@@ -733,8 +783,8 @@ const SalePanel = ({
           metodo:     tab.paymentMethod,
           // Si es efectivo guardamos lo que el cliente entrego, no el total
           monto:      tab.paymentMethod === 'efectivo'
-                        ? parseFloat(tab.cashReceived || total)
-                        : total,
+                        ? parseFloat(tab.cashReceived || totalFinal)
+                        : totalFinal,
           cambio:     cambioEfectivo,
           referencia: null,
         },
@@ -768,6 +818,8 @@ if (!isOnline) {
     payments,
     cambio:         cambioEfectivo,
     sale_mode:      mode,
+    cupon_id:       tab.cuponData?.cupon_id || null,
+    descuento_cupon: tab.cuponData?.descuento || 0,
   }, token);
 }
 
@@ -784,7 +836,7 @@ if (!isOnline) {
           : tab.paymentMethod === 'efectivo' ? parseFloat(tab.cashReceived || 0) : 0,
         cambio: tab.isMixto
           ? Math.max(0, ef2 - (total - m2))
-          : tab.paymentMethod === 'efectivo' ? Math.max(0, parseFloat(tab.cashReceived || 0) - total) : 0,
+          : tab.paymentMethod === 'efectivo' ? Math.max(0, parseFloat(tab.cashReceived || 0) - totalConCupon) : 0,
       });
     } catch(e) {
       if (e.status === 409) {
@@ -804,10 +856,11 @@ if (!isOnline) {
 
     const LIMITE_CONSUMIDOR_FINAL = 100000; // ajusta según tu negocio
 
-if (tab.sinDian) {
-  await _ejecutarVenta('sin_dian', null);
-  return;
-}
+    // Si no tiene plan DIAN → siempre sin DIAN
+    if (!hasFeature('dian') || tab.sinDian) {
+      await _ejecutarVenta('sin_dian', null);
+      return;
+    }
 
 // Si ya hay cliente → no pedir datos
 if (tab.selectedCustomer) {
@@ -937,8 +990,10 @@ setDianModal(true);
     return () => window.removeEventListener('keydown', handler);
   }, [tab, pinModal, suspendedSales, onSuspend, onUpdate, showAlert, onAddTabSinDian, handleSale]);
 
-  const total  = Math.round(tab.cart.reduce((a, c) => a + (parseFloat(c.price) || 0) * (parseFloat(c.quantity) || 0), 0));
-  const cambio = parseFloat(tab.cashReceived || 0) - total;
+  const total  = round50(tab.cart.reduce((a, c) => a + (parseFloat(c.price) || 0) * (parseFloat(c.quantity) || 0), 0));
+  const descuentoCupon = tab.cuponData ? Math.round(tab.cuponData.descuento) : 0;
+  const totalConCupon  = Math.max(0, total - descuentoCupon);
+  const cambio = parseFloat(tab.cashReceived || 0) - totalConCupon;
 
   const stockBadge = (item) => {
     let maxStock;
@@ -1490,8 +1545,20 @@ setDianModal(true);
                 <div className="mt-3 p-2 rounded" style={{ background:'#f8fafc', fontSize:12 }}>
                   <div className="d-flex justify-content-between">
                     <span className="text-muted">Total a facturar:</span>
-                    <span className="fw-bold text-success fs-6">{fmtMoney(total)}</span>
+                    <span className={`fw-bold fs-6 ${tab.cuponData ? 'text-decoration-line-through text-muted' : 'text-success'}`}>{fmtMoney(total)}</span>
                   </div>
+                  {tab.cuponData && (
+                    <>
+                      <div className="d-flex justify-content-between mt-1">
+                        <span className="text-success small"><i className="bi bi-ticket-perforated me-1"></i>Cupón {tab.cuponCode}:</span>
+                        <span className="text-success small fw-bold">-{fmtMoney(tab.cuponData.descuento)}</span>
+                      </div>
+                      <div className="d-flex justify-content-between mt-1">
+                        <span className="fw-bold">Total con cupón:</span>
+                        <span className="fw-bold text-success fs-6">{fmtMoney(Math.max(0, total - tab.cuponData.descuento))}</span>
+                      </div>
+                    </>
+                  )}
                   <div className="d-flex justify-content-between mt-1">
                     <span className="text-muted">Resolución DIAN:</span>
                     <span className="text-muted">No. 18764050366042</span>
@@ -1579,9 +1646,20 @@ setDianModal(true);
               {query && (
                 <button className="btn btn-outline-secondary" onClick={clearQuery}>x</button>
               )}
-              <button className="btn btn-outline-success" title="Cámara IA"
-                onClick={() => onOpenCamera && onOpenCamera()}>
-                </button>
+              <button
+                className={`btn ${hasFeature('camara_ia') ? 'btn-outline-success' : 'btn-outline-secondary'}`}
+                title={hasFeature('camara_ia') ? 'Cámara IA — Identificar frutas y verduras' : 'Cámara IA — Requiere Plan Premium'}
+                onClick={() => hasFeature('camara_ia') && onOpenCamera && onOpenCamera()}
+                style={{ position:'relative' }}>
+                <i className="bi bi-camera-fill"></i>
+                {!hasFeature('camara_ia') && (
+                  <i className="bi bi-lock-fill" style={{
+                    position:'absolute', top:-4, right:-4,
+                    fontSize:10, background:'#6b7280', color:'#fff',
+                    borderRadius:'50%', padding:'2px 3px'
+                  }}></i>
+                )}
+              </button>
             </div>
             <div className="d-flex align-items-center justify-content-between mt-1">
               <div className="text-muted" style={{ fontSize:11 }}>
@@ -1809,6 +1887,37 @@ setDianModal(true);
           </div>
         </div>
 
+        {/* Cupón de descuento — solo Plan Estándar+ */}
+        {hasFeature('cupones') && (
+        <div className="mb-3 px-1">
+          <div className="fw-semibold small mb-1"><i className="bi bi-ticket-perforated me-1"></i>Cupón de descuento</div>
+          <div className="d-flex gap-2">
+            <input className="form-control form-control-sm"
+              placeholder="Código del cupón..."
+              value={tab.cuponCode || ''}
+              onChange={e => onUpdate(tab.id, d => ({ ...d, cuponCode: e.target.value.toUpperCase(), cuponData: null }))}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyCupon(); } }}
+            />
+            <button className="btn btn-sm btn-outline-primary fw-bold"
+              disabled={!tab.cuponCode || tab.cuponLoading}
+              onClick={applyCupon}>
+              {tab.cuponLoading ? <span className="spinner-border spinner-border-sm"/> : 'Aplicar'}
+            </button>
+            {tab.cuponData && (
+              <button className="btn btn-sm btn-outline-danger" onClick={() => onUpdate(tab.id, d => ({ ...d, cuponCode:'', cuponData:null }))}>
+                <i className="bi bi-x"></i>
+              </button>
+            )}
+          </div>
+          {tab.cuponData && (
+            <div className="alert alert-success py-1 px-2 mt-1 small mb-0">
+              <i className="bi bi-check-circle-fill me-1"></i>
+              {tab.cuponData.message} — Ahorro: <strong>{fmtMoney(tab.cuponData.descuento)}</strong>
+            </div>
+          )}
+        </div>
+        )}
+
         {/* Pago */}
         <div className="card border-0 shadow-sm" style={{ borderRadius:12 }}>
           <div className="card-header border-0 fw-bold bg-white" style={{ borderRadius:'12px 12px 0 0' }}>
@@ -1833,12 +1942,14 @@ setDianModal(true);
                 <div className="d-flex gap-2 mb-3 flex-wrap">
                   {[
                     { val:'efectivo',      label:'Efectivo'      },
-                    { val:'tarjeta',       label:'Tarjeta'       },
+                    { val:'tarjeta',       label:'Tarjeta',       feature:'datafono' },
                     { val:'transferencia', label:'Transferencia' },
                     { val:'nequi',         label:'Nequi'         },
                     { val:'credito',       label:'A credito'     },
                   ].map(m => (
                     <button key={m.val}
+                      disabled={m.feature && !hasFeature(m.feature)}
+                      title={m.feature && !hasFeature(m.feature) ? 'Requiere Plan Estándar o superior' : ''}
                       className={'btn btn-sm flex-fill ' + (tab.paymentMethod === m.val
                         ? (m.val === 'credito' ? 'btn-warning fw-bold' : 'btn-dark')
                         : 'btn-outline-secondary')}
@@ -1907,7 +2018,7 @@ setDianModal(true);
             {tab.isMixto && (
               <div>
                 <div className="p-2 rounded mb-3" style={{ background:'#fffbeb', border:'1px solid #fde68a', fontSize:12 }}>
-                  Total: {fmtMoney(total)} = Efectivo + segundo metodo
+                  Total: {fmtMoney(totalConCupon)} = Efectivo + segundo metodo
                 </div>
                 <div className="mb-3">
                   <label className="form-label small fw-semibold">Efectivo recibido</label>
@@ -1927,6 +2038,8 @@ setDianModal(true);
                       { val:'transferencia', label:'Transferencia' },
                     ].map(m => (
                       <button key={m.val}
+                      disabled={m.feature && !hasFeature(m.feature)}
+                      title={m.feature && !hasFeature(m.feature) ? 'Requiere Plan Estándar o superior' : ''}
                         className={'btn btn-sm flex-fill ' + (tab.mixtoSegundo === m.val ? 'btn-primary' : 'btn-outline-secondary')}
                         onClick={() => set('mixtoSegundo', m.val)}>
                         {m.label}
@@ -1969,7 +2082,7 @@ setDianModal(true);
             <div className="border-top pt-2 mt-3">
               <div className="d-flex justify-content-between fw-bold fs-5">
                 <span>TOTAL:</span>
-                <span className="text-success">{fmtMoney(total)}</span>
+                <span className="text-success">{fmtMoney(totalConCupon)}</span>
               </div>
             </div>
 
@@ -1987,13 +2100,15 @@ setDianModal(true);
       <span className="spinner-border spinner-border-sm me-2" />
       Procesando...
     </>
-  ) : tab.sinDian ? (
+  ) : tab.sinDian || !hasFeature('dian') ? (
     <>
-      Cobrar (sin DIAN) — {fmtMoney(total)}
+      <i className="bi bi-check-circle me-2"></i>
+      Cobrar — {fmtMoney(totalConCupon)}
     </>
   ) : (
     <>
-      Cobrar con DIAN — {fmtMoney(total)}
+      <i className="bi bi-file-earmark-text me-2"></i>
+      Cobrar con DIAN — {fmtMoney(totalConCupon)}
     </>
   )}
 </button>
@@ -2007,6 +2122,7 @@ setDianModal(true);
 // ─── Componente principal ──────────────────────────────────────────────────
 const Sales = () => {
   const { token, user, logout } = useAuth();
+  const { hasFeature } = usePlan();
   const navigate = useNavigate();
   const [shiftOk,        setShiftOk]        = React.useState(null);
   const [shiftData,      setShiftData]      = React.useState(null);
@@ -2551,8 +2667,8 @@ const Sales = () => {
         />
       )}
 
-      {/* ── Botón pedidos catálogo ── */}
-      {pedidosCatalogo.length > 0 && (
+      {/* ── Botón pedidos catálogo — solo Plan Estándar+ ── */}
+      {pedidosCatalogo.length > 0 && hasFeature('catalogo_qr') && (
         <div style={{position:'fixed',bottom:24,right:24,zIndex:8888}}>
           <button className="btn btn-warning fw-bold shadow-lg"
             style={{borderRadius:50,padding:'12px 20px',fontSize:15,position:'relative'}}
@@ -2792,30 +2908,6 @@ const Sales = () => {
                 </h5>
               </div>
               <div className="modal-body p-4">
-                {/* Resumen del turno */}
-                {shiftData && (
-                  <div className="rounded p-3 mb-3" style={{background:'#f8fafc',border:'1px solid #e2e8f0'}}>
-                    <div className="fw-bold mb-2 small text-muted text-uppercase">Resumen del turno</div>
-                    <div className="d-flex justify-content-between mb-1">
-                      <span className="small">Base inicial:</span>
-                      <span className="fw-bold">${Number(shiftData.base_amount||0).toLocaleString('es-CO')}</span>
-                    </div>
-                    <div className="d-flex justify-content-between mb-1">
-                      <span className="small">Ventas en efectivo:</span>
-                      <span className="fw-bold text-success">${Number(shiftData.total_cash||0).toLocaleString('es-CO')}</span>
-                    </div>
-                    <div className="d-flex justify-content-between mb-1">
-                      <span className="small">Retiros:</span>
-                      <span className="fw-bold text-danger">-${Number(shiftData.total_withdrawals||0).toLocaleString('es-CO')}</span>
-                    </div>
-                    <div className="d-flex justify-content-between pt-2" style={{borderTop:'1px solid #e2e8f0'}}>
-                      <span className="small fw-bold">Efectivo esperado:</span>
-                      <span className="fw-bold text-primary">
-                        ${Number((shiftData.base_amount||0) + (shiftData.total_cash||0) - (shiftData.total_withdrawals||0)).toLocaleString('es-CO')}
-                      </span>
-                    </div>
-                  </div>
-                )}
                 <div className="mb-3">
                   <label className="form-label fw-semibold">
                     <i className="bi bi-cash-coin me-1"></i>Total contado en caja
@@ -2828,13 +2920,6 @@ const Sales = () => {
                       onKeyDown={e=>{ if(e.key==='Enter') cerrarTurnoYSesion(); }}
                       autoFocus/>
                   </div>
-                  {efectivoContado !== '' && shiftData && (
-                    <div className={`mt-2 small fw-bold ${
-                      parseFloat(efectivoContado) >= (shiftData.base_amount||0) + (shiftData.total_cash||0) - (shiftData.total_withdrawals||0)
-                        ? 'text-success' : 'text-danger'}`}>
-                      Diferencia: ${(parseFloat(efectivoContado||0) - ((shiftData.base_amount||0) + (shiftData.total_cash||0) - (shiftData.total_withdrawals||0))).toLocaleString('es-CO')}
-                    </div>
-                  )}
                 </div>
               </div>
               <div className="modal-footer justify-content-between border-0 pb-4">

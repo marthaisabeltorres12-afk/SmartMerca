@@ -149,7 +149,17 @@ def create_app():
             pass
         db.create_all()
 
-        # Migración automática: agregar branch_id a sales si no existe
+        # Migración: plan_vence y plan_cliente en system_config
+        try:
+            db.session.execute(db.text("ALTER TABLE system_config ADD COLUMN plan_vence DATE NULL"))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+        try:
+            db.session.execute(db.text("ALTER TABLE system_config ADD COLUMN plan_cliente VARCHAR(200) DEFAULT ''"))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
         try:
             db.session.execute(db.text(
                 "ALTER TABLE sales ADD COLUMN branch_id INT NULL REFERENCES branches(id)"
@@ -171,6 +181,15 @@ def create_app():
         try:
             db.session.execute(db.text(
                 "ALTER TABLE purchase_orders ADD COLUMN branch_id INT NULL REFERENCES branches(id)"
+            ))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        # Migración: branch_id en cash_registers
+        try:
+            db.session.execute(db.text(
+                "ALTER TABLE cash_registers ADD COLUMN branch_id INT NULL REFERENCES branches(id)"
             ))
             db.session.commit()
         except Exception:
