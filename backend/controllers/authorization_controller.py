@@ -16,24 +16,28 @@ OPERACIONES = {
     'reset_password':    'ambos',
 }
 
-def _log(user_id, operacion, exitoso, detalle=''):
+def _log(user_id, operacion, exitoso, detalle='', admin_nombre='Sistema', admin_rol='admin'):
     try:
-        # Buscar el nombre real del admin que autorizó
-        nombre = 'Sistema'
-        rol    = 'sistema'
-        if user_id:
-            admin = User.query.get(user_id)
-            if admin:
-                nombre = admin.name
-                rol    = admin.role
+        # Obtener sucursal del turno activo del admin que autorizó
+        branch_id = None
+        try:
+            from models.shift import Shift
+            turno = Shift.query.filter(
+                Shift.cashier_id == user_id,
+                Shift.status == 'abierto'
+            ).first()
+            if turno: branch_id = turno.branch_id
+        except Exception:
+            pass
 
         log = AuditLog(
             user_id        = user_id,
-            usuario_nombre = nombre,      # ← antes era 'Sistema' hardcodeado
-            rol            = rol,         # ← antes era 'sistema' hardcodeado
+            usuario_nombre = admin_nombre,
+            rol            = admin_rol,
             accion         = 'autorizar' if exitoso else 'autorizar_fallo',
             descripcion    = f"Op: {operacion} — {'OK' if exitoso else 'FALLO'} {detalle}",
             fecha_hora     = datetime.now(),
+            branch_id      = branch_id,
         )
         db.session.add(log)
         db.session.commit()
@@ -79,7 +83,9 @@ def verificar_autorizacion_admin(pin=None, codigo_tarjeta=None, tipo_operacion='
 
     if modo == 'ambos':
         if pin_ok and tarjeta_ok:
-            _log(admin_auth.id if admin_auth else None, tipo_operacion, True)
+            _log(admin_auth.id if admin_auth else None, tipo_operacion, True,
+                 admin_nombre=admin_auth.name if admin_auth else 'Admin',
+                 admin_rol=admin_auth.role if admin_auth else 'admin')
             return True, admin_auth
         faltante = []
         if not pin_ok:     faltante.append('PIN')
@@ -88,7 +94,9 @@ def verificar_autorizacion_admin(pin=None, codigo_tarjeta=None, tipo_operacion='
         return False, f'Se requieren AMBOS factores. Faltó: {", ".join(faltante)}'
     else:
         if pin_ok or tarjeta_ok:
-            _log(admin_auth.id if admin_auth else None, tipo_operacion, True)
+            _log(admin_auth.id if admin_auth else None, tipo_operacion, True,
+                 admin_nombre=admin_auth.name if admin_auth else 'Admin',
+                 admin_rol=admin_auth.role if admin_auth else 'admin')
             return True, admin_auth
         _log(None, tipo_operacion, False)
         return False, 'PIN incorrecto o tarjeta no válida'

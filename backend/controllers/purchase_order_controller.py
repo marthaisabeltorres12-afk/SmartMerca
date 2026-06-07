@@ -59,6 +59,18 @@ def create_order():
     if not data.get('items') or not len(data['items']):
         return jsonify({'message': 'La orden debe tener al menos un producto'}), 400
 
+    # Obtener sucursal del turno activo del usuario
+    branch_id = None
+    try:
+        from models.shift import Shift
+        turno = Shift.query.filter(
+            Shift.cashier_id == user_id,
+            Shift.status == 'abierto'
+        ).first()
+        if turno: branch_id = turno.branch_id
+    except Exception:
+        pass
+
     order = PurchaseOrder(
         numero_orden   = _gen_numero(),
         supplier_id    = data['supplier_id'],
@@ -66,6 +78,7 @@ def create_order():
         fecha_esperada = data.get('fecha_esperada') or None,
         notas          = data.get('notas') or None,
         created_by     = user_id,
+        branch_id      = branch_id,
     )
     db.session.add(order)
     db.session.flush()

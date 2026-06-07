@@ -24,6 +24,19 @@ class ReturnOrder(db.Model):
     items    = db.relationship('ReturnItem', backref='return_order', cascade='all, delete-orphan')
 
     def to_dict(self):
+        # Obtener sucursal del turno más reciente del cajero cerca de la devolución
+        branch_name = None
+        try:
+            from models.shift import Shift
+            turno = Shift.query.filter(
+                Shift.cashier_id == self.cashier_id,
+                Shift.opened_at <= self.created_at
+            ).order_by(Shift.opened_at.desc()).first()
+            if turno and turno.branch_id:
+                branch_name = turno.branch.nombre if turno.branch else None
+        except Exception:
+            pass
+
         return {
             'id':          self.id,
             'sale_id':     self.sale_id,
@@ -42,6 +55,7 @@ class ReturnOrder(db.Model):
             'total':       float(self.total),
             'items':       [i.to_dict() for i in self.items],
             'created_at':  str(self.created_at),
+            'branch_name': branch_name,
         }
 
 class ReturnItem(db.Model):

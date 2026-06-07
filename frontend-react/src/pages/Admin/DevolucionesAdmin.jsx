@@ -129,6 +129,7 @@ const DevolucionesAdmin = () => {
                   <th>#</th>
                   <th>Venta</th>
                   <th>Cajero</th>
+                  <th>Sucursal</th>
                   <th>Cliente</th>
                   <th>Motivo</th>
                   <th>Modalidad</th>
@@ -141,9 +142,9 @@ const DevolucionesAdmin = () => {
               </thead>
               <tbody>
                 {loading
-                  ? <tr><td colSpan="11" className="text-center py-5"><div className="spinner-border spinner-border-sm"/></td></tr>
+                  ? <tr><td colSpan="12" className="text-center py-5"><div className="spinner-border spinner-border-sm"/></td></tr>
                   : filtered.length === 0
-                    ? <tr><td colSpan="11" className="text-center text-muted py-5">
+                    ? <tr><td colSpan="12" className="text-center text-muted py-5">
                         <div style={{ fontSize:'2rem' }}><i className="bi bi-inbox me-2"></i></div>
                         Sin devoluciones en este período
                       </td></tr>
@@ -153,6 +154,11 @@ const DevolucionesAdmin = () => {
                           <td><span className="badge bg-secondary">{i+1}</span></td>
                           <td className="fw-bold">#{String(r.sale_id).padStart(6,'0')}</td>
                           <td className="small">{r.cashier}</td>
+                          <td className="small">
+                            {r.branch_name
+                              ? <><i className="bi bi-geo-alt me-1 text-muted"></i>{r.branch_name}</>
+                              : <span className="text-muted">—</span>}
+                          </td>
                           <td className="small">{r.customer || <span className="text-muted">—</span>}</td>
                           <td className="small text-muted" style={{ maxWidth:120 }}>
                             <span title={r.reason}>{r.reason?.slice(0,25) || '—'}</span>
@@ -188,7 +194,7 @@ const DevolucionesAdmin = () => {
                         {/* Detalle expandido */}
                         {expanded === r.id && (
                           <tr>
-                            <td colSpan="11" className="p-0">
+                            <td colSpan="12" className="p-0">
                               <div className="px-4 py-3" style={{ background:'#f8fafc', borderBottom:'2px solid #e2e8f0' }}>
                                 <div className="row g-3">
 

@@ -11,8 +11,10 @@ class AuditLog(db.Model):
     accion          = db.Column(db.String(50))
     descripcion     = db.Column(db.Text)
     fecha_hora      = db.Column(db.DateTime, default=datetime.now)
+    branch_id       = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
 
     usuario = db.relationship('User', foreign_keys=[user_id])
+    branch  = db.relationship('Branch', foreign_keys=[branch_id])
 
     def to_dict(self):
         return {
@@ -23,4 +25,5 @@ class AuditLog(db.Model):
             'accion':         self.accion,
             'descripcion':    self.descripcion,
             'fecha_hora':     str(self.fecha_hora),
+            'branch_name':    self.branch.nombre if self.branch else None,
         }

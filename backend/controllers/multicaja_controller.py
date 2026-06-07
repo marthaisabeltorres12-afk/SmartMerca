@@ -72,6 +72,7 @@ def editar_caja(caja_id):
     if 'descripcion' in data: caja.descripcion = data['descripcion']
     if 'base_amount' in data: caja.base_amount = float(data['base_amount'])
     if 'is_active'   in data: caja.is_active   = data['is_active']
+    if 'branch_id'   in data: caja.branch_id   = int(data['branch_id']) if data['branch_id'] else None
 
     # Actualizar cajeros autorizados
     if 'cajero_ids' in data:

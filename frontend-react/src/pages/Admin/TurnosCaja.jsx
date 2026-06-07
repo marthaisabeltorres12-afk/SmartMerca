@@ -48,7 +48,21 @@ const CashierView = ({ token, user }) => {
   return (
     <div className="row justify-content-center">
       <div className="col-md-5">
-        {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+        {alert && (
+          <div style={{
+            position:'fixed', bottom:28, right:28, zIndex:99999,
+            minWidth:350, borderRadius:12, padding:'14px 20px',
+            fontWeight:600, fontSize:15,
+            background: alert.type==='success'?'#f0fdf4':'#fef2f2',
+            color: alert.type==='success'?'#166534':'#991b1b',
+            border: `1.5px solid ${alert.type==='success'?'#86efac':'#fca5a5'}`,
+            boxShadow: alert.type==='success'?'0 4px 20px rgba(34,197,94,0.35)':'0 4px 20px rgba(239,68,68,0.35)',
+            animation:'slideDown 0.3s ease',
+          }}>
+            <i className={`bi me-2 ${alert.type==='success'?'bi-check-circle-fill':'bi-x-circle-fill'}`}></i>
+            {alert.msg}
+          </div>
+        )}
         {!shift ? (
           <div className="card border-0 shadow-sm text-center py-5">
             <div className="fs-2 mb-2"><i className="bi bi-clock-history me-2"></i></div>
@@ -120,10 +134,10 @@ const CashierView = ({ token, user }) => {
 // ══════════════════════════════════════════════
 // PANEL MULTI-CAJA (dentro de AdminView)
 // ══════════════════════════════════════════════
-const PanelCajas = ({ token, cajas, users, onRefresh }) => {
+const PanelCajas = ({ token, cajas, users, onRefresh, branches = [] }) => {
   const [modalNueva, setModalNueva] = useState(false);
   const [modalEditar,setModalEditar]= useState(null);
-  const [formNueva,  setFormNueva]  = useState({ nombre:'', descripcion:'', cajero_ids:[], base_amount:'' });
+  const [formNueva,  setFormNueva]  = useState({ nombre:'', descripcion:'', cajero_ids:[], base_amount:'', branch_id:'' });
   const [guardando,  setGuardando]  = useState(false);
   const [error,      setError]      = useState('');
 
@@ -144,9 +158,10 @@ const PanelCajas = ({ token, cajas, users, onRefresh }) => {
         descripcion: formNueva.descripcion,
         cajero_ids:  formNueva.cajero_ids,
         base_amount: parseFloat(formNueva.base_amount||0),
+        branch_id:   formNueva.branch_id ? parseInt(formNueva.branch_id) : null,
       }) }, token);
       setModalNueva(false);
-      setFormNueva({ nombre:'', descripcion:'', cajero_ids:[], base_amount:'' });
+      setFormNueva({ nombre:'', descripcion:'', cajero_ids:[], base_amount:'', branch_id:'' });
       onRefresh();
     } catch(e) { setError(e.message); }
     finally { setGuardando(false); }
@@ -161,6 +176,7 @@ const PanelCajas = ({ token, cajas, users, onRefresh }) => {
         descripcion: modalEditar.descripcion,
         cajero_ids:  modalEditar.cajero_ids,
         base_amount: parseFloat(modalEditar.base_amount||0),
+        branch_id:   modalEditar.branch_id ? parseInt(modalEditar.branch_id) : null,
       }) }, token);
       setModalEditar(null);
       onRefresh();
@@ -304,7 +320,8 @@ const PanelCajas = ({ token, cajas, users, onRefresh }) => {
                     nombre:      caja.nombre,
                     descripcion: caja.descripcion||'',
                     cajero_ids:  caja.cajero_ids||[],
-                    base_amount: caja.base_amount||0
+                    base_amount: caja.base_amount||0,
+                    branch_id:   caja.branch_id ? String(caja.branch_id) : ''
                   })}>
                   <i className="bi bi-pencil"></i> Editar
                 </button>
@@ -355,6 +372,16 @@ const PanelCajas = ({ token, cajas, users, onRefresh }) => {
                         onChange={e=>setFormNueva(f=>({...f,base_amount:e.target.value}))}/>
                     </div>
                   </div>
+                  {branches.length > 0 && (
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold small"><i className="bi bi-geo-alt me-1"></i>Sucursal</label>
+                    <select className="form-select" value={formNueva.branch_id}
+                      onChange={e=>setFormNueva(f=>({...f,branch_id:e.target.value}))}>
+                      <option value="">— Sin sucursal —</option>
+                      {branches.map(b=><option key={b.id} value={String(b.id)}>{b.nombre}</option>)}
+                    </select>
+                  </div>
+                  )}
                   <div className="mb-3">
                     <label className="form-label fw-semibold small">Descripción (opcional)</label>
                     <input className="form-control" placeholder="Ej: Caja entrada principal"
@@ -401,6 +428,16 @@ const PanelCajas = ({ token, cajas, users, onRefresh }) => {
                         onChange={e=>setModalEditar(m=>({...m,base_amount:e.target.value}))}/>
                     </div>
                   </div>
+                  {branches.length > 0 && (
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold small"><i className="bi bi-geo-alt me-1"></i>Sucursal</label>
+                    <select className="form-select" value={modalEditar.branch_id||''}
+                      onChange={e=>setModalEditar(m=>({...m,branch_id:e.target.value}))}>
+                      <option value="">— Sin sucursal —</option>
+                      {branches.map(b=><option key={b.id} value={String(b.id)}>{b.nombre}</option>)}
+                    </select>
+                  </div>
+                  )}
                   <div className="mb-3">
                     <label className="form-label fw-semibold small">Descripción</label>
                     <input className="form-control" value={modalEditar.descripcion}
@@ -528,7 +565,13 @@ const AdminView = ({ token }) => {
     } catch(e) { showAlert('danger', e.message); }
   };
 
-
+  const handleRequestCount = async (shift) => {
+    try {
+      await shiftService.requestCount(shift.id, token);
+      showAlert('success','Se solicitó el conteo al cajero');
+      load();
+    } catch(e) { showAlert('danger', e.message); }
+  };
 
   const handleClose = async () => {
     setLoading(true);
@@ -544,12 +587,6 @@ const AdminView = ({ token }) => {
   const handleWithdrawal = async () => {
     if (!wdAmount || parseFloat(wdAmount)<=0) { showAlert('danger','Monto inválido'); return; }
     if (!wdReason.trim()) { showAlert('danger','Ingresa el motivo'); return; }
-    // Validar que el retiro no supere el efectivo disponible
-    const efectivoDisponible = parseFloat(wdModal.base_amount||0) + parseFloat(wdModal.total_cash||0) - parseFloat(wdModal.total_withdrawals||0);
-    if (parseFloat(wdAmount) > efectivoDisponible) {
-      setPinError(`El retiro ($${Number(wdAmount).toLocaleString('es-CO')}) supera el efectivo disponible ($${efectivoDisponible.toLocaleString('es-CO')})`);
-      return;
-    }
     if (!pinValue.trim()) { setPinError('Ingresa el PIN'); return; }
     setPinLoading(true); setPinError('');
     try {
@@ -630,7 +667,22 @@ const AdminView = ({ token }) => {
 
   return (
     <div>
-      {alert && <div className={`alert alert-${alert.type} alert-dismissible`}>{alert.msg}</div>}
+      {alert && (
+        <div style={{
+          position:'fixed', bottom:28, right:28, zIndex:99999,
+          minWidth:350, borderRadius:12, padding:'14px 20px',
+          fontWeight:600, fontSize:15,
+          background: alert.type==='success'?'#f0fdf4':alert.type==='warning'?'#fffbeb':'#fef2f2',
+          color: alert.type==='success'?'#166534':alert.type==='warning'?'#854d0e':'#991b1b',
+          border: `1.5px solid ${alert.type==='success'?'#86efac':alert.type==='warning'?'#fde047':'#fca5a5'}`,
+          boxShadow: alert.type==='success'?'0 4px 20px rgba(34,197,94,0.35)':alert.type==='warning'?'0 4px 20px rgba(234,179,8,0.35)':'0 4px 20px rgba(239,68,68,0.35)',
+          animation:'slideDown 0.3s ease',
+        }}>
+          <i className={`bi me-2 ${alert.type==='success'?'bi-check-circle-fill':alert.type==='warning'?'bi-exclamation-triangle-fill':'bi-x-circle-fill'}`}></i>
+          {alert.msg}
+        </div>
+      )}
+      <style>{`@keyframes slideDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
       {/* KPIs */}
       <div className="row g-3 mb-4">
@@ -670,7 +722,7 @@ const AdminView = ({ token }) => {
 
       {/* ── CAJAS (MULTI-CAJA) ── */}
       {tab === 'cajas' && (
-        <PanelCajas token={token} cajas={cajas} users={users} onRefresh={load} />
+        <PanelCajas token={token} cajas={cajas} users={users} onRefresh={load} branches={branches} />
       )}
 
       {/* ── TURNOS ACTIVOS ── */}
@@ -699,7 +751,16 @@ const AdminView = ({ token }) => {
                       onClick={()=>{ setWdModal(s); setWdAmount(''); setWdReason(''); setPinValue(''); setPinError(''); }}>
                       <i className="bi bi-box-arrow-up me-1"></i> Retiro
                     </button>
-
+                    {!s.cashier_count_requested
+                      ? <button className="btn btn-sm btn-outline-info" onClick={()=>handleRequestCount(s)}>
+                          <i className="bi bi-clipboard-check me-1"></i> Pedir conteo
+                        </button>
+                      : !s.cash_counted_by_cashier
+                        ? <span className="badge bg-warning text-dark align-self-center"><i className="bi bi-hourglass-split me-1"></i> Esperando conteo del cajero</span>
+                        : <button className="btn btn-sm btn-danger fw-bold" onClick={()=>setCloseModal(s)}>
+                           <i className="bi bi-stop-circle me-1"></i>
+                          </button>
+                    }
                   </div>
                 </div>
                 <div className="card-body">
@@ -773,14 +834,14 @@ const AdminView = ({ token }) => {
             <div className="table-responsive">
               <table className="table table-hover align-middle mb-0" style={{fontSize:13}}>
                 <thead className="table-light">
-                  <tr><th>#</th><th>Cajero</th><th>Caja</th><th>Apertura</th><th>Cierre</th>
+                  <tr><th>#</th><th>Cajero</th><th>Caja</th><th>Sucursal</th><th>Apertura</th><th>Cierre</th>
                     <th className="text-end">Base</th><th className="text-end">Ventas</th>
                     <th className="text-end">Cajero contó</th><th className="text-end">Diferencia</th>
                     <th>Estado</th><th></th></tr>
                 </thead>
                 <tbody>
                   {!filteredH.length
-                    ? <tr><td colSpan="11" className="text-center text-muted py-4">Sin turnos</td></tr>
+                    ? <tr><td colSpan="12" className="text-center text-muted py-4">Sin turnos</td></tr>
                     : filteredH.map(s => {
                       const diff         = parseFloat(s.difference ?? 0);
                       const ajustesIngreso = parseFloat(s.ajustes_ingreso ?? 0);
@@ -793,6 +854,7 @@ const AdminView = ({ token }) => {
                             <td className="text-muted">{s.id}</td>
                             <td className="fw-semibold"><i className="bi bi-person me-1"></i>{s.cashier}</td>
 <td className="text-muted">{s.cash_register ? <><i className="bi bi-display me-1"></i>{s.cash_register}</> : '—'}</td>
+<td className="text-muted">{s.branch_name ? <><i className="bi bi-geo-alt me-1"></i>{s.branch_name}</> : <span className="text-muted">—</span>}</td>
 
                             <td className="text-muted">{fmtDt(s.opened_at)}</td>
                             <td className="text-muted">{s.closed_at ? fmtDt(s.closed_at) : <span className="badge bg-success">Abierto</span>}</td>
@@ -857,11 +919,6 @@ const AdminView = ({ token }) => {
                 <button className="btn-close btn-close-white" onClick={()=>setWdModal(null)} />
               </div>
               <div className="modal-body">
-                <div className="alert alert-info py-2 small mb-3">
-                  <i className="bi bi-info-circle me-1"></i>
-                  Efectivo disponible:{' '}
-                  <strong>{fmt(parseFloat(wdModal.base_amount||0) + parseFloat(wdModal.total_cash||0) - parseFloat(wdModal.total_withdrawals||0))}</strong>
-                </div>
                 <div className="mb-3">
                   <label className="form-label fw-semibold">Monto *</label>
                   <div className="input-group"><span className="input-group-text">$</span>

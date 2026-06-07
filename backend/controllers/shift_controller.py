@@ -240,20 +240,33 @@ def submit_cashier_count(shift_id):
 # ── Cerrar turno (admin) ──────────────────────────────────────────────────
 @jwt_required()
 def close_shift():
-    claims = get_jwt()
-    if not _admin(claims):
-        return jsonify({'message': 'Solo admins pueden cerrar turnos'}), 403
+    claims  = get_jwt()
+    user_id = int(get_jwt_identity())
+    role    = claims.get('role', '')
+    is_admin = _admin(claims)
 
     data     = request.get_json()
     shift_id = data.get('shift_id')
     shift    = Shift.query.get(shift_id) if shift_id else None
-    if not shift or shift.status != 'abierto':
+    if not shift or shift.status not in ('abierto', 'pendiente_cierre'):
         return jsonify({'message': 'Turno no encontrado o ya cerrado'}), 404
+
+    # El cajero solo puede cerrar su propio turno
+    if not is_admin and shift.cashier_id != user_id:
+        return jsonify({'message': 'Solo puedes cerrar tu propio turno'}), 403
 
     t = _calc_totals(shift)
     cash_expected = float(shift.base_amount) + t['total_cash'] - t['total_withdrawals']
-    cashier_count = float(shift.cash_counted_by_cashier or 0)
-    difference    = cashier_count - cash_expected
+
+    # Usar el conteo enviado en el body, o el guardado anteriormente por el cajero
+    cash_counted_body = data.get('cash_counted')
+    if cash_counted_body is not None:
+        cashier_count = float(cash_counted_body)
+        shift.cash_counted_by_cashier = cashier_count
+    else:
+        cashier_count = float(shift.cash_counted_by_cashier or 0)
+
+    difference = cashier_count - cash_expected
 
     shift.closed_at         = _now_colombia()
     shift.cash_counted      = cashier_count

@@ -190,7 +190,7 @@ const Etiquetas = () => {
                       return (
                         <tr key={p.id} style={{cursor:'pointer'}}
                           onClick={() => agregarProducto(p)}>
-                          <td className="fw-semibold">{p.name}</td>
+                          <td className="fw-semibold">{p.name}{p.gramaje_cantidad && (` (${p.gramaje_cantidad} ${p.gramaje_unidad})`)}</td>
                           <td className="text-muted">{p.barcode||'Sin código'}</td>
                           <td className="text-success fw-bold">{fmt(p.price)}</td>
                           <td>

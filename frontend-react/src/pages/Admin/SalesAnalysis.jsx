@@ -44,6 +44,7 @@ const SalesAnalysis = () => {
   const [period,   setPeriod]   = useState('month');
   const [sinSearch,    setSinSearch]    = useState('');
   const [sinCatFilter, setSinCatFilter] = useState('');
+  const [filterSucursal, setFilterSucursal] = useState('');
 
   useEffect(() => {
     const h = { Authorization: `Bearer ${token}` };
@@ -54,9 +55,19 @@ const SalesAnalysis = () => {
       .catch(() => setLoading(false));
   }, [token]);
 
+  // Sucursales únicas en las ventas
+  const sucursales = useMemo(() =>
+    [...new Set(sales.map(s => s.branch_name).filter(Boolean))].sort()
+  , [sales]);
+
+  // Ventas filtradas por sucursal
+  const salesFiltered = useMemo(() =>
+    filterSucursal ? sales.filter(s => s.branch_name === filterSucursal) : sales
+  , [sales, filterSucursal]);
+
   const { labels, totals, counts } = useMemo(() => {
     const map = {};
-    sales.forEach(s => {
+    salesFiltered.forEach(s => {
       const d = s.created_at?.slice(0, 10);
       if (!d) return;
       let key;
@@ -86,7 +97,7 @@ const SalesAnalysis = () => {
       totals: sorted.map(k => map[k].total),
       counts: sorted.map(k => map[k].count),
     };
-  }, [sales, period]);
+  }, [salesFiltered, period]);
 
   const proyected = useMemo(() => linearRegression(totals), [totals]);
   const projLabels = [...labels, 'Proy. +1', 'Proy. +2', 'Proy. +3'];
@@ -94,7 +105,7 @@ const SalesAnalysis = () => {
   // productRanking — enriquecido con dname buscando el producto por id
   const productRanking = useMemo(() => {
     const map = {};
-    sales.forEach(s => s.items?.forEach(i => {
+    salesFiltered.forEach(s => s.items?.forEach(i => {
       const key = i.product_id || i.product;
       if (!map[key]) {
         const prod = products.find(p => p.id === i.product_id || p.name === i.product);
@@ -104,14 +115,14 @@ const SalesAnalysis = () => {
       map[key].revenue += parseFloat(i.price) * parseFloat(i.quantity);
     }));
     return Object.values(map).sort((a, b) => b.qty - a.qty);
-  }, [sales, products]);
+  }, [salesFiltered, products]);
 
   const top10    = productRanking.slice(0, 10);
   const bottom10 = [...productRanking].sort((a, b) => a.qty - b.qty).slice(0, 10);
 
   const vendidosIds = useMemo(
-    () => new Set(sales.flatMap(s => (s.items || []).map(i => i.product_id))),
-    [sales]
+    () => new Set(salesFiltered.flatMap(s => (s.items || []).map(i => i.product_id))),
+    [salesFiltered]
   );
 
   const sinVentas = products.filter(p => p.is_active && !vendidosIds.has(p.id));
@@ -179,18 +190,27 @@ const urgenciaTag = (dias) => {
             <h4 className="fw-bold mb-0"><i className="bi bi-graph-up"></i> Análisis de Ventas</h4>
             <small className="text-muted">Tendencias, productos más/menos vendidos y proyección futura</small>
           </div>
-          <div className="btn-group btn-group-sm">
-            {[
-              { k: 'week',  lb: 'Semanal' },
-              { k: 'month', lb: 'Mensual' },
-              { k: 'year',  lb: 'Anual'   },
-            ].map(p => (
-              <button key={p.k}
-                className={`btn ${period === p.k ? 'btn-dark' : 'btn-outline-secondary'}`}
-                onClick={() => setPeriod(p.k)}>
-                {p.lb}
-              </button>
-            ))}
+          <div className="d-flex align-items-center gap-2 flex-wrap">
+            {sucursales.length > 0 && (
+              <select className="form-select form-select-sm" style={{width:'auto', minWidth:160}}
+                value={filterSucursal} onChange={e => setFilterSucursal(e.target.value)}>
+                <option value="">Todas las sucursales</option>
+                {sucursales.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            )}
+            <div className="btn-group btn-group-sm">
+              {[
+                { k: 'week',  lb: 'Semanal' },
+                { k: 'month', lb: 'Mensual' },
+                { k: 'year',  lb: 'Anual'   },
+              ].map(p => (
+                <button key={p.k}
+                  className={`btn ${period === p.k ? 'btn-dark' : 'btn-outline-secondary'}`}
+                  onClick={() => setPeriod(p.k)}>
+                  {p.lb}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

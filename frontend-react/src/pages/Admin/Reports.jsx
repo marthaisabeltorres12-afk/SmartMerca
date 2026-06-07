@@ -52,6 +52,7 @@ const Reports = () => {
   const [prodCat,    setProdCat]    = useState('');
   const [prodCajero, setProdCajero] = useState('');
   const [prodPago,   setProdPago]   = useState('');
+  const [prodSucursal, setProdSucursal] = useState('');
   const [prodSort,   setProdSort]   = useState('fecha_desc');
   const [prodPage,   setProdPage]   = useState(1);
   const PAGE_SIZE = 50;
@@ -175,6 +176,7 @@ const Reports = () => {
           fecha_date:   (sale.created_at || '').slice(0,10),
           hora:         (sale.created_at || '').slice(11,16),
           cajero:       sale.cashier || '—',
+          sucursal:     sale.branch_name || '—',
           pago:         sale.payment_method || 'efectivo',
           cliente:      sale.customer?.name || sale.customer?.full_name || 'Consumidor Final',
           // Metadatos del producto
@@ -189,7 +191,8 @@ const Reports = () => {
   // Opciones únicas para filtros
   const opcionesCats    = useMemo(() => [...new Set(allRows.map(r => r.categoria).filter(v => v !== '—'))].sort(), [allRows]);
   const opcionesCajeros = useMemo(() => [...new Set(allRows.map(r => r.cajero).filter(v => v !== '—'))].sort(), [allRows]);
-  const opcionesPagos   = useMemo(() => [...new Set(allRows.map(r => r.pago))].sort(), [allRows]);
+  const opcionesPagos      = useMemo(() => [...new Set(allRows.map(r => r.pago))].sort(), [allRows]);
+  const opcionesSucursales = useMemo(() => [...new Set(allRows.map(r => r.sucursal).filter(v => v !== '—'))].sort(), [allRows]);
 
   const prodFiltered = useMemo(() => {
     let rows = [...allRows];
@@ -203,9 +206,10 @@ const Reports = () => {
       );
     }
 
-    if (prodCat)    rows = rows.filter(r => r.categoria === prodCat);
-    if (prodCajero) rows = rows.filter(r => r.cajero    === prodCajero);
-    if (prodPago)   rows = rows.filter(r => r.pago      === prodPago);
+    if (prodCat)      rows = rows.filter(r => r.categoria === prodCat);
+    if (prodCajero)   rows = rows.filter(r => r.cajero    === prodCajero);
+    if (prodPago)     rows = rows.filter(r => r.pago      === prodPago);
+    if (prodSucursal) rows = rows.filter(r => r.sucursal  === prodSucursal);
 
     rows.sort((a,b) => {
       if (prodSort === 'fecha_desc')    return b.fecha.localeCompare(a.fecha);
@@ -216,7 +220,7 @@ const Reports = () => {
       return 0;
     });
     return rows;
-  }, [allRows, prodQuery, prodCat, prodCajero, prodPago, prodSort]);
+  }, [allRows, prodQuery, prodCat, prodCajero, prodPago, prodSort, prodSucursal]);
 
   const prodTotalQty     = prodFiltered.reduce((a,r) => a + r.cantidad, 0);
   const prodTotalMonto   = prodFiltered.reduce((a,r) => a + r.subtotal, 0);
@@ -742,13 +746,14 @@ const ganAct  = actual.ventas - costoMesActual;
                       <th>Fecha y hora</th>
                       <th>Pago</th>
                       <th>Cajero</th>
+                      <th>Sucursal</th>
                       <th>Categoría</th>
                     </tr>
                   </thead>
                   <tbody>
                     {!prodPageRows.length ? (
                       <tr>
-                        <td colSpan="10" className="text-center text-muted py-5">
+                        <td colSpan="11" className="text-center text-muted py-5">
                           <div className="fs-3"><i className="bi bi-search"></i></div>
                           <div>Sin resultados para los filtros aplicados</div>
                         </td>
@@ -783,6 +788,11 @@ const ganAct  = actual.ventas - costoMesActual;
                           </span>
                         </td>
                         <td className="text-muted">{r.cajero}</td>
+                        <td className="text-muted small">
+                          {r.sucursal !== '—'
+                            ? <><i className="bi bi-geo-alt me-1"></i>{r.sucursal}</>
+                            : <span className="text-muted">—</span>}
+                        </td>
                         <td>
                           {r.categoria !== '—'
                             ? <span className="badge bg-light text-dark border" style={{ fontSize:10 }}>{r.categoria}</span>

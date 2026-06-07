@@ -16,13 +16,13 @@ const fmtDt = s => s ? new Date(s).toLocaleString('es-CO', { day:'2-digit', mont
 // Reemplaza SOLO el componente CashierView en TurnosCaja.jsx
 
 const CashierView = ({ token, user }) => {
-  const [shift,       setShift]       = useState(undefined);
-  const [loading,     setLoading]     = useState(true);
-  const [cashCounted, setCashCounted] = useState('');
-  const [alert,       setAlert]       = useState(null);
-  const [closing,     setClosing]     = useState(false);
+  const [shift,    setShift]    = useState(undefined);
+  const [loading,  setLoading]  = useState(true);
+  const [alert,    setAlert]    = useState(null);
+  const [closing,  setClosing]  = useState(false);
+  const [conteo,   setConteo]   = useState('');
 
-  const showAlert = (type, msg) => { setAlert({type,msg}); setTimeout(()=>setAlert(null),4500); };
+  const showAlert = (type, msg) => { setAlert({type, msg}); setTimeout(() => setAlert(null), 4500); };
 
   const load = useCallback(async () => {
     try { setShift(await shiftService.getActive(token)); }
@@ -32,18 +32,28 @@ const CashierView = ({ token, user }) => {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleRequestClose = async (e) => {
+  const fmt = n => '$' + Number(n||0).toLocaleString('es-CO');
+
+  const efectivoEsperado = shift
+    ? (parseFloat(shift.base_amount||0) + parseFloat(shift.total_cash||0) - parseFloat(shift.total_withdrawals||0))
+    : 0;
+
+  const diferencia = conteo !== '' ? parseFloat(conteo||0) - efectivoEsperado : null;
+
+  const handleClose = async (e) => {
     e.preventDefault();
-    if (!cashCounted) { showAlert('danger','Ingresa el total de efectivo'); return; }
     setClosing(true);
     try {
       const { apiFetch } = await import('../../services/api');
-      await apiFetch(`/shifts/${shift.id}/request-close`, {
+      await apiFetch('/shifts/close', {
         method: 'POST',
-        body: JSON.stringify({ cash_counted: parseFloat(cashCounted) })
+        body: JSON.stringify({
+          shift_id:     shift.id,
+          cash_counted: parseFloat(conteo) || 0,
+        })
       }, token);
-      showAlert('success','Solicitud de cierre enviada. El administrador aprobará el cierre.');
-      load();
+      showAlert('success', 'Turno cerrado correctamente.');
+      setTimeout(() => { window.location.href = '/login'; }, 1500);
     } catch(e) { showAlert('danger', e.message); }
     finally { setClosing(false); }
   };
@@ -52,89 +62,100 @@ const CashierView = ({ token, user }) => {
 
   return (
     <div className="row justify-content-center">
-      <div className="col-md-5">
-        {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+      <div className="col-md-6 col-lg-5">
+        {alert && (
+          <div style={{
+            position:'fixed', bottom:28, right:28, zIndex:9999,
+            minWidth:350, borderRadius:12, padding:'14px 20px',
+            fontWeight:600, fontSize:15,
+            boxShadow: alert.type==='success' ? '0 4px 20px rgba(34,197,94,0.35)' : '0 4px 20px rgba(239,68,68,0.35)',
+            background: alert.type==='success' ? '#f0fdf4' : '#fef2f2',
+            color: alert.type==='success' ? '#166534' : '#991b1b',
+            border: `1.5px solid ${alert.type==='success' ? '#86efac' : '#fca5a5'}`,
+            animation:'slideDown 0.3s ease',
+          }}>
+            <i className={`bi me-2 ${alert.type==='success' ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}`}></i>
+            {alert.msg}
+          </div>
+        )}
+        <style>{`@keyframes slideDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
         {!shift ? (
           <div className="card border-0 shadow-sm text-center py-5">
-            <div className="fs-2 mb-2">
-  <i className="bi bi-hourglass-split"></i>
-</div>
+            <div className="fs-2 mb-2"><i className="bi bi-hourglass-split text-muted"></i></div>
             <div className="fw-semibold">No tienes turno activo</div>
-            <div className="text-muted small mt-1">El administrador abrirá tu turno</div>
-          </div>
-
-        ) : shift.status === 'pendiente_cierre' ? (
-          <div className="card border-warning border-2">
-            <div className="card-body text-center py-5">
-              <div className="fs-1 mb-2">⏳</div>
-              <div className="fw-bold fs-5">Cierre pendiente de aprobación</div>
-              <div className="text-muted small mt-2">El administrador revisará y aprobará el cierre</div>
-            </div>
+            <div className="text-muted small mt-1">El administrador debe abrir tu turno</div>
           </div>
 
         ) : (
           <>
-            {/* ✅ CAMBIO: Sin total_sales ni precios — solo estado del turno */}
-            <div className="card border-success border-2 mb-4">
-              <div className="card-body text-center py-4">
-                <div className="fs-1 mb-1">🟢</div>
-                <div className="fw-bold fs-5">Turno activo</div>
-                {shift.cash_register && (
-                  <div className="badge bg-primary mt-1">🖥️ {shift.cash_register}</div>
-                )}
-                <div className="text-muted small mt-2">
-                  Desde: {new Date(shift.opened_at).toLocaleString('es-CO', {
-                    day:'2-digit', month:'2-digit', year:'numeric',
-                    hour:'2-digit', minute:'2-digit'
-                  })}
+            {/* Info del turno */}
+            <div className="card border-0 shadow-sm mb-3">
+              <div className="card-body py-3 d-flex align-items-center justify-content-between">
+                <div>
+                  <div className="fw-bold fs-5">
+                    <i className="bi bi-display me-2 text-primary"></i>
+                    {shift.cash_register || 'Mi caja'}
+                  </div>
+                  {shift.branch_name && (
+                    <div className="text-muted small mt-1">
+                      <i className="bi bi-geo-alt me-1"></i>{shift.branch_name}
+                    </div>
+                  )}
+                </div>
+                <div className="text-end">
+                  <div className="text-muted small">Inicio del turno</div>
+                  <div className="fw-semibold small">
+                    {new Date(shift.opened_at).toLocaleString('es-CO', {
+                      day:'2-digit', month:'2-digit', year:'numeric',
+                      hour:'2-digit', minute:'2-digit'
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
 
+            {/* Formulario de cierre */}
             <div className="card border-0 shadow-sm">
-              <div
-  className="card-header fw-semibold py-3"
-  style={{ background: '#1e3a5f', color: '#fff' }}
->
-  <i className="bi bi-shield-lock me-2"></i>
-  Cerrar mi turno
-</div>
+              <div className="card-header py-3 fw-bold" style={{background:'#dc2626', color:'#fff'}}>
+                <i className="bi bi-box-arrow-right me-2"></i>Cerrar turno
+              </div>
               <div className="card-body">
-                <p className="text-muted small mb-3">
-                  Cuenta todo el dinero físico en caja e ingresa el total.
-                  <strong> No verás el total del sistema</strong> — solo ingresa lo que tienes.
-                </p>
-                <form onSubmit={handleRequestClose}>
-                  <div className="mb-4">
-                    <label className="form-label fw-semibold bi-wallet2"> Total efectivo en caja</label>
+                <form onSubmit={handleClose}>
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">
+                      <i className="bi bi-cash-coin me-1"></i>
+                      Total efectivo contado en caja
+                    </label>
                     <div className="input-group input-group-lg">
-                      <span className="input-group-text">$</span>
-                      <input type="number" className="form-control" min="0" step="1"
-                        placeholder="0" value={cashCounted}
-                        onChange={e => setCashCounted(e.target.value)} required />
-                    </div>
-                    <div className="form-text text-warning fw-semibold">
-                      Cuenta billete por billete antes de ingresar
+                      <span className="input-group-text fw-bold">$</span>
+                      <input
+                        type="number" min="0"
+                        className="form-control form-control-lg text-end fw-bold"
+                        placeholder="0"
+                        value={conteo}
+                        onChange={e => setConteo(e.target.value)}
+                        autoFocus
+                      />
                     </div>
                   </div>
-                 <button
-  type="submit"
-  className="btn btn-danger w-100 fw-bold btn-lg"
-  disabled={closing}
->
-  {closing ? (
-    <>
-      <i className="bi bi-hourglass-split me-2"></i>
-      Enviando...
-    </>
-  ) : (
-    <>
-      <i className="bi bi-shield-lock me-2"></i>
-      Solicitar cierre de turno
-    </>
-  )}
-</button>
+
+                  {diferencia !== null && (
+                    <div className={`alert py-2 mb-3 ${diferencia >= 0 ? 'alert-success' : 'alert-danger'}`}>
+                      <i className={`bi me-2 ${diferencia >= 0 ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'}`}></i>
+                      <strong>Diferencia: {diferencia >= 0 ? '+' : ''}{fmt(diferencia)}</strong>
+                      {diferencia === 0 && ' — ¡Cuadre exacto!'}
+                      {diferencia > 0 && ' — Sobrante'}
+                      {diferencia < 0 && ' — Faltante'}
+                    </div>
+                  )}
+
+                  <button type="submit" className="btn btn-danger w-100 fw-bold btn-lg" disabled={closing || conteo === ''}>
+                    {closing
+                      ? <><span className="spinner-border spinner-border-sm me-2"/>Cerrando turno...</>
+                      : <><i className="bi bi-box-arrow-right me-2"></i>Cerrar turno y salir</>
+                    }
+                  </button>
                 </form>
               </div>
             </div>
@@ -157,7 +178,7 @@ const AdminView = ({ token }) => {
   const [loading,     setLoading]     = useState(false);
 
   // Abrir turno
-  const [baseForm,    setBaseForm]    = useState({ cashier_id:'', base_amount:'' });
+  const [baseForm,    setBaseForm]    = useState({ cashier_id:'', base_amount:'', cash_register:'' });
 
   // Retiro
   const [wdModal,     setWdModal]     = useState(null);
@@ -237,9 +258,9 @@ const AdminView = ({ token }) => {
   const handleOpen = async (e) => {
     e.preventDefault();
     try {
-      await shiftService.open({ cashier_id: parseInt(baseForm.cashier_id), base_amount: parseFloat(baseForm.base_amount||0) }, token);
+      await shiftService.open({ cashier_id: parseInt(baseForm.cashier_id), base_amount: parseFloat(baseForm.base_amount||0), cash_register: baseForm.cash_register||'' }, token);
       showAlert('success','Turno abierto correctamente');
-      setBaseForm({ cashier_id:'', base_amount:'' });
+      setBaseForm({ cashier_id:'', base_amount:'', cash_register:'' });
       load();
       setTab('activos');
     } catch(e) { showAlert('danger', e.message); }
@@ -310,9 +331,9 @@ const AdminView = ({ token }) => {
   };
 
   const statusBadge = s => {
-    if (s==='aprobado')  return <span className="badge bg-success">✅ Aprobado</span>;
-    if (s==='rechazado') return <span className="badge bg-danger">❌ Rechazado</span>;
-    return <span className="badge bg-warning text-dark">⏳ Pendiente</span>;
+    if (s==='aprobado')  return <span className="badge bg-success"><i className='bi bi-check-circle-fill me-1'></i>Aprobado</span>;
+    if (s==='rechazado') return <span className="badge bg-danger"><i className='bi bi-x-circle-fill me-1'></i>Rechazado</span>;
+    return <span className="badge bg-warning text-dark">Pendiente</span>;
   };
 
   const cajeros    = [...new Set(shifts.map(s=>s.cashier).filter(Boolean))].sort();
@@ -326,10 +347,10 @@ const AdminView = ({ token }) => {
       {/* KPIs */}
       <div className="row g-3 mb-4">
         {[
-          { icon:'🟢', value: openShifts.length,                              label:'Turnos activos',   color:'success' },
-          { icon:'⏳', value: pendientes,                                      label:'Cierres pendientes',color:'warning' },
-          { icon:'✅', value: closes.filter(c=>c.status==='aprobado').length,  label:'Cierres aprobados',color:'primary' },
-          { icon:'❌', value: closes.filter(c=>c.status==='rechazado').length, label:'Cierres rechazados',color:'danger' },
+          { icon:<i className="bi bi-circle-fill text-success" style={{fontSize:24}}></i>, value: openShifts.length,                              label:'Turnos activos',    color:'success' },
+          { icon:<i className="bi bi-hourglass-split text-warning" style={{fontSize:24}}></i>, value: pendientes,                                      label:'Cierres pendientes', color:'warning' },
+          { icon:<i className="bi bi-check-circle-fill text-primary" style={{fontSize:24}}></i>, value: closes.filter(c=>c.status==='aprobado').length,  label:'Cierres aprobados',  color:'primary' },
+          { icon:<i className="bi bi-x-circle-fill text-danger" style={{fontSize:24}}></i>, value: closes.filter(c=>c.status==='rechazado').length, label:'Cierres rechazados', color:'danger'  },
         ].map((k,i) => (
           <div key={i} className="col-6 col-md-3">
             <div className={`card border-${k.color} border-2 text-center`}>
@@ -346,28 +367,11 @@ const AdminView = ({ token }) => {
       {/* Tabs */}
       <ul className="nav nav-tabs mb-4">
         {[
-          ['activos',  '🟢 Turnos activos',     openShifts.length],
-          ['abrir',    '➕ Abrir turno',          0],
-          ['historial','📋 Historial turnos',     0],
-          ['cierres',  '🏧 Cierres diarios',      pendientes],
-        ].map(([k,l,badge]) => (
-          <li key={k} className="nav-item">
-            <button className={`nav-link ${tab===k?'active':''}`} onClick={()=>setTab(k)}>
-              {l}
-              {badge > 0 && <span className="badge bg-danger ms-1">{badge}</span>}
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      {/* Tabs */}
-      <ul className="nav nav-tabs mb-4">
-        {[
-          ['activos',   '🟢 Turnos activos',       openShifts.length],
-          ['pendientes','🔴 Pendientes de cierre',   pendientesCierre.length],
-          ['abrir',     '➕ Abrir turno',            0],
-          ['historial', '📋 Historial turnos',        0],
-          ['cierres',   '🏧 Cierres diarios',         pendientes],
+          ['activos',   <><i className="bi bi-circle-fill text-success me-1" style={{fontSize:10}}></i> Turnos activos</>,       openShifts.length],
+          ['pendientes',<><i className="bi bi-clock-history text-danger me-1"></i> Pendientes de cierre</>,   pendientesCierre.length],
+          ['abrir',     <><i className="bi bi-plus-circle me-1"></i> Abrir turno</>,            0],
+          ['historial', <><i className="bi bi-journal-text me-1"></i> Historial turnos</>,        0],
+          ['cierres',   <><i className="bi bi-cash-stack me-1"></i> Cierres diarios</>,         pendientes],
         ].map(([k,l,badge]) => (
           <li key={k} className="nav-item">
             <button className={`nav-link ${tab===k?'active':''}`} onClick={()=>setTab(k)}>
@@ -383,7 +387,7 @@ const AdminView = ({ token }) => {
         <div>
           {!pendientesCierre.length ? (
             <div className="text-center text-muted py-5">
-              <div className="fs-2">✅</div>
+              <div className="fs-2"><i className='bi bi-check-circle-fill text-success' style={{fontSize:32}}></i></div>
               <div>No hay solicitudes de cierre pendientes</div>
             </div>
           ) : pendientesCierre.map(s => {
@@ -395,28 +399,28 @@ const AdminView = ({ token }) => {
                 <div className="card-header d-flex align-items-center justify-content-between py-3"
                   style={{ background:'#fff5f5', borderLeft:'4px solid #ef4444' }}>
                   <div>
-                    <span className="fw-bold fs-6">👤 {s.cashier}</span>
+                    <span className="fw-bold fs-6">{s.cashier}</span>
                     <span className="text-muted small ms-3">Desde: {fmtDt(s.opened_at)}</span>
                     <span className="badge bg-warning text-dark ms-2">Pendiente cierre</span>
                   </div>
                   <div className="d-flex gap-2">
                     <button className="btn btn-sm btn-success fw-bold"
                       onClick={() => handleApproveClose(s)}>
-                      ✅ Aprobar cierre
+                      <i className='bi bi-check-circle me-1'></i>Aprobar cierre
                     </button>
                     <button className="btn btn-sm btn-outline-danger"
                       onClick={() => handleRejectClose(s)}>
-                      ❌ Rechazar
+                      <i className='bi bi-x-circle me-1'></i>Rechazar
                     </button>
                   </div>
                 </div>
                 <div className="card-body">
                   <div className="row g-3">
                     {[
-                      ['💵 Efectivo esperado', cashExp,        diff >= 0 ? 'success':'danger'],
-                      ['🧾 Contado por cajero', counted,       diff >= 0 ? 'success':'danger'],
-                      ['📊 Diferencia',          Math.abs(diff), diff >= 0 ? 'success':'danger'],
-                      ['🛒 Total ventas',         s.total_sales||0, 'primary'],
+                      ['Efectivo esperado', cashExp,        diff >= 0 ? 'success':'danger'],
+                      ['Contado por cajero', counted,       diff >= 0 ? 'success':'danger'],
+                      ['Diferencia',          Math.abs(diff), diff >= 0 ? 'success':'danger'],
+                      ['Total ventas',         s.total_sales||0, 'primary'],
                     ].map(([label, val, color]) => (
                       <div key={label} className="col-6 col-md-3">
                         <div className={`card border-${color} border-1`}>
@@ -432,10 +436,10 @@ const AdminView = ({ token }) => {
                   </div>
                   <div className="row g-2 mt-2">
                     {[
-                      ['💳 Tarjeta', s.total_card||0],
-                      ['📱 Nequi',   s.total_nequi||0],
-                      ['🏦 Transfer', s.total_transfer||0],
-                      ['📦 Crédito', s.total_credit||0],
+                      ['Tarjeta', s.total_card||0],
+                      ['Nequi',   s.total_nequi||0],
+                      ['Transfer', s.total_transfer||0],
+                      ['Crédito', s.total_credit||0],
                     ].map(([label, val]) => (
                       <div key={label} className="col-6 col-md-3">
                         <div className="text-muted small">{label}: <strong>{fmt(val)}</strong></div>
@@ -453,9 +457,9 @@ const AdminView = ({ token }) => {
         <div>
           {!openShifts.length ? (
             <div className="text-center text-muted py-5">
-              <div className="fs-2">📭</div>
+              <div className="fs-2"><i className='bi bi-inbox'></i></div>
               <div>No hay turnos abiertos</div>
-              <button className="btn btn-success mt-3" onClick={()=>setTab('abrir')}>➕ Abrir turno</button>
+              <button className="btn btn-success mt-3" onClick={()=>setTab('abrir')}><i className='bi bi-plus-circle me-1'></i>Abrir turno</button>
             </div>
           ) : openShifts.map(s => {
             const cashExp = parseFloat(s.base_amount) + parseFloat(s.total_cash) - parseFloat(s.total_withdrawals);
@@ -464,23 +468,23 @@ const AdminView = ({ token }) => {
                 <div className="card-header d-flex align-items-center justify-content-between py-3"
                   style={{ background:'#f0fdf4', borderLeft:'4px solid #22c55e' }}>
                   <div>
-                    <span className="fw-bold fs-6">👤 {s.cashier}</span>
+                    <span className="fw-bold fs-6">{s.cashier}</span>
                     <span className="text-muted small ms-3">Desde: {fmtDt(s.opened_at)}</span>
                     <span className="badge bg-success ms-2">Activo</span>
                   </div>
                   <div className="d-flex gap-2 flex-wrap">
                     <button className="btn btn-sm btn-outline-warning"
                       onClick={()=>{ setWdModal(s); setWdAmount(''); setWdReason(''); setPinValue(''); setPinError(''); }}>
-                      📤 Retiro
+                      <i className='bi bi-box-arrow-up me-1'></i>Retiro
                     </button>
                     {!s.cashier_count_requested
                       ? <button className="btn btn-sm btn-outline-info" onClick={()=>handleRequestCount(s)}>
-                          📋 Pedir conteo
+                          <i className='bi bi-clipboard-check me-1'></i>Pedir conteo
                         </button>
                       : !s.cash_counted_by_cashier
-                        ? <span className="badge bg-warning text-dark align-self-center">⏳ Esperando conteo del cajero</span>
+                        ? <span className="badge bg-warning text-dark align-self-center">Esperando conteo del cajero</span>
                         : <button className="btn btn-sm btn-danger fw-bold" onClick={()=>setCloseModal(s)}>
-                            🔴 Cerrar turno
+                            <i className='bi bi-stop-circle me-1'></i>Cerrar turno
                           </button>
                     }
                   </div>
@@ -535,7 +539,7 @@ const AdminView = ({ token }) => {
           <div className="col-md-5">
             <div className="card border-0 shadow-sm">
               <div className="card-header fw-semibold py-3" style={{background:'#1e3a5f',color:'#fff',borderRadius:'8px 8px 0 0'}}>
-                🟢 Abrir turno para cajero
+                Abrir turno para cajero
               </div>
               <div className="card-body">
                 <form onSubmit={handleOpen}>
@@ -547,8 +551,14 @@ const AdminView = ({ token }) => {
                       {users.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
                     </select>
                   </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold"><i className="bi bi-pc-display me-1"></i>Nombre de caja</label>
+                    <input type="text" className="form-control" placeholder="Ej: Caja 1, Caja Principal..."
+                      value={baseForm.cash_register||''}
+                      onChange={e=>setBaseForm({...baseForm,cash_register:e.target.value})} />
+                  </div>
                   <div className="mb-4">
-                    <label className="form-label fw-semibold">💵 Base inicial en caja</label>
+                    <label className="form-label fw-semibold">Base inicial en caja</label>
                     <div className="input-group input-group-lg">
                       <span className="input-group-text">$</span>
                       <input type="number" className="form-control" min="0" step="1000"
@@ -557,7 +567,7 @@ const AdminView = ({ token }) => {
                     </div>
                     <div className="form-text">Dinero físico que pones en la caja del cajero al inicio</div>
                   </div>
-                  <button type="submit" className="btn btn-success w-100 fw-bold btn-lg">🟢 Abrir turno</button>
+                  <button type="submit" className="btn btn-success w-100 fw-bold btn-lg"><i className='bi bi-play-circle me-1'></i>Abrir turno</button>
                 </form>
               </div>
             </div>
@@ -607,7 +617,7 @@ const AdminView = ({ token }) => {
                         <React.Fragment key={s.id}>
                           <tr style={{background: isOpen?'#f0fdf4': diff<0?'#fff5f5':''}}>
                             <td className="text-muted">{s.id}</td>
-                            <td className="fw-semibold">👤 {s.cashier}</td>
+                            <td className="fw-semibold">{s.cashier}</td>
                             <td className="text-muted">{fmtDt(s.opened_at)}</td>
                             <td className="text-muted">{s.closed_at ? fmtDt(s.closed_at) : <span className="badge bg-success">Abierto</span>}</td>
                             <td className="text-end">{fmt(s.base_amount)}</td>
@@ -656,7 +666,7 @@ const AdminView = ({ token }) => {
         <div>
           <div className="d-flex justify-content-between align-items-center mb-3">
             <div className="d-flex gap-2">
-              {[['todos','Todos'],['pendiente','⏳ Pendientes'],['aprobado','✅ Aprobados'],['rechazado','❌ Rechazados']].map(([v,l])=>(
+              {[['todos','Todos'],['pendiente','Pendientes'],['aprobado','Aprobados'],['rechazado','Rechazados']].map(([v,l])=>(
                 <button key={v} className={`btn btn-sm ${filterClose===v?'btn-dark':'btn-outline-secondary'}`}
                   onClick={()=>setFilterClose(v)}>{l}</button>
               ))}
@@ -679,7 +689,7 @@ const AdminView = ({ token }) => {
                     ? <tr><td colSpan="7" className="text-center text-muted py-4">Sin registros</td></tr>
                     : filteredC.map(c => (
                       <tr key={c.id}>
-                        <td className="fw-semibold">👤 {c.cashier}</td>
+                        <td className="fw-semibold">{c.cashier}</td>
                         <td>{c.date}</td>
                         <td className="text-end text-success fw-semibold">{fmt(c.system_total)}</td>
                         <td className="text-end">{fmt(c.cash_counted)}</td>
@@ -713,7 +723,7 @@ const AdminView = ({ token }) => {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header" style={{background:'#92400e',color:'#fff'}}>
-                <h5 className="modal-title fw-bold">📤 Retiro — {wdModal.cashier}</h5>
+                <h5 className="modal-title fw-bold">Retiro — {wdModal.cashier}</h5>
                 <button className="btn-close btn-close-white" onClick={()=>setWdModal(null)} />
               </div>
               <div className="modal-body">
@@ -730,7 +740,7 @@ const AdminView = ({ token }) => {
                     value={wdReason} onChange={e=>setWdReason(e.target.value)} />
                 </div>
                 <div className="mb-2 p-3 rounded" style={{background:'#fef9c3',border:'1px solid #fde68a'}}>
-                  <label className="form-label fw-semibold small">🔒 PIN del administrador *</label>
+                  <label className="form-label fw-semibold small">PIN del administrador *</label>
                   <input type="password"
                     className={`form-control form-control-lg text-center ${pinError?'is-invalid':''}`}
                     placeholder="• • • •" maxLength={6}
@@ -743,7 +753,7 @@ const AdminView = ({ token }) => {
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={()=>setWdModal(null)}>Cancelar</button>
                 <button className="btn btn-warning fw-bold" onClick={handleWithdrawal} disabled={pinLoading}>
-                  {pinLoading?'Verificando...':'✅ Registrar retiro'}
+                  {pinLoading?'Verificando...':'Registrar retiro'}
                 </button>
               </div>
             </div>
@@ -757,7 +767,7 @@ const AdminView = ({ token }) => {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header" style={{background:'#7f1d1d',color:'#fff'}}>
-                <h5 className="modal-title fw-bold">🔴 Cerrar turno — {closeModal.cashier}</h5>
+                <h5 className="modal-title fw-bold">Cerrar turno — {closeModal.cashier}</h5>
                 <button className="btn-close btn-close-white" onClick={()=>setCloseModal(null)} />
               </div>
               <div className="modal-body">
@@ -785,9 +795,9 @@ const AdminView = ({ token }) => {
                       <div className={`p-3 rounded text-center ${diff===0?'bg-success bg-opacity-10':diff>0?'bg-success bg-opacity-10':'bg-danger bg-opacity-10'}`}>
                         <div className="text-muted small">Diferencia</div>
                         <div className={`fs-3 fw-bold ${diff>=0?'text-success':'text-danger'}`}>{diff>=0?'+':''}{fmt(diff)}</div>
-                        {diff<0 && <div className="text-danger small fw-semibold">⚠️ Faltante de {fmt(Math.abs(diff))}</div>}
-                        {diff>0 && <div className="text-success small">✅ Sobrante de {fmt(diff)}</div>}
-                        {diff===0 && <div className="text-success small">✅ Cuadrado perfectamente</div>}
+                        {diff<0 && <div className="text-danger small fw-semibold">Faltante de {fmt(Math.abs(diff))}</div>}
+                        {diff>0 && <div className="text-success small">Sobrante de {fmt(diff)}</div>}
+                        {diff===0 && <div className="text-success small">Cuadrado perfectamente</div>}
                       </div>
                     </div>
                   );
@@ -796,7 +806,7 @@ const AdminView = ({ token }) => {
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={()=>setCloseModal(null)}>Cancelar</button>
                 <button className="btn btn-danger fw-bold" onClick={handleClose} disabled={loading}>
-                  {loading?'Cerrando...':'🔴 Confirmar cierre'}
+                  {loading?'Cerrando...':'Confirmar cierre'}
                 </button>
               </div>
             </div>
@@ -810,7 +820,7 @@ const AdminView = ({ token }) => {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">🏧 Cierre — {selected.cashier} · {selected.date}</h5>
+                <h5 className="modal-title">Cierre — {selected.cashier} · {selected.date}</h5>
                 <button className="btn-close" onClick={()=>setSelected(null)} />
               </div>
               <div className="modal-body">
@@ -854,8 +864,8 @@ const AdminView = ({ token }) => {
                 <button className="btn btn-secondary" onClick={()=>setSelected(null)}>Cerrar</button>
                 {selected.status==='pendiente' && (
                   <>
-                    <button className="btn btn-danger" disabled={loading} onClick={()=>handleReview('rechazado')}>❌ Rechazar</button>
-                    <button className="btn btn-success" disabled={loading} onClick={()=>handleReview('aprobado')}>✅ Aprobar</button>
+                    <button className="btn btn-danger" disabled={loading} onClick={()=>handleReview('rechazado')}><i className='bi bi-x-circle me-1'></i>Rechazar</button>
+                    <button className="btn btn-success" disabled={loading} onClick={()=>handleReview('aprobado')}><i className='bi bi-check-circle me-1'></i>Aprobar</button>
                   </>
                 )}
               </div>

@@ -149,6 +149,33 @@ def create_app():
             pass
         db.create_all()
 
+        # Migración automática: agregar branch_id a sales si no existe
+        try:
+            db.session.execute(db.text(
+                "ALTER TABLE sales ADD COLUMN branch_id INT NULL REFERENCES branches(id)"
+            ))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()  # Ya existe — ignorar
+
+        # Migración automática: agregar branch_id a audit_logs si no existe
+        try:
+            db.session.execute(db.text(
+                "ALTER TABLE audit_logs ADD COLUMN branch_id INT NULL REFERENCES branches(id)"
+            ))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        # Migración automática: agregar branch_id a purchase_orders si no existe
+        try:
+            db.session.execute(db.text(
+                "ALTER TABLE purchase_orders ADD COLUMN branch_id INT NULL REFERENCES branches(id)"
+            ))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
     return app
 
 

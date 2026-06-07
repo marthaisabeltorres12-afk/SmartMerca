@@ -10,12 +10,14 @@ class Sale(db.Model):
     payment_method = db.Column(db.String(50), default='efectivo')
     total          = db.Column(db.Numeric(10,2), nullable=False, default=0)
     line_id        = db.Column(db.Integer, db.ForeignKey('business_lines.id'), nullable=True)
+    branch_id      = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     created_at     = db.Column(db.DateTime, server_default=db.func.now())
 
     cashier  = db.relationship('User', backref='sales')
     customer = db.relationship('Customer', backref='sales')
     items    = db.relationship('SaleItem', backref='sale', cascade='all, delete-orphan')
     line     = db.relationship('BusinessLine', foreign_keys=[line_id])
+    branch   = db.relationship('Branch', foreign_keys=[branch_id])
 
     def to_dict(self):
         return {
@@ -27,7 +29,9 @@ class Sale(db.Model):
             'payment_method': self.payment_method,
             'total':          float(self.total),
             'line_id':        self.line_id,
-            'line_name':      self.line.name  if self.line else None,
+            'line_name':      self.line.name if self.line else None,
+            'branch_id':      self.branch_id,
+            'branch_name':    self.branch.nombre if self.branch else None,
             'line_color':     self.line.color if self.line else None,
             'items':          [i.to_dict() for i in self.items],
             'payments':       [p.to_dict() for p in self.payments] if self.payments else [],

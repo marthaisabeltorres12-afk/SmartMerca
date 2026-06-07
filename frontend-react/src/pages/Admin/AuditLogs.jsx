@@ -4,12 +4,11 @@ import { useAuth } from "../../context/AuthContext";
 
 export default function AuditLogs() {
   const { token } = useAuth();
-  const [logs,    setLogs]    = useState([]);
-  const [error,   setError]   = useState(null);
-  const [search,  setSearch]  = useState('');
-  const [from,    setFrom]    = useState('');
-  const [to,      setTo]      = useState('');
-  const [accion,  setAccion]  = useState('');
+  const [logs,   setLogs]   = useState([]);
+  const [error,  setError]  = useState(null);
+  const [search, setSearch] = useState('');
+  const [from,   setFrom]   = useState('');
+  const [to,     setTo]     = useState('');
 
   const roles = {
     admin:         "Administrador",
@@ -19,12 +18,11 @@ export default function AuditLogs() {
   };
 
   const accionColor = {
-    crear:        "text-success fw-bold",
-    editar:       "text-warning fw-bold",
-    eliminar:     "text-danger fw-bold",
-    descuento:    "text-primary fw-bold",
-    autorizar:    "text-purple fw-bold",
-    autorizar_fallo: "text-danger fw-bold",
+    crear:         "text-success fw-bold",
+    editar:        "text-warning fw-bold",
+    eliminar:      "text-danger fw-bold",
+    descuento:     "text-primary fw-bold",
+    autorizacion:  "text-purple fw-bold",
   };
 
   useEffect(() => {
@@ -41,28 +39,19 @@ export default function AuditLogs() {
       .catch(err => { console.error(err); setError("No se pudieron cargar los logs: " + err.message); });
   }, [token, from, to]);
 
-  const filtered = logs.filter(log => {
-    const matchSearch = !search ||
-      (log.usuario_nombre || '').toLowerCase().includes(search.toLowerCase()) ||
-      (log.rol            || '').toLowerCase().includes(search.toLowerCase()) ||
-      (log.accion         || '').toLowerCase().includes(search.toLowerCase()) ||
-      (log.descripcion    || '').toLowerCase().includes(search.toLowerCase());
-
-    const matchAccion = !accion || (log.accion || '') === accion;
-
-    return matchSearch && matchAccion;
-  });
-
-  // Obtener acciones únicas para el select
-  const accionesUnicas = [...new Set(logs.map(l => l.accion).filter(Boolean))].sort();
+  const filtered = logs.filter(log =>
+    !search ||
+    (log.usuario_nombre || '').toLowerCase().includes(search.toLowerCase()) ||
+    (log.rol            || '').toLowerCase().includes(search.toLowerCase()) ||
+    (log.accion         || '').toLowerCase().includes(search.toLowerCase()) ||
+    (log.descripcion    || '').toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="d-flex">
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft: 240 }}>
-        <h4 className="fw-bold mb-1">
-          <i className="bi bi-file-earmark-medical"></i> Logs de Auditoría
-        </h4>
+        <h4 className="fw-bold mb-1"><i className="bi bi-file-earmark-medical"></i> Logs de Auditoría</h4>
         <p className="text-muted mb-4">Registro de acciones importantes del sistema</p>
 
         {error && <div className="alert alert-danger">{error}</div>}
@@ -71,23 +60,11 @@ export default function AuditLogs() {
         <div className="card border-0 shadow-sm mb-3">
           <div className="card-body py-3">
             <div className="row g-2 align-items-end">
-              <div className="col-md-4">
-                <label className="form-label small fw-semibold">
-                  <i className="bi bi-search"></i> Buscar
-                </label>
+              <div className="col-md-5">
+                <label className="form-label small fw-semibold"><i className="bi bi-search"></i> Buscar</label>
                 <input className="form-control"
                   placeholder="Usuario, rol, acción o descripción..."
                   value={search} onChange={e => setSearch(e.target.value)} />
-              </div>
-              <div className="col-md-2">
-                <label className="form-label small fw-semibold">Acción</label>
-                <select className="form-select"
-                  value={accion} onChange={e => setAccion(e.target.value)}>
-                  <option value="">Todas</option>
-                  {accionesUnicas.map(a => (
-                    <option key={a} value={a}>{a}</option>
-                  ))}
-                </select>
               </div>
               <div className="col-md-2">
                 <label className="form-label small fw-semibold">Desde</label>
@@ -99,15 +76,14 @@ export default function AuditLogs() {
                 <input type="date" className="form-control"
                   value={to} onChange={e => setTo(e.target.value)} />
               </div>
-              <div className="col-md-1">
-                <label className="form-label small fw-semibold">&nbsp;</label>
+              <div className="col-md-2">
                 <button className="btn btn-outline-secondary w-100"
-                  onClick={() => { setSearch(''); setFrom(''); setTo(''); setAccion(''); }}>
+                  onClick={() => { setSearch(''); setFrom(''); setTo(''); }}>
                   Limpiar
                 </button>
               </div>
               <div className="col-md-1 d-flex align-items-end">
-                <span className="badge bg-secondary fs-6">{filtered.length}</span>
+                <span className="badge bg-secondary">{filtered.length}</span>
               </div>
             </div>
           </div>
@@ -116,22 +92,22 @@ export default function AuditLogs() {
         {/* Tabla */}
         <div className="card border-0 shadow-sm">
           <div className="table-responsive">
-            <table className="table table-bordered table-hover align-middle mb-0"
-              style={{ fontSize: 13 }}>
+            <table className="table table-bordered table-hover align-middle mb-0" style={{ fontSize: 13 }}>
               <thead className="table-light">
                 <tr>
                   <th>Usuario</th>
                   <th>Rol</th>
                   <th>Acción</th>
                   <th>Descripción</th>
-                  <th style={{ whiteSpace: 'nowrap' }}>Fecha y hora</th>
+                  <th>Sucursal</th>
+                  <th style={{ whiteSpace:'nowrap' }}>Fecha y hora</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="text-center text-muted py-4">
-                      {error ? 'Error al cargar datos' : 'No hay registros'}
+                    <td colSpan="6" className="text-center text-muted py-4">
+                      {error ? 'Error al cargar datos' : 'No hay registros aún'}
                     </td>
                   </tr>
                 ) : filtered.map((log, i) => (
@@ -143,13 +119,16 @@ export default function AuditLogs() {
                         {log.accion}
                       </span>
                     </td>
-                    <td className="text-muted" style={{ maxWidth: 420 }}>
+                    <td className="text-muted" style={{ maxWidth:420 }}>
                       {log.descripcion || "-"}
                     </td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      {log.fecha_hora
-                        ? new Date(log.fecha_hora).toLocaleString('es-CO')
-                        : "-"}
+                    <td className="small text-muted">
+                      {log.branch_name
+                        ? <><i className="bi bi-geo-alt me-1"></i>{log.branch_name}</>
+                        : '—'}
+                    </td>
+                    <td style={{ whiteSpace:'nowrap' }}>
+                      {log.fecha_hora ? new Date(log.fecha_hora).toLocaleString('es-CO') : "-"}
                     </td>
                   </tr>
                 ))}

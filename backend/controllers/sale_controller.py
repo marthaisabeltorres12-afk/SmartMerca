@@ -83,11 +83,26 @@ def create_sale():
     from models.presentation import ProductPresentation
 
     cashier = User.query.get(user_id)
+
+    # Obtener branch_id del turno activo del cajero
+    branch_id = None
+    try:
+        from models.shift import Shift
+        turno = Shift.query.filter(
+            Shift.cashier_id == user_id,
+            Shift.status == 'abierto'
+        ).first()
+        if turno and turno.branch_id:
+            branch_id = turno.branch_id
+    except Exception:
+        pass
+
     sale = Sale(
         cashier_id     = user_id,
         cashier_name   = cashier.name if cashier else '',
         customer_id    = data.get('customer_id') or None,
         payment_method = data.get('payment_method', 'efectivo'),
+        branch_id      = branch_id,
         total          = 0
     )
     db.session.add(sale)

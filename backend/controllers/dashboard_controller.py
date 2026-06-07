@@ -84,15 +84,44 @@ def get_dashboard_today():
     # ── Ventas por método de pago hoy ────────────────────────────────────
     try:
         from models.sale_payment import SalePayment
-        q_pagos = db.session.query(
+        pagos_hoy = db.session.query(
             SalePayment.metodo,
             func.sum(SalePayment.monto).label('total')
-        ).join(Sale).filter(func.date(Sale.created_at) == today)
-        q_pagos = _filtro_ventas_validas(q_pagos)
-        pagos_hoy = q_pagos.group_by(SalePayment.metodo).all()
+        ).join(Sale, Sale.id == SalePayment.sale_id)\
+         .filter(func.date(Sale.created_at) == today)\
+         .group_by(SalePayment.metodo).all()
         metodos = {r.metodo: float(r.total) for r in pagos_hoy}
+        # Fallback: si no hay tabla sale_payments, usar payment_method de Sale
+        if not metodos:
+            ventas_metodo = db.session.query(
+                Sale.payment_method,
+                func.sum(Sale.total).label('total')
+            ).filter(func.date(Sale.created_at) == today)\
+             .group_by(Sale.payment_method).all()
+            metodos = {r.payment_method: float(r.total) for r in ventas_metodo if r.payment_method}
     except Exception:
         metodos = {}
+
+    # ── Ventas por sucursal hoy ──────────────────────────────────────────
+    por_sucursal = []
+    try:
+        from models.branch import Branch
+        sucursales = Branch.query.filter_by(is_active=True).all()
+        for suc in sucursales:
+            q_suc = db.session.query(
+                func.count(Sale.id).label('count'),
+                func.sum(Sale.total).label('total')
+            ).filter(
+                func.date(Sale.created_at) == today,
+                Sale.branch_id == suc.id
+            ).first()
+            por_sucursal.append({
+                'nombre': suc.nombre,
+                'ventas': int(q_suc.count or 0),
+                'total':  float(q_suc.total or 0),
+            })
+    except Exception:
+        por_sucursal = []
 
     # ── Cajero top del día ───────────────────────────────────────────────
     q_cajero = db.session.query(
@@ -138,6 +167,7 @@ def get_dashboard_today():
         'total_ayer':      total_ayer,
         'variacion_pct':   variacion_pct,
         'metodos_pago':    metodos,
+        'por_sucursal':    por_sucursal,
         'cajero_top':      {'nombre': cajero_top.cashier_name, 'total': float(cajero_top.total)} if cajero_top else None,
         'top_productos':   [{'nombre': r.product_name, 'qty': float(r.qty), 'valor': float(r.valor)} for r in top_productos],
         'alertas': {

@@ -12,11 +12,13 @@ class PurchaseOrder(db.Model):
     notas           = db.Column(db.Text, nullable=True)
     created_by      = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     approved_by     = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    branch_id       = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     created_at      = db.Column(db.DateTime, default=datetime.now)
 
     supplier  = db.relationship('Supplier', backref='purchase_orders')
     creator   = db.relationship('User', foreign_keys=[created_by])
     approver  = db.relationship('User', foreign_keys=[approved_by])
+    branch    = db.relationship('Branch', foreign_keys=[branch_id])
     items     = db.relationship('PurchaseOrderItem', backref='order', cascade='all, delete-orphan')
 
     def to_dict(self):
@@ -32,6 +34,8 @@ class PurchaseOrder(db.Model):
             'created_by_name': self.creator.name if self.creator else None,
             'approved_by':    self.approved_by,
             'created_at':     str(self.created_at),
+            'branch_id':      self.branch_id,
+            'branch_name':    self.branch.nombre if self.branch else None,
             'items':          [i.to_dict() for i in self.items],
             'total_items':    len(self.items),
             'valor_total':    sum(float(i.cantidad_solicitada) * float(i.precio_costo_acordado or 0) for i in self.items),

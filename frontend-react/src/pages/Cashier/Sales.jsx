@@ -2001,6 +2001,8 @@ const Sales = () => {
   const [shiftData,      setShiftData]      = React.useState(null);
   const [showAbrirTurno, setShowAbrirTurno] = React.useState(false);
   const [showCerrarTurno,setShowCerrarTurno]= React.useState(false);
+  const [cajasDisponibles, setCajasDisponibles] = React.useState([]);
+  const [cajaSeleccionada, setCajaSeleccionada] = React.useState('');
   const [efectivoInicial,setEfectivoInicial]= React.useState('');
   const [efectivoContado,setEfectivoContado]= React.useState('');
   const [cierreLoading,  setCierreLoading]  = React.useState(false);
@@ -2057,6 +2059,14 @@ const Sales = () => {
           setShiftData(data);
         } else {
           setShiftOk(false);
+          fetch('http://localhost:5000/api/cajas/mis-cajas', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          }).then(r => r.ok ? r.json() : [])
+            .then(cajas => {
+              const lista = Array.isArray(cajas) ? cajas : [];
+              setCajasDisponibles(lista);
+              setCajaSeleccionada(lista.length >= 1 ? String(lista[0].id) : '');
+            }).catch(() => setCajasDisponibles([]));
           setShowAbrirTurno(true); // Mostrar modal automáticamente
         }
       })
@@ -2149,12 +2159,15 @@ const Sales = () => {
   const { isOnline, pendingCount, syncing, guardarVentaPendiente, sincronizarPendientes } = useOfflineMode(token, showAlert);
 
   const abrirTurno = async () => {
+    if (cajasDisponibles.length > 1 && !cajaSeleccionada) {
+      showAlert('danger', 'Selecciona una caja para continuar'); return;
+    }
     const monto = parseFloat(efectivoInicial) || 0;
     try {
       const res = await fetch('http://localhost:5000/api/shifts/open', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initial_cash: monto })
+        body: JSON.stringify({ initial_cash: monto, cash_register_id: cajaSeleccionada ? parseInt(cajaSeleccionada) : null })
       });
       if (res.ok) {
         const data = await res.json();
@@ -2178,10 +2191,10 @@ const Sales = () => {
     try {
       const contado = parseFloat(efectivoContado) || 0;
       if (shiftData?.id) {
-        await fetch('http://localhost:5000/api/shifts/' + shiftData.id + '/request-close', {
+        await fetch('http://localhost:5000/api/shifts/close', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cash_counted: contado })
+          body: JSON.stringify({ shift_id: shiftData.id, cash_counted: contado })
         });
       }
       setShowCerrarTurno(false);
@@ -2511,41 +2524,37 @@ const Sales = () => {
           <div className="modal-dialog" style={{ marginTop:'12vh', maxWidth:420 }}>
             <div className="modal-content border-0 shadow-lg">
               <div className="modal-header py-3" style={{ background:'#1e3a5f', color:'#fff' }}>
-                <h5 className="modal-title fw-bold bi bi-shield-lock me-2"> Cierre de turno</h5>
+                <h5 className="modal-title fw-bold">
+                  <i className="bi bi-box-arrow-right me-2"></i>Cierre de turno
+                </h5>
                 <button className="btn-close btn-close-white" onClick={() => setShowCierreModal(false)} />
               </div>
               <div className="modal-body text-center py-4">
-                <div style={{ fontSize:'3rem', marginBottom:12 }}></div>
-                <h5 className="fw-bold mb-2">¿Listo para cerrar tu turno?</h5>
+                <i className="bi bi-cash-register" style={{fontSize:'3rem', color:'#1e3a5f'}}></i>
+                <h5 className="fw-bold mt-3 mb-2">¿Listo para cerrar tu turno?</h5>
                 <p className="text-muted mb-4" style={{ fontSize:14 }}>
-                  Serás redirigido a la pantalla de cierre de caja donde podrás registrar el conteo de efectivo y cerrar el turno.
+                  Ingresarás el conteo de efectivo y el turno se cerrará automáticamente.
                 </p>
                 <div className="d-flex flex-column gap-2">
-                  <a href="/cajero/turno" className="btn btn-primary fw-bold py-2">
-  Ir a cierre de caja
-</a>
-
-<a href="/cajero/historial" className="btn btn-outline-secondary py-2">
-  Ver historial de ventas
-</a>
+                  <button className="btn btn-danger fw-bold py-2" onClick={() => {
+                    setShowCierreModal(false);
+                    solicitarCierreTurno();
+                  }}>
+                    <i className="bi bi-box-arrow-right me-2"></i>Cerrar turno
+                  </button>
                   <hr className="my-1"/>
-                  <button
-  className="btn btn-outline-danger py-2"
-  onClick={() => {
-    if (shiftOk) solicitarCierreTurno();
-    else {
-      logout();
-      navigate('/login');
-    }
-  }}
->
-  Cerrar sesión
-</button>
+                  <button className="btn btn-outline-danger py-2" onClick={() => {
+                    setShowCierreModal(false);
+                    logout();
+                    navigate('/login');
+                  }}>
+                    <i className="bi bi-door-open me-2"></i>Cerrar sesión sin cerrar turno
+                  </button>
                 </div>
               </div>
               <div className="modal-footer py-2 justify-content-center">
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowCierreModal(false)}>
-                  Volver a ventas (ESC)
+                  <i className="bi bi-arrow-left me-1"></i>Volver a ventas
                 </button>
               </div>
             </div>
@@ -2758,11 +2767,29 @@ const Sales = () => {
               <div className="modal-body p-4 text-center">
               <div style={{ fontSize: 52, marginBottom: 12 }}>
   </div>
-                <p className="text-muted mb-4">
-                  Bienvenido/a <strong>{user?.name}</strong>.<br/>
-                  Presiona el botón para abrir tu turno y comenzar.
+                <p className="text-muted mb-3">
+                  Bienvenido/a <strong>{user?.name}</strong>.
                 </p>
-                <p className="small text-muted">El efectivo inicial lo configura el administrador.</p>
+                {cajasDisponibles.length > 1 && (
+                  <div className="mb-3 text-start">
+                    <label className="form-label fw-semibold small">
+                      <i className="bi bi-display me-1"></i>¿En qué caja vas a trabajar? *
+                    </label>
+                    <select className="form-select" value={cajaSeleccionada}
+                      onChange={e => setCajaSeleccionada(e.target.value)}>
+                      <option value="">— Selecciona una caja —</option>
+                      {cajasDisponibles.map(cj => (
+                        <option key={cj.id} value={String(cj.id)}>{cj.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {cajasDisponibles.length === 1 && (
+                  <div className="alert alert-success py-2 small mb-3 text-start">
+                    <i className="bi bi-display me-1"></i>
+                    Caja: <strong>{cajasDisponibles[0].nombre}</strong>
+                  </div>
+                )}
               </div>
               <div className="modal-footer justify-content-center border-0 pb-4">
                 <button className="btn btn-success btn-lg fw-bold px-5" onClick={abrirTurno}>
@@ -2777,16 +2804,42 @@ const Sales = () => {
       {/* ── Modal Cerrar Turno ── */}
       {showCerrarTurno && (
         <div className="modal d-block" style={{background:'rgba(0,0,0,0.7)',zIndex:9999,position:'fixed',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <div className="modal-dialog modal-dialog-centered" style={{maxWidth:420,width:'90%',margin:'auto'}}>
+          <div className="modal-dialog modal-dialog-centered" style={{maxWidth:440,width:'90%',margin:'auto'}}>
             <div className="modal-content border-0 shadow-lg">
-              <div className="modal-header" style={{background:'#dc2626',color:'#fff',borderRadius:'8px 8px 0 0'}}>
-                <h5 className="modal-title fw-bold">Cerrar Turno y Sesión</h5>
+              <div className="modal-header" style={{background:'#1e3a5f',color:'#fff',borderRadius:'8px 8px 0 0'}}>
+                <h5 className="modal-title fw-bold">
+                  <i className="bi bi-box-arrow-right me-2"></i>Cerrar Turno
+                </h5>
               </div>
-              <div className="modal-body p-4 text-center">
-                <div style={{fontSize:52,marginBottom:12}}></div>
-                <p className="text-muted mb-4">Cuenta el dinero en tu caja e ingresa el total.</p>
+              <div className="modal-body p-4">
+                {/* Resumen del turno */}
+                {shiftData && (
+                  <div className="rounded p-3 mb-3" style={{background:'#f8fafc',border:'1px solid #e2e8f0'}}>
+                    <div className="fw-bold mb-2 small text-muted text-uppercase">Resumen del turno</div>
+                    <div className="d-flex justify-content-between mb-1">
+                      <span className="small">Base inicial:</span>
+                      <span className="fw-bold">${Number(shiftData.base_amount||0).toLocaleString('es-CO')}</span>
+                    </div>
+                    <div className="d-flex justify-content-between mb-1">
+                      <span className="small">Ventas en efectivo:</span>
+                      <span className="fw-bold text-success">${Number(shiftData.total_cash||0).toLocaleString('es-CO')}</span>
+                    </div>
+                    <div className="d-flex justify-content-between mb-1">
+                      <span className="small">Retiros:</span>
+                      <span className="fw-bold text-danger">-${Number(shiftData.total_withdrawals||0).toLocaleString('es-CO')}</span>
+                    </div>
+                    <div className="d-flex justify-content-between pt-2" style={{borderTop:'1px solid #e2e8f0'}}>
+                      <span className="small fw-bold">Efectivo esperado:</span>
+                      <span className="fw-bold text-primary">
+                        ${Number((shiftData.base_amount||0) + (shiftData.total_cash||0) - (shiftData.total_withdrawals||0)).toLocaleString('es-CO')}
+                      </span>
+                    </div>
+                  </div>
+                )}
                 <div className="mb-3">
-                  <label className="form-label fw-semibold">Total contado en caja</label>
+                  <label className="form-label fw-semibold">
+                    <i className="bi bi-cash-coin me-1"></i>Total contado en caja
+                  </label>
                   <div className="input-group input-group-lg">
                     <span className="input-group-text fw-bold">$</span>
                     <input type="number" className="form-control form-control-lg text-end fw-bold"
@@ -2795,9 +2848,13 @@ const Sales = () => {
                       onKeyDown={e=>{ if(e.key==='Enter') cerrarTurnoYSesion(); }}
                       autoFocus/>
                   </div>
-                </div>
-                <div className="alert alert-warning small mb-0">
-                  Después de cerrar el turno quedará pendiente de aprobación por el administrador.
+                  {efectivoContado !== '' && shiftData && (
+                    <div className={`mt-2 small fw-bold ${
+                      parseFloat(efectivoContado) >= (shiftData.base_amount||0) + (shiftData.total_cash||0) - (shiftData.total_withdrawals||0)
+                        ? 'text-success' : 'text-danger'}`}>
+                      Diferencia: ${(parseFloat(efectivoContado||0) - ((shiftData.base_amount||0) + (shiftData.total_cash||0) - (shiftData.total_withdrawals||0))).toLocaleString('es-CO')}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="modal-footer justify-content-between border-0 pb-4">
@@ -2805,7 +2862,9 @@ const Sales = () => {
                   Cancelar
                 </button>
                 <button className="btn btn-danger fw-bold px-4" disabled={cierreLoading} onClick={cerrarTurnoYSesion}>
-                  {cierreLoading ? '⏳ Cerrando...' : 'Cerrar turno y salir'}
+                  {cierreLoading
+                    ? <><span className="spinner-border spinner-border-sm me-2"/>Cerrando...</>
+                    : <><i className="bi bi-box-arrow-right me-2"></i>Cerrar turno y salir</>}
                 </button>
               </div>
             </div>

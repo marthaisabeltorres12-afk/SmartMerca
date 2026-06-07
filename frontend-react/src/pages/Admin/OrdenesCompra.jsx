@@ -248,18 +248,23 @@ const OrdenesCompra = () => {
               <div className="table-responsive">
                 <table className="table table-hover align-middle mb-0" style={{fontSize:13}}>
                   <thead className="table-light">
-                    <tr><th>Orden</th><th>Proveedor</th><th>Fecha esperada</th>
+                    <tr><th>Orden</th><th>Proveedor</th><th>Sucursal</th><th>Fecha esperada</th>
                       <th className="text-center">Productos</th><th className="text-end">Valor total</th>
                       <th></th></tr>
                   </thead>
                   <tbody>
                     {!filteredOrders.length ? (
-                      <tr><td colSpan="6" className="text-center text-muted py-4">Sin órdenes</td></tr>
+                      <tr><td colSpan="7" className="text-center text-muted py-4">Sin órdenes</td></tr>
                     ) : filteredOrders.map(o => (
                       <React.Fragment key={o.id}>
                         <tr>
                           <td className="fw-semibold">{o.numero_orden}</td>
                           <td>{o.supplier_name}</td>
+                          <td className="small text-muted">
+                            {o.branch_name
+                              ? <><i className="bi bi-geo-alt me-1"></i>{o.branch_name}</>
+                              : '—'}
+                          </td>
                           <td className="text-muted">{o.fecha_esperada || '—'}</td>
                           <td className="text-center">{o.total_items}</td>
                           <td className="text-end fw-bold">{fmt(o.valor_total)}</td>

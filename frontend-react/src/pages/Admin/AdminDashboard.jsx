@@ -173,6 +173,31 @@ const AdminDashboard = () => {
               </div>
             </div>
 
+            {data?.por_sucursal?.length > 0 && (
+            <div className="card border-0 shadow-sm">
+              <div className="card-header fw-semibold py-3" style={{ background:'#1e3a5f', color:'#fff' }}>
+                <i className="bi bi-geo-alt-fill me-2"></i> Ventas por sucursal hoy
+              </div>
+              <div className="card-body">
+                {data.por_sucursal.map((s, i) => {
+                  const totalGeneral = data.por_sucursal.reduce((a, x) => a + x.total, 0);
+                  const pct = totalGeneral > 0 ? Math.round((s.total / totalGeneral) * 100) : 0;
+                  return (
+                    <div key={i} className="mb-3">
+                      <div className="d-flex justify-content-between small mb-1">
+                        <span className="fw-semibold"><i className="bi bi-geo-alt me-1"></i>{s.nombre}</span>
+                        <span>{fmt(s.total)} <span className="text-muted">· {s.ventas} ventas ({pct}%)</span></span>
+                      </div>
+                      <div className="progress" style={{ height: 8 }}>
+                        <div className="progress-bar bg-primary" style={{ width:`${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            )}
+
             <div className="card border-0 shadow-sm">
               <div className="card-header fw-semibold py-3" style={{ background:'#1e3a5f', color:'#fff' }}><i className="bi bi-bell-fill me-2"></i>Estado del sistema</div>
               <div className="card-body p-2">
