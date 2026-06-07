@@ -211,6 +211,26 @@ const Promotions = () => {
       showMsg('danger', 'Nombre y producto son requeridos');
       return;
     }
+    // Validar que las fechas no sean pasadas
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    if (form.date_from) {
+      const desde = new Date(form.date_from + 'T00:00:00');
+      if (!editing && desde < hoy) {
+        showMsg('danger', 'La fecha de inicio no puede ser una fecha pasada');
+        return;
+      }
+    }
+    if (form.date_to) {
+      const hasta = new Date(form.date_to + 'T00:00:00');
+      if (hasta < hoy) {
+        showMsg('danger', 'La fecha de fin no puede ser una fecha pasada');
+        return;
+      }
+      if (form.date_from && new Date(form.date_from + 'T00:00:00') > hasta) {
+        showMsg('danger', 'La fecha de fin debe ser posterior a la fecha de inicio');
+        return;
+      }
+    }
     setSaving(true);
     const body = {
       ...form,
@@ -552,11 +572,13 @@ const Promotions = () => {
                   <div className="col-6">
                     <label className="form-label fw-semibold">Fecha inicio</label>
                     <input type="date" className="form-control" value={form.date_from}
+                      min={new Date().toISOString().slice(0,10)}
                       onChange={e=>set('date_from', e.target.value)} />
                   </div>
                   <div className="col-6">
                     <label className="form-label fw-semibold">Fecha fin</label>
                     <input type="date" className="form-control" value={form.date_to}
+                      min={form.date_from || new Date().toISOString().slice(0,10)}
                       onChange={e=>set('date_to', e.target.value)} />
                   </div>
                   <div className="col-12">

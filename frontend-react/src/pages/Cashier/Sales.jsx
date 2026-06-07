@@ -128,7 +128,7 @@ const Invoice = ({ sale, cashierName, onClose, mode = 'sin_dian' }) => {
         <div className="modal-content">
           <div className="modal-header py-2" style={{ background: isDian ? '#1e3a5f' : '#374151', color:'#fff' }}>
             <h6 className="modal-title fw-bold">
-              {isDian ? '🧾 Factura DIAN generada' : '🧾 Ticket generado'}
+              {isDian ? 'Factura DIAN generada' : 'Ticket generado'}
             </h6>
             <button className="btn-close btn-close-white btn-sm" onClick={onClose} />
           </div>
@@ -281,7 +281,7 @@ const Invoice = ({ sale, cashierName, onClose, mode = 'sin_dian' }) => {
           <div className="modal-footer py-2 gap-2">
             <button className="btn btn-outline-secondary btn-sm" onClick={onClose}>Cerrar</button>
             <button className="btn btn-dark btn-sm fw-bold" onClick={handlePrint}>
-              🖨️ Imprimir {isDian ? 'factura' : 'ticket'}
+              Imprimir {isDian ? 'factura' : 'ticket'}
             </button>
           </div>
         </div>
@@ -293,7 +293,7 @@ const Invoice = ({ sale, cashierName, onClose, mode = 'sin_dian' }) => {
 // ─── Panel de una venta ────────────────────────────────────────────────────
 const SalePanel = ({
   tab, products, presentations = [], onUpdate, onCompleted,
-  onAddTab, showAlert, token, handleSaleRef,
+  onAddTab, showAlert, token, handleSaleRef, promosActivas = [],
   suspendedSales = [], onSuspend, onRecover, onOpenCamera,
   onAddTabSinDian,  isOnline,
   guardarVentaPendiente, tabs = [],
@@ -519,23 +519,44 @@ const SalePanel = ({
       if (warn?.level === 'warning') showAlert('warning', warn.msg);
       const newCart = exists
         ? draft.cart.map(c => (c.product_id === product.id && !c.is_presentation) ? { ...c, quantity: c.quantity + 1 } : c)
-        : [...draft.cart, {
-            cart_key:       'prod_' + product.id,
-            product_id:     product.id,
-            name:           displayName(product),
-            price:          product.final_price ?? parseFloat(product.price),
-            original_price: product.final_price ?? parseFloat(product.price),
-            discount_pct:   product.active_discount || 0,
-            quantity:       1,
-            stock:          product.stock,
-            expiry_date:    product.expiry_date || null,
-            porPeso:        false,
-            editingPrice:   false,
-          }];
+        : [...draft.cart, (() => {
+            const precioBase = parseFloat(product.price);  // precio SIN descuento
+            // Buscar promo activa para este producto
+            const promo = promosActivas.find(pr => pr.product_id === product.id && pr.is_valid_today);
+            let precio = product.final_price ?? precioBase;  // final_price ya tiene promo del backend
+            let descPct = product.active_discount || 0;
+            let promoLabel = null;
+            if (promo && promo.is_valid_today) {
+              if (promo.type === 'descuento_pct' && promo.discount_value > 0) {
+                descPct = promo.discount_value;
+                // Calcular sobre el precio base real, no sobre final_price
+                precio  = parseFloat((precioBase * (1 - promo.discount_value / 100)).toFixed(0));
+                promoLabel = `-${promo.discount_value}% (${promo.name})`;
+              } else if (promo.type === 'descuento_fijo' && promo.discount_value > 0) {
+                precio  = Math.max(0, precioBase - promo.discount_value);
+                descPct = Math.round((promo.discount_value / precioBase) * 100);
+                promoLabel = `-$${Number(promo.discount_value).toLocaleString('es-CO')} (${promo.name})`;
+              }
+            }
+            return {
+              cart_key:       'prod_' + product.id,
+              product_id:     product.id,
+              name:           displayName(product),
+              price:          precio,
+              original_price: precioBase,
+              discount_pct:   descPct,
+              promo_label:    promoLabel,
+              quantity:       1,
+              stock:          product.stock,
+              expiry_date:    product.expiry_date || null,
+              porPeso:        false,
+              editingPrice:   false,
+            };
+          })()];
       return { ...draft, cart: newCart };
     });
     clearQuery();
-  }, [tab.id, onUpdate, productWarning, showAlert, stockDisponible, products]);
+  }, [tab.id, onUpdate, productWarning, showAlert, stockDisponible, products, promosActivas]);
 
   const confirmWeight = () => {
     const kg = parseFloat(weightInput);
@@ -768,7 +789,7 @@ if (!isOnline) {
       });
     } catch(e) {
       if (e.status === 409) {
-        showAlert('warning', `⚠️ ${e.message} — Haz clic en "Reintentar" para intentar de nuevo.`, true);
+        showAlert('warning', `${e.message} — Haz clic en "Reintentar" para intentar de nuevo.`, true);
       } else {
         showAlert('danger', e.message || 'Error al registrar la venta');
       }
@@ -789,7 +810,7 @@ if (tab.sinDian) {
   return;
 }
 
-// 🟢 Si ya hay cliente → no pedir datos
+// Si ya hay cliente → no pedir datos
 if (tab.selectedCustomer) {
   await _ejecutarVenta('dian', {
     tipoDoc: tab.selectedCustomer.doc_type || 'CC',
@@ -801,7 +822,7 @@ if (tab.selectedCustomer) {
   return;
 }
 
-// 🟢 Si NO hay cliente pero venta pequeña → consumidor final
+// Si NO hay cliente pero venta pequeña → consumidor final
 if (total <= LIMITE_CONSUMIDOR_FINAL) {
   await _ejecutarVenta('dian', {
     tipoDoc: 'CC',
@@ -813,7 +834,7 @@ if (total <= LIMITE_CONSUMIDOR_FINAL) {
   return;
 }
 
-// 🔴 Si es venta grande → pedir datos
+// Si es venta grande → pedir datos
 setDianModal(true);
   };
 
@@ -969,7 +990,7 @@ setDianModal(true);
 
           {tab.cart.length === 0 ? (
             <div className="card-body d-flex flex-column align-items-center justify-content-center text-muted" style={{ minHeight:300 }}>
-              <div style={{ fontSize:'3rem' }}>🛒</div>
+              <div style={{ fontSize:'3rem' }}></div>
               <div className="fw-semibold mt-2">Carrito vacio</div>
               <div className="small">Escanea un codigo o busca un producto</div>
             </div>
@@ -994,7 +1015,10 @@ setDianModal(true);
                       <tr key={c.product_id}>
                         <td>
                           <div className="fw-semibold small">{c.name}</div>
-                          {c.discount_pct > 0 && (
+                          {c.promo_label && (
+                            <span className="badge bg-success" style={{ fontSize:'0.65rem' }}>{c.promo_label}</span>
+                          )}
+                          {!c.promo_label && c.discount_pct > 0 && (
                             <span className="badge bg-danger" style={{ fontSize:'0.65rem' }}>-{c.discount_pct}%</span>
                           )}
                           {c.porPeso && (
@@ -1161,7 +1185,7 @@ setDianModal(true);
                   <div className="p-3 rounded" style={{ background:'#f0fdf4', border:'1px solid #bbf7d0' }}>
                     <div className="fw-bold">{priceResult.name}</div>
                     <div className="text-muted small">{priceResult.category || '—'}</div>
-                    {priceResult.barcode && <div className="text-muted small" style={{ fontFamily:'monospace' }}>📦 {priceResult.barcode}</div>}
+                    {priceResult.barcode && <div className="text-muted small" style={{ fontFamily:'monospace' }}>{priceResult.barcode}</div>}
                     <div className="d-flex gap-3 mt-2">
                       <div>
                         <div className="text-muted" style={{ fontSize:11 }}>Precio</div>
@@ -1303,7 +1327,7 @@ setDianModal(true);
     ['F8', 'Devoluciones'],
     ['F9', 'Abrir cajón de dinero'],
     ['F10', 'Ir a cierre de turno'],
-    ['F11', <><i className="bi bi-tags me-2"></i>Etiquetas de productos</>],
+    ['F11', <>Etiquetas de productos</>],
     ['F12', 'Cobrar'],
     ['Enter', 'Agregar producto escaneado'],
     ['ESC', 'Cerrar modal / cancelar búsqueda'],
@@ -1338,7 +1362,7 @@ setDianModal(true);
       <div className="modal-content">
         <div className="modal-header">
           <h6 className="modal-title fw-bold">
-            ⚖️ Pesar: {displayName(weightModal)}
+            ️ Pesar: {displayName(weightModal)}
           </h6>
           <button className="btn-close" onClick={() => setWeightModal(null)} />
         </div>
@@ -1347,7 +1371,7 @@ setDianModal(true);
             Precio: {fmtMoney(weightModal.final_price ?? weightModal.price)}/kg
           </p>
  
-          {/* ✅ Widget de báscula — se usa si el cliente tiene báscula USB */}
+          {/* Widget de báscula — se usa si el cliente tiene báscula USB */}
           <BasculaWidget
             productoNombre={displayName(weightModal)}
             onPesoConfirmado={(kg) => {
@@ -1400,7 +1424,7 @@ setDianModal(true);
 )}
 
       {/* Modal PIN */}
-     {/* ✅ AuthModal reemplaza el modal PIN */}
+     {/* AuthModal reemplaza el modal PIN */}
       {pinModal && (
         <AuthModal
           tipo={pinModal.action}
@@ -1420,7 +1444,7 @@ setDianModal(true);
           <div className="modal-dialog" style={{ marginTop:'8vh' }}>
             <div className="modal-content border-0 shadow-lg">
               <div className="modal-header py-3" style={{ background:'#1e3a5f', color:'#fff' }}>
-                <h5 className="modal-title fw-bold">🧾 Factura DIAN — Datos del cliente</h5>
+                <h5 className="modal-title fw-bold">Factura DIAN — Datos del cliente</h5>
                 <button className="btn-close btn-close-white" onClick={() => setDianModal(false)} />
               </div>
               <div className="modal-body">
@@ -1489,7 +1513,7 @@ setDianModal(true);
                   }}>
                   {dianLoading
                     ? <><span className="spinner-border spinner-border-sm me-2"/>Procesando...</>
-                    : '🧾 Emitir factura DIAN'}
+                    : 'Emitir factura DIAN'}
                 </button>
               </div>
             </div>
@@ -1556,10 +1580,9 @@ setDianModal(true);
               {query && (
                 <button className="btn btn-outline-secondary" onClick={clearQuery}>x</button>
               )}
-              <button className="btn btn-outline-success" title="📷 Cámara IA"
+              <button className="btn btn-outline-success" title="Cámara IA"
                 onClick={() => onOpenCamera && onOpenCamera()}>
-                📷
-              </button>
+                </button>
             </div>
             <div className="d-flex align-items-center justify-content-between mt-1">
               <div className="text-muted" style={{ fontSize:11 }}>
@@ -1593,7 +1616,7 @@ setDianModal(true);
                             )}
                             {p._type !== 'presentation' && p.gramaje_cantidad && p.gramaje_unidad && (
                               <span className="badge bg-light text-dark border ms-1" style={{ fontSize:9 }}>
-                                ⚖️ {p.gramaje_cantidad} {p.gramaje_unidad}
+                                ️ {p.gramaje_cantidad} {p.gramaje_unidad}
                               </span>
                             )}
                             {p.barcode && (
@@ -1663,7 +1686,7 @@ setDianModal(true);
           <div className="card-header border-0 fw-bold bg-white d-flex justify-content-between align-items-center" style={{ borderRadius:'12px 12px 0 0' }}>
             <span>Cliente</span>
             {!tab.selectedCustomer && (
-              <span className="badge bg-secondary" style={{fontSize:11}}>👤 Consumidor Final</span>
+              <span className="badge bg-secondary" style={{fontSize:11}}>Consumidor Final</span>
             )}
           </div>
           <div className="card-body py-3">
@@ -1673,7 +1696,7 @@ setDianModal(true);
                   <div className="fw-bold">{tab.selectedCustomer.full_name}
                     {tab.selectedCustomer.price_list_nombre && (
                       <span className="badge bg-success ms-2 bi-percent" style={{fontSize:10}}>
-                        🏷️ {tab.selectedCustomer.price_list_nombre}
+                        ️ {tab.selectedCustomer.price_list_nombre}
                       </span>
                     )}
                   </div>
@@ -1691,7 +1714,7 @@ setDianModal(true);
                 </div>
                 <button className="btn btn-outline-danger btn-sm"
                   onClick={() => onUpdate(tab.id, d => ({ ...d, selectedCustomer:null, customerSearch:'' }))}>
-                  ✕
+                  ×
                 </button>
               </div>
             ) : (
@@ -1834,9 +1857,9 @@ setDianModal(true);
                 {(tab.paymentMethod === 'tarjeta' || tab.paymentMethod === 'transferencia' || tab.paymentMethod === 'nequi') && (
                   <div className="mb-3 p-2 rounded text-center" style={{ background:'#f0f9ff' }}>
                     <div className="text-muted small">
-                      {tab.paymentMethod === 'tarjeta'       && '💳 Confirme el pago en el datáfono'}
-                      {tab.paymentMethod === 'transferencia' && '🏦 Verifique el comprobante de transferencia'}
-                      {tab.paymentMethod === 'nequi'         && '📱 Verifique la notificación de Nequi'}
+                      {tab.paymentMethod === 'tarjeta'       && 'Confirme el pago en el datáfono'}
+                      {tab.paymentMethod === 'transferencia' && 'Verifique el comprobante de transferencia'}
+                      {tab.paymentMethod === 'nequi'         && 'Verifique la notificación de Nequi'}
                     </div>
                   </div>
                 )}
@@ -1955,12 +1978,10 @@ setDianModal(true);
     </>
   ) : tab.sinDian ? (
     <>
-      <i className="bi bi-receipt me-2"></i>
       Cobrar (sin DIAN) — {fmtMoney(total)}
     </>
   ) : (
     <>
-      <i className="bi bi-receipt-cutoff me-2"></i>
       Cobrar con DIAN — {fmtMoney(total)}
     </>
   )}
@@ -1981,12 +2002,11 @@ const Sales = () => {
   const [showAbrirTurno, setShowAbrirTurno] = React.useState(false);
   const [showCerrarTurno,setShowCerrarTurno]= React.useState(false);
   const [efectivoInicial,setEfectivoInicial]= React.useState('');
-  const [cajasDisponibles, setCajasDisponibles] = React.useState([]);
-  const [cajaSeleccionada, setCajaSeleccionada] = React.useState('');
   const [efectivoContado,setEfectivoContado]= React.useState('');
   const [cierreLoading,  setCierreLoading]  = React.useState(false);
   const [products,       setProducts]       = useState([]);
   const [presentations,  setPresentations]  = useState([]);
+  const [promosActivas,  setPromosActivas]  = useState([]);
   const [tabs,           setTabs]           = useState(() => [newTab()]);
   const [activeTabId,    setActiveTabId]    = useState(tabs[0].id);
   const [alert,          setAlert]          = useState(null);
@@ -2021,6 +2041,12 @@ const Sales = () => {
   useEffect(() => {
     productService.getAll(token).then(setProducts).catch(console.error);
     presentationService.getAll(token).then(setPresentations).catch(console.error);
+    // Cargar promociones activas del día
+    fetch('http://localhost:5000/api/promotions/?activas=true', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }).then(r => r.ok ? r.json() : [])
+      .then(data => setPromosActivas(Array.isArray(data) ? data.filter(p => p.is_valid_today) : []))
+      .catch(() => {});
     fetch('http://localhost:5000/api/shifts/active', {
       headers: { 'Authorization': 'Bearer ' + token }
     })
@@ -2031,15 +2057,6 @@ const Sales = () => {
           setShiftData(data);
         } else {
           setShiftOk(false);
-          // Cargar cajas disponibles antes de mostrar el modal
-          fetch('http://localhost:5000/api/cajas/mis-cajas', {
-            headers: { 'Authorization': 'Bearer ' + token }
-          }).then(r => r.ok ? r.json() : [])
-            .then(cajas => {
-              const lista = Array.isArray(cajas) ? cajas : [];
-              setCajasDisponibles(lista);
-              setCajaSeleccionada(lista.length >= 1 ? String(lista[0].id) : '');
-            }).catch(() => setCajasDisponibles([]));
           setShowAbrirTurno(true); // Mostrar modal automáticamente
         }
       })
@@ -2065,7 +2082,7 @@ const Sales = () => {
       }, token);
       // Imprimir comprobante de envio
       imprimirComprobanteEnvio(modalDomiciliario, formDom);
-      showAlert('success', `✅ Enviado · Código de entrega: ${codigo}`);
+      showAlert('success', `Enviado · Código de entrega: ${codigo}`);
       setModalDomiciliario(null);
       setFormDom({nombre:'',celular:'',marca_moto:'',placa:''});
       apiFetch(`/domicilios?cajero_id=${user.id}&estado=en_camino`, {}, token)
@@ -2112,7 +2129,7 @@ const Sales = () => {
       </table>
       <div class="sep"></div>
       <div class="sep"></div>
-      <div class="c" style="font-size:11px;font-weight:bold">📲 ENVIAR FOTO DE COMPROBANTE AL:</div>
+      <div class="c" style="font-size:11px;font-weight:bold">ENVIAR FOTO DE COMPROBANTE AL:</div>
       <div class="c" style="font-size:14px;font-weight:900">WhatsApp: 3203308547</div>
       <div class="c" style="font-size:9px">(Foto del comprobante firmado por el cliente)</div>
       <div class="sep"></div>
@@ -2132,15 +2149,12 @@ const Sales = () => {
   const { isOnline, pendingCount, syncing, guardarVentaPendiente, sincronizarPendientes } = useOfflineMode(token, showAlert);
 
   const abrirTurno = async () => {
-    if (cajasDisponibles.length > 1 && !cajaSeleccionada) {
-      showAlert('danger', 'Selecciona una caja para continuar'); return;
-    }
     const monto = parseFloat(efectivoInicial) || 0;
     try {
       const res = await fetch('http://localhost:5000/api/shifts/open', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initial_cash: monto, cash_register_id: cajaSeleccionada ? parseInt(cajaSeleccionada) : null })
+        body: JSON.stringify({ initial_cash: monto })
       });
       if (res.ok) {
         const data = await res.json();
@@ -2258,7 +2272,7 @@ const Sales = () => {
     { key:'F8',  label:'Devoluciones' },
     { key:'F9',  label:'Cajón' },
     { key:'F10', label:'Cierre', highlight: true },
-    { key:'F11', label:'🏷️ Etiquetas' },
+    { key:'F11', label:'Etiquetas' },
     { key:'F12', label:'Cobrar', highlight: true },
     { key:'ESC', label:'Cancelar' },
   ];
@@ -2296,13 +2310,13 @@ const Sales = () => {
             syncing={syncing}
             onSync={sincronizarPendientes}
           />
-          {/* 🌙 Luna */}
+          {/* Luna */}
           <button onClick={toggleDarkMode} title={darkMode ? 'Modo claro' : 'Modo oscuro'}
             style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', padding:'2px 6px', borderRadius:8,
               color:'#64748b', transition:'.2s' }}
             onMouseEnter={e => e.currentTarget.style.background='#f1f5f9'}
             onMouseLeave={e => e.currentTarget.style.background='none'}>
-            {darkMode ? '☀️' : '🌙'}
+            {darkMode ? <i className="bi bi-sun-fill"></i> : <i className="bi bi-moon-stars-fill"></i>}
           </button>
           {/* Nombre cajero */}
           <div style={{ fontSize:13, fontWeight:600, color:'#374151', display:'flex', alignItems:'center', gap:6 }}>
@@ -2325,7 +2339,7 @@ const Sales = () => {
               {alert.retryable && (
                 <button className="btn btn-sm btn-warning fw-bold"
                   onClick={() => { setAlert(null); handleSaleRef.current && handleSaleRef.current(); }}>
-                  🔄 Reintentar
+                  Reintentar
                 </button>
               )}
               <button type="button" className="btn-close" onClick={() => setAlert(null)} />
@@ -2380,21 +2394,13 @@ const Sales = () => {
         <div style={{ background:'#fff', border:'1px solid #dee2e6', borderTop:'none', borderRadius:'0 0 12px 12px', padding:16, marginBottom:12 }}>
           {shiftOk === false && (
             <div className="d-flex flex-column align-items-center justify-content-center py-5 text-center">
-              <div style={{ fontSize:'4rem' }}>🔒</div>
+              <div style={{ fontSize:'4rem' }}></div>
               <h4 className="fw-bold mt-3 text-danger">Sin turno activo</h4>
               <p className="text-muted mb-4" style={{ maxWidth:400 }}>
                 Para comenzar a vender debes abrir tu turno de caja.
               </p>
-              <button className="btn btn-primary fw-bold px-4" onClick={async ()=>{
-                try {
-                  const r = await fetch('http://localhost:5000/api/cajas/mis-cajas', {headers:{'Authorization':'Bearer '+token}});
-                  const cajas = r.ok ? (await r.json()) : [];
-                  setCajasDisponibles(Array.isArray(cajas) ? cajas : []);
-                  setCajaSeleccionada(cajas.length >= 1 ? String(cajas[0].id) : '');
-                } catch(e) { setCajasDisponibles([]); }
-                setShowAbrirTurno(true);
-              }}>
-                🟢 Abrir turno de caja
+              <button className="btn btn-primary fw-bold px-4" onClick={()=>setShowAbrirTurno(true)}>
+                Abrir turno de caja
               </button>
             </div>
           )}
@@ -2405,6 +2411,39 @@ const Sales = () => {
             </div>
           )}
           {shiftOk === true && activeTab && (
+            <>
+            {/* Banner promociones activas */}
+            {promosActivas.length > 0 && (
+              <div style={{
+                background: 'linear-gradient(90deg,#1e3a5f,#2563eb)',
+                borderRadius: 10, padding: '8px 16px', marginBottom: 12,
+                display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+              }}>
+                <span style={{color:'#fde047', fontWeight:700, fontSize:13, whiteSpace:'nowrap'}}>
+                  PROMOS ACTIVAS:
+                </span>
+                {promosActivas.slice(0,4).map(p => (
+                  <span key={p.id} style={{
+                    background:'rgba(255,255,255,0.15)', color:'#fff',
+                    borderRadius:6, padding:'2px 10px', fontSize:12, fontWeight:600
+                  }}>
+                    {p.name}
+                    {p.discount_type === 'percentage' && p.discount_value > 0 && (
+                      <span style={{color:'#fde047', marginLeft:4}}>-{p.discount_value}%</span>
+                    )}
+                    {p.discount_type === '2x1' && (
+                      <span style={{color:'#86efac', marginLeft:4}}>2×1</span>
+                    )}
+                    {p.date_to && (
+                      <span style={{color:'#fca5a5', marginLeft:4, fontSize:10}}>hasta {p.date_to}</span>
+                    )}
+                  </span>
+                ))}
+                {promosActivas.length > 4 && (
+                  <span style={{color:'#cbd5e1', fontSize:11}}>+{promosActivas.length - 4} más</span>
+                )}
+              </div>
+            )}
             <SalePanel
               isOnline={isOnline}
               guardarVentaPendiente={guardarVentaPendiente}
@@ -2434,7 +2473,9 @@ const Sales = () => {
               onOpenCamera={() => setShowCamaraIA(true)}
               camaraProductoPeso={camaraProductoPeso}
               onClearCamaraProductoPeso={() => setCamaraProductoPeso(null)}
+              promosActivas={promosActivas}
             />
+            </>
           )}
         </div>
       </main>
@@ -2474,19 +2515,17 @@ const Sales = () => {
                 <button className="btn-close btn-close-white" onClick={() => setShowCierreModal(false)} />
               </div>
               <div className="modal-body text-center py-4">
-                <div style={{ fontSize:'3rem', marginBottom:12 }}>🏁</div>
+                <div style={{ fontSize:'3rem', marginBottom:12 }}></div>
                 <h5 className="fw-bold mb-2">¿Listo para cerrar tu turno?</h5>
                 <p className="text-muted mb-4" style={{ fontSize:14 }}>
                   Serás redirigido a la pantalla de cierre de caja donde podrás registrar el conteo de efectivo y cerrar el turno.
                 </p>
                 <div className="d-flex flex-column gap-2">
                   <a href="/cajero/turno" className="btn btn-primary fw-bold py-2">
-  <i className="bi bi-flag-fill me-2"></i>
   Ir a cierre de caja
 </a>
 
 <a href="/cajero/historial" className="btn btn-outline-secondary py-2">
-  <i className="bi bi-journal-text me-2"></i>
   Ver historial de ventas
 </a>
                   <hr className="my-1"/>
@@ -2500,7 +2539,6 @@ const Sales = () => {
     }
   }}
 >
-  <i className="bi bi-box-arrow-right me-2"></i>
   Cerrar sesión
 </button>
                 </div>
@@ -2530,7 +2568,7 @@ const Sales = () => {
           <button className="btn btn-warning fw-bold shadow-lg"
             style={{borderRadius:50,padding:'12px 20px',fontSize:15,position:'relative'}}
             onClick={()=>setShowPedidos(true)}>
-            🛵 Pedidos
+            Pedidos
             <span className="badge bg-danger ms-2" style={{fontSize:12}}>{pedidosCatalogo.length}</span>
           </button>
         </div>
@@ -2542,7 +2580,7 @@ const Sales = () => {
           <div className="modal-dialog modal-lg modal-dialog-scrollable">
             <div className="modal-content">
               <div className="modal-header" style={{background:'#1e3a5f',color:'#fff'}}>
-                <h5 className="modal-title fw-bold">🛵 Pedidos del catálogo asignados a ti</h5>
+                <h5 className="modal-title fw-bold">Pedidos del catálogo asignados a ti</h5>
                 <button className="btn-close btn-close-white" onClick={()=>setShowPedidos(false)}/>
               </div>
               <div className="modal-body p-3">
@@ -2553,8 +2591,8 @@ const Sales = () => {
                     pendiente:'warning', asignado:'info', en_camino:'primary', entregado:'success', cancelado:'secondary'
                   }[p.estado] || 'secondary';
                   const estadoLabel = {
-                    pendiente:'⏳ Pendiente', asignado:'📋 Asignado', en_camino:'🛵 En camino',
-                    entregado:'✅ Entregado', cancelado:'❌ Cancelado'
+                    pendiente:'⏳ Pendiente', asignado:'Asignado', en_camino:'En camino',
+                    entregado:'Entregado', cancelado:'Cancelado'
                   }[p.estado] || p.estado;
                   return (
                   <div key={p.id} className={`card mb-3 border-${estadoColor} border-2`}>
@@ -2572,10 +2610,10 @@ const Sales = () => {
 
                       {/* Info cliente */}
                       <div className="p-2 rounded mb-2" style={{background:'#f8fafc'}}>
-                        <div className="fw-semibold">👤 {p.cliente_nombre}</div>
-                        <div className="small">📱 {p.cliente_telefono}</div>
-                        <div className="small">📍 {p.cliente_direccion}</div>
-                        {p.notas && <div className="small text-muted">📝 {p.notas}</div>}
+                        <div className="fw-semibold">{p.cliente_nombre}</div>
+                        <div className="small">{p.cliente_telefono}</div>
+                        <div className="small">{p.cliente_direccion}</div>
+                        {p.notas && <div className="small text-muted">{p.notas}</div>}
                       </div>
 
                       {/* Productos */}
@@ -2595,12 +2633,12 @@ const Sales = () => {
                       {/* Info domiciliario si ya fue asignado */}
                       {p.domiciliario_nombre && (
                         <div className="p-2 rounded mb-2" style={{background:'#eff6ff',fontSize:12}}>
-                          <div className="fw-semibold text-primary">🛵 Domiciliario asignado:</div>
+                          <div className="fw-semibold text-primary">Domiciliario asignado:</div>
                           <div>{p.domiciliario_nombre} · {p.domiciliario_celular}</div>
                           {p.domiciliario && p.domiciliario.vehiculo && <div>Moto: {p.domiciliario.vehiculo}</div>}
                           {p.domiciliario && p.domiciliario.placa && <div>Placa: {p.domiciliario.placa}</div>}
                           <div className="mt-1 small text-muted">
-                            📲 El domiciliario debe enviar foto del comprobante al WhatsApp de la tienda
+                            El domiciliario debe enviar foto del comprobante al WhatsApp de la tienda
                           </div>
                         </div>
                       )}
@@ -2610,14 +2648,14 @@ const Sales = () => {
                         {/* Contactar cliente siempre disponible */}
                         <a href={waLink} target="_blank" rel="noreferrer"
                           className="btn btn-success btn-sm fw-semibold">
-                          💬 Contactar cliente
+                          Contactar cliente
                         </a>
 
                         {/* Asignar domiciliario — solo si no tiene */}
                         {p.estado !== 'entregado' && p.estado !== 'cancelado' && !p.domiciliario_nombre && (
                           <button className="btn btn-warning btn-sm fw-semibold"
                             onClick={() => { setModalDomiciliario(p); setFormDom({nombre:'',celular:'',marca_moto:'',placa:''}); }}>
-                            🛵 Asignar domiciliario
+                            Asignar domiciliario
                           </button>
                         )}
 
@@ -2629,7 +2667,7 @@ const Sales = () => {
                               apiFetch(`/domicilios/${p.id}/estado`,
                                 { method:'PUT', body: JSON.stringify({ estado:'entregado' }) }, token)
                               .then(() => {
-                                showAlert('success', `✅ Pedido ${p.numero_pedido} marcado como entregado`);
+                                showAlert('success', `Pedido ${p.numero_pedido} marcado como entregado`);
                                 apiFetch(`/domicilios?cajero_id=${user.id}`, {}, token)
                                   .then(data => setPedidosCatalogo(
                                     Array.isArray(data) ? data.filter(d =>
@@ -2640,7 +2678,7 @@ const Sales = () => {
                               })
                               .catch(() => showAlert('danger','Error al confirmar entrega'));
                             }}>
-                            ✅ Confirmar entrega
+                            Confirmar entrega
                           </button>
                         )}
 
@@ -2657,7 +2695,7 @@ const Sales = () => {
                                     ? data.filter(d => ['CAT-','DOM-'].some(p => d.numero_pedido?.startsWith(p))) : []));
                               });
                             }}>
-                            ❌ Cancelar
+                            Cancelar
                           </button>
                         )}
                       </div>
@@ -2677,7 +2715,7 @@ const Sales = () => {
           onAddToCart={(prod) => {
             setShowCamaraIA(false);
             // Si es por peso → abrir weightModal en el SalePanel activo
-            const PESO_CATS = ['🥦 Frutas y Verduras', '🥩 Carnes y Embutidos'];
+            const PESO_CATS = ['Frutas y Verduras', 'Carnes y Embutidos'];
             if (PESO_CATS.includes(prod.category)) {
               // Disparar evento para que SalePanel abra el modal de peso
               setCamaraProductoPeso(prod);
@@ -2715,39 +2753,20 @@ const Sales = () => {
           <div className="modal-dialog modal-dialog-centered" style={{maxWidth:420,width:'90%',margin:'auto'}}>
             <div className="modal-content border-0 shadow-lg">
               <div className="modal-header" style={{background:'#1e3a5f',color:'#fff',borderRadius:'8px 8px 0 0'}}>
-                <h5 className="modal-title fw-bold">🟢 Abrir Turno de Caja</h5>
+                <h5 className="modal-title fw-bold">Abrir Turno de Caja</h5>
               </div>
               <div className="modal-body p-4 text-center">
               <div style={{ fontSize: 52, marginBottom: 12 }}>
-  <i className="bi bi-cash-coin"></i>
-</div>
-                <p className="text-muted mb-3">
-                  Bienvenido/a <strong>{user?.name}</strong>.
+  </div>
+                <p className="text-muted mb-4">
+                  Bienvenido/a <strong>{user?.name}</strong>.<br/>
+                  Presiona el botón para abrir tu turno y comenzar.
                 </p>
-                {cajasDisponibles.length > 1 && (
-                  <div className="mb-3 text-start">
-                    <label className="form-label fw-semibold small">
-                      <i className="bi bi-display me-1"></i>¿En qué caja vas a trabajar? *
-                    </label>
-                    <select className="form-select" value={cajaSeleccionada}
-                      onChange={e => setCajaSeleccionada(e.target.value)}>
-                      <option value="">— Selecciona una caja —</option>
-                      {cajasDisponibles.map(cj => (
-                        <option key={cj.id} value={String(cj.id)}>{cj.nombre}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                {cajasDisponibles.length === 1 && (
-                  <div className="alert alert-success py-2 small mb-3">
-                    <i className="bi bi-display me-1"></i>
-                    Caja: <strong>{cajasDisponibles[0].nombre}</strong>
-                  </div>
-                )}
+                <p className="small text-muted">El efectivo inicial lo configura el administrador.</p>
               </div>
               <div className="modal-footer justify-content-center border-0 pb-4">
                 <button className="btn btn-success btn-lg fw-bold px-5" onClick={abrirTurno}>
-                  🟢 Abrir turno y comenzar
+                  Abrir turno y comenzar
                 </button>
               </div>
             </div>
@@ -2761,10 +2780,10 @@ const Sales = () => {
           <div className="modal-dialog modal-dialog-centered" style={{maxWidth:420,width:'90%',margin:'auto'}}>
             <div className="modal-content border-0 shadow-lg">
               <div className="modal-header" style={{background:'#dc2626',color:'#fff',borderRadius:'8px 8px 0 0'}}>
-                <h5 className="modal-title fw-bold">🔒 Cerrar Turno y Sesión</h5>
+                <h5 className="modal-title fw-bold">Cerrar Turno y Sesión</h5>
               </div>
               <div className="modal-body p-4 text-center">
-                <div style={{fontSize:52,marginBottom:12}}>🧮</div>
+                <div style={{fontSize:52,marginBottom:12}}></div>
                 <p className="text-muted mb-4">Cuenta el dinero en tu caja e ingresa el total.</p>
                 <div className="mb-3">
                   <label className="form-label fw-semibold">Total contado en caja</label>
@@ -2778,7 +2797,7 @@ const Sales = () => {
                   </div>
                 </div>
                 <div className="alert alert-warning small mb-0">
-                  ⚠️ Después de cerrar el turno quedará pendiente de aprobación por el administrador.
+                  Después de cerrar el turno quedará pendiente de aprobación por el administrador.
                 </div>
               </div>
               <div className="modal-footer justify-content-between border-0 pb-4">
@@ -2786,7 +2805,7 @@ const Sales = () => {
                   Cancelar
                 </button>
                 <button className="btn btn-danger fw-bold px-4" disabled={cierreLoading} onClick={cerrarTurnoYSesion}>
-                  {cierreLoading ? '⏳ Cerrando...' : '🔒 Cerrar turno y salir'}
+                  {cierreLoading ? '⏳ Cerrando...' : 'Cerrar turno y salir'}
                 </button>
               </div>
             </div>
@@ -2808,7 +2827,7 @@ const Sales = () => {
         <div className="modal d-block" style={{background:'rgba(0,0,0,0.6)',zIndex:9995,position:'fixed',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
           <div style={{background:'#fff',borderRadius:14,overflow:'hidden',maxWidth:400,width:'90%',boxShadow:'0 20px 60px rgba(0,0,0,0.4)'}}>
             <div style={{background:'#1e3a5f',padding:'14px 20px'}}>
-              <h5 style={{margin:0,fontWeight:700,color:'#fff'}}>🛵 Asignar Domiciliario</h5>
+              <h5 style={{margin:0,fontWeight:700,color:'#fff'}}>Asignar Domiciliario</h5>
               <div style={{fontSize:12,color:'rgba(255,255,255,0.75)'}}>Pedido {modalDomiciliario.numero_pedido}</div>
             </div>
             <div style={{padding:20}}>
@@ -2836,7 +2855,7 @@ const Sales = () => {
                 </div>
               </div>
               <div className="alert alert-info py-2 small mb-0">
-                🖨️ Se imprimirá el comprobante de envío con el código de entrega automáticamente.
+                Se imprimirá el comprobante de envío con el código de entrega automáticamente.
               </div>
             </div>
             <div style={{padding:'0 20px 20px',display:'flex',gap:10}}>
@@ -2845,7 +2864,7 @@ const Sales = () => {
                 Cancelar
               </button>
               <button className="btn btn-warning fw-bold flex-fill" onClick={asignarDomiciliarioS}>
-                🛵 Enviar pedido
+                <i className="bi bi-scooter"></i> Enviar pedido
               </button>
             </div>
           </div>
