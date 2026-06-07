@@ -58,28 +58,22 @@ class Product(db.Model):
 
         if promo:
             if promo.date_from and today < promo.date_from:
-                return float(self.price)
+                return round(float(self.price))
 
             if promo.date_to and today > promo.date_to:
-                return float(self.price)
+                return round(float(self.price))
 
             if promo.type == 'descuento_pct':
-                return round(
-                float(self.price) * (1 - float(promo.discount_value) / 100),
-                2
-             )
+                return round(float(self.price) * (1 - float(promo.discount_value) / 100))
 
             if promo.type == 'descuento_fijo':
-                return max(
-                0,
-                float(self.price) - float(promo.discount_value)
-            )
+                return max(0, round(float(self.price) - float(promo.discount_value)))
 
-        # lleva_gratis no cambia el precio unitario
-            return float(self.price)
+            # lleva_gratis no cambia el precio unitario
+            return round(float(self.price))
 
-    # SIN PROMOCIÓN
-        return float(self.price)
+        # SIN PROMOCIÓN
+        return round(float(self.price))
     
     def _display_name(self):
         if self.gramaje_cantidad and self.gramaje_unidad:

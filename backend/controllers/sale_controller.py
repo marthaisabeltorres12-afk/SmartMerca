@@ -188,7 +188,8 @@ def create_sale():
 
             item_price = price if price else float(product.final_price)
 
-            # ── Promoción activa ──────────────────────────────────────────
+            # ── Promoción activa ─────────────────────────────────────────
+            # Solo aplicar si el frontend NO mandó precio (precio viene del backend)
             from datetime import date
             from models.promotion import Promotion
 
@@ -201,16 +202,15 @@ def create_sale():
 
             cantidad_cobrada = qty  # default: se cobra todo
 
-            if promo and promo.is_valid_today:  # usa el @property del modelo
-                print(f"[PROMO] tipo={promo.type} buy={promo.buy_quantity} free={promo.free_quantity}")
+            if promo and promo.is_valid_today and not price:
 
                 if promo.type == 'descuento_pct':
                     pct = float(promo.discount_value or 0)
-                    item_price = round(item_price * (1 - pct / 100), 2)
+                    item_price = round(item_price * (1 - pct / 100))
 
                 elif promo.type == 'descuento_fijo':
                     fijo = float(promo.discount_value or 0)
-                    item_price = max(0, round(item_price - fijo, 2))
+                    item_price = max(0, round(item_price - fijo))
 
                 elif promo.type == 'lleva_gratis':
                     buy  = int(promo.buy_quantity or 0)
@@ -223,7 +223,7 @@ def create_sale():
                         print(f"[lleva_gratis] qty={qty} grupos={grupos_completos} "
                               f"gratis={cantidad_gratis} cobrada={cantidad_cobrada}")
 
-            subtotal = item_price * cantidad_cobrada
+            subtotal = round(item_price * cantidad_cobrada)
             total   += subtotal
 
             product.stock -= qty

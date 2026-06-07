@@ -529,13 +529,12 @@ const SalePanel = ({
             if (promo && promo.is_valid_today) {
               if (promo.type === 'descuento_pct' && promo.discount_value > 0) {
                 descPct = promo.discount_value;
-                // Calcular sobre el precio base real, no sobre final_price
-                precio  = parseFloat((precioBase * (1 - promo.discount_value / 100)).toFixed(0));
-                promoLabel = `-${promo.discount_value}% (${promo.name})`;
+                precio  = Math.round(precioBase * (1 - promo.discount_value / 100));
+                promoLabel = `-${promo.discount_value}%`;
               } else if (promo.type === 'descuento_fijo' && promo.discount_value > 0) {
-                precio  = Math.max(0, precioBase - promo.discount_value);
+                precio  = Math.max(0, Math.round(precioBase - promo.discount_value));
                 descPct = Math.round((promo.discount_value / precioBase) * 100);
-                promoLabel = `-$${Number(promo.discount_value).toLocaleString('es-CO')} (${promo.name})`;
+                promoLabel = `-$${Number(promo.discount_value).toLocaleString('es-CO')}`;
               }
             }
             return {
@@ -723,8 +722,8 @@ const SalePanel = ({
       const ef2 = parseFloat(tab.mixtoEfectivo || 0);
       const m2  = parseFloat(tab.mixtoMonto2   || 0);
       const cambioEfectivo = tab.isMixto
-        ? Math.max(0, ef2 - (total - m2))
-        : Math.max(0, parseFloat(tab.cashReceived||0) - total);
+        ? Math.max(0, Math.round(ef2 - (total - m2)))
+        : Math.max(0, Math.round(parseFloat(tab.cashReceived||0) - total));
 
       const payments = tab.isMixto ? [
         { metodo: 'efectivo',       monto: ef2,   cambio: cambioEfectivo, referencia: null },
@@ -746,7 +745,7 @@ let sale;
 if (!isOnline) {
   // Sin internet — guardar localmente
   const ventaData = {
-    items:          tab.cart.map(c => ({ product_id: c.product_id, presentation_id: c.presentation_id || null, quantity: c.quantity })),
+    items:          tab.cart.map(c => ({ product_id: c.product_id, presentation_id: c.presentation_id || null, quantity: c.quantity, price: c.price })),
     customer_id:    tab.selectedCustomer?.id || null,
     payment_method: pm,
     payments,
@@ -763,7 +762,7 @@ if (!isOnline) {
   };
 } else {
   sale = await saleService.create({
-    items:          tab.cart.map(c => ({ product_id: c.product_id, presentation_id: c.presentation_id || null, quantity: c.quantity })),
+    items:          tab.cart.map(c => ({ product_id: c.product_id, presentation_id: c.presentation_id || null, quantity: c.quantity, price: c.price })),
     customer_id:    tab.selectedCustomer?.id || null,
     payment_method: pm,
     payments,
@@ -938,7 +937,7 @@ setDianModal(true);
     return () => window.removeEventListener('keydown', handler);
   }, [tab, pinModal, suspendedSales, onSuspend, onUpdate, showAlert, onAddTabSinDian, handleSale]);
 
-  const total  = tab.cart.reduce((a, c) => a + (parseFloat(c.price) || 0) * (parseFloat(c.quantity) || 0), 0);
+  const total  = Math.round(tab.cart.reduce((a, c) => a + (parseFloat(c.price) || 0) * (parseFloat(c.quantity) || 0), 0));
   const cambio = parseFloat(tab.cashReceived || 0) - total;
 
   const stockBadge = (item) => {
@@ -1632,6 +1631,18 @@ setDianModal(true);
                             {p.active_discount > 0 && (
                               <span className="badge bg-danger">-{p.active_discount}%</span>
                             )}
+                            {/* Badge de promo activa para este producto */}
+                            {promosActivas.find(pr => pr.product_id === p.id && pr.is_valid_today) && (() => {
+                              const pr = promosActivas.find(x => x.product_id === p.id && x.is_valid_today);
+                              return (
+                                <span className="badge bg-warning text-dark" style={{fontSize:9}}>
+                                  <i className="bi bi-tag-fill me-1"></i>
+                                  {pr.type === 'descuento_pct' && `-${pr.discount_value}%`}
+                                  {pr.type === 'descuento_fijo' && `-$${Number(pr.discount_value).toLocaleString('es-CO')}`}
+                                  {pr.type === 'lleva_gratis' && `${pr.buy_quantity}x${pr.buy_quantity + pr.free_quantity}`}
+                                </span>
+                              );
+                            })()}
                             {p.category && (
                               <span className="badge bg-light text-dark border" style={{ fontSize:9 }}>{p.category}</span>
                             )}
@@ -2426,37 +2437,6 @@ const Sales = () => {
           {shiftOk === true && activeTab && (
             <>
             {/* Banner promociones activas */}
-            {promosActivas.length > 0 && (
-              <div style={{
-                background: 'linear-gradient(90deg,#1e3a5f,#2563eb)',
-                borderRadius: 10, padding: '8px 16px', marginBottom: 12,
-                display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-              }}>
-                <span style={{color:'#fde047', fontWeight:700, fontSize:13, whiteSpace:'nowrap'}}>
-                  PROMOS ACTIVAS:
-                </span>
-                {promosActivas.slice(0,4).map(p => (
-                  <span key={p.id} style={{
-                    background:'rgba(255,255,255,0.15)', color:'#fff',
-                    borderRadius:6, padding:'2px 10px', fontSize:12, fontWeight:600
-                  }}>
-                    {p.name}
-                    {p.discount_type === 'percentage' && p.discount_value > 0 && (
-                      <span style={{color:'#fde047', marginLeft:4}}>-{p.discount_value}%</span>
-                    )}
-                    {p.discount_type === '2x1' && (
-                      <span style={{color:'#86efac', marginLeft:4}}>2×1</span>
-                    )}
-                    {p.date_to && (
-                      <span style={{color:'#fca5a5', marginLeft:4, fontSize:10}}>hasta {p.date_to}</span>
-                    )}
-                  </span>
-                ))}
-                {promosActivas.length > 4 && (
-                  <span style={{color:'#cbd5e1', fontSize:11}}>+{promosActivas.length - 4} más</span>
-                )}
-              </div>
-            )}
             <SalePanel
               isOnline={isOnline}
               guardarVentaPendiente={guardarVentaPendiente}
