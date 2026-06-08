@@ -22,6 +22,21 @@ def login():
     if not user.is_active:
         return jsonify({'message': 'Tu cuenta está desactivada. Contacta al administrador.'}), 403
 
+    # Verificar plan — solo admin_tecnico puede entrar si el plan está vencido
+    if user.role != 'admin_tecnico':
+        try:
+            from models.system_config import SystemConfig
+            from datetime import date
+            config = SystemConfig.query.first()
+            if config and config.plan_vence:
+                dias_vencido = (date.today() - config.plan_vence).days
+                if dias_vencido > 0:
+                    return jsonify({
+                        'message': '🔒 El sistema está suspendido por falta de pago. Contacta a Creatsoft para renovar tu plan.'
+                    }), 403
+        except Exception:
+            pass
+
     access_token = create_access_token(
         identity=str(user.id),
         additional_claims={'role': user.role}

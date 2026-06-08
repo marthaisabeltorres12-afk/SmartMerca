@@ -318,7 +318,7 @@ const SalePanel = ({
   guardarVentaPendiente, tabs = [],
   camaraProductoPeso, onClearCamaraProductoPeso,
 }) => {
-  const { hasFeature } = usePlan();
+  const { hasFeature, soloLectura, planVencido } = usePlan();
   const queryRef  = useRef();
   const weightRef = useRef();
   const pinRef    = useRef();
@@ -2122,7 +2122,7 @@ setDianModal(true);
 // ─── Componente principal ──────────────────────────────────────────────────
 const Sales = () => {
   const { token, user, logout } = useAuth();
-  const { hasFeature } = usePlan();
+  const { hasFeature, soloLectura, planVencido } = usePlan();
   const navigate = useNavigate();
   const [shiftOk,        setShiftOk]        = React.useState(null);
   const [shiftData,      setShiftData]      = React.useState(null);

@@ -24,7 +24,7 @@ const KpiCard = ({ icon, label, value, sub, subColor }) => (
 // ── Dashboard principal ────────────────────────────────────────────────────
 const AdminDashboard = () => {
   const { token } = useAuth();
-  const { hasFeature } = usePlan();
+  const { hasFeature, soloLectura, planVencido, diasRestantes } = usePlan();
   const [data,       setData]       = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [loading,    setLoading]    = useState(true);
@@ -66,6 +66,20 @@ const AdminDashboard = () => {
       <Navbar />
       <main className="flex-grow-1 p-4" style={{ marginLeft:240 }}>
         <PlanVencimientoAlert />
+        {soloLectura && (
+          <div className="alert d-flex align-items-center gap-3 mb-4 fw-semibold"
+            style={{background:'#fef2f2',border:'2px solid #fca5a5',borderRadius:12,color:'#991b1b'}}>
+            <i className="bi bi-shield-exclamation-fill fs-3 text-danger"></i>
+            <div className="flex-grow-1">
+              <div className="fw-bold fs-6">Sistema en modo solo lectura</div>
+              <div className="small fw-normal">El plan está vencido hace más de 7 días. Los cajeros no pueden iniciar sesión. Solo el administrador puede ver datos.</div>
+            </div>
+            <a href="https://wa.me/573001234567" target="_blank" rel="noreferrer"
+              className="btn btn-danger fw-bold px-3 flex-shrink-0">
+              <i className="bi bi-whatsapp me-2"></i>Renovar ahora
+            </a>
+          </div>
+        )}
         <div className="d-flex align-items-center justify-content-between mb-4">
           <div>
         <h4 className="fw-bold mb-0"> <i className="bi bi-speedometer2 me-2"></i> Dashboard</h4>

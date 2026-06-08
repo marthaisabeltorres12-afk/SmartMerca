@@ -159,6 +159,7 @@ const auditorLinks = [
 
 const Navbar = () => {
   const { user, logout, token } = useAuth();
+  const { hasFeature, soloLectura, planVencido } = usePlan();
   const { darkMode, toggleDarkMode } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -506,6 +507,38 @@ const Navbar = () => {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Banner solo lectura — fijo en la parte inferior */}
+      {soloLectura && (
+        <div style={{
+          position:'fixed', bottom:0, left:0, right:0, zIndex:99998,
+          background:'#991b1b', color:'#fff', padding:'8px 20px',
+          display:'flex', alignItems:'center', justifyContent:'center', gap:12,
+          fontSize:13, fontWeight:600,
+        }}>
+          <i className="bi bi-lock-fill"></i>
+          MODO SOLO LECTURA — Plan vencido. Los cajeros no pueden iniciar sesión.
+          <a href="https://wa.me/573001234567" target="_blank" rel="noreferrer"
+            className="btn btn-sm btn-light fw-bold px-3" style={{fontSize:12}}>
+            <i className="bi bi-whatsapp me-1"></i>Renovar
+          </a>
+        </div>
+      )}
+      {planVencido && !soloLectura && (
+        <div style={{
+          position:'fixed', bottom:0, left:0, right:0, zIndex:99998,
+          background:'#b45309', color:'#fff', padding:'6px 20px',
+          display:'flex', alignItems:'center', justifyContent:'center', gap:12,
+          fontSize:12, fontWeight:600,
+        }}>
+          <i className="bi bi-exclamation-triangle-fill"></i>
+          Plan vencido — Los cajeros no pueden vender. Renueva ahora.
+          <a href="https://wa.me/573001234567" target="_blank" rel="noreferrer"
+            className="btn btn-sm btn-warning fw-bold px-3 text-dark" style={{fontSize:11}}>
+            Renovar ahora
+          </a>
         </div>
       )}
     </>

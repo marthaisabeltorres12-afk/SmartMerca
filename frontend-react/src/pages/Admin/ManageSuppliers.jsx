@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../../components/Navbar';
+import { usePlan } from '../../context/PlanContext';
 import { useAuth } from '../../context/AuthContext';
 import { supplierService } from '../../services/supplierService';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -9,6 +10,7 @@ const EMPTY = { company_name:'', name:'', contact_name:'', email:'', phone:'', a
 
 const ManageSuppliers = () => {
   const { token } = useAuth();
+  const { soloLectura } = usePlan();
   const [suppliers,        setSuppliers]        = useState([]);
   const [search,           setSearch]           = useState('');
   const [showModal,        setShowModal]        = useState(false);

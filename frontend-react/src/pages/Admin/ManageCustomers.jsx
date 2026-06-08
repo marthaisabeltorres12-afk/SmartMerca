@@ -12,7 +12,7 @@ const DOC_TYPES = ['CC','CE','NIT','Pasaporte','TI'];
 
 const ManageCustomers = () => {
   const { token } = useAuth();
-  const { hasFeature } = usePlan();
+  const { hasFeature, soloLectura } = usePlan();
   const [customers,     setCustomers]     = useState([]);
   const [priceLists,    setPriceLists]    = useState([]);
   const [search,        setSearch]        = useState('');

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Navbar from '../../components/Navbar';
+import { usePlan } from '../../context/PlanContext';
 import { useAuth } from '../../context/AuthContext';
 import { inventoryService } from '../../services/inventoryService';
 import { productService } from '../../services/productService';
@@ -518,6 +519,7 @@ const Comprobante = ({ result, header, suppliers, onClose }) => {
 /* ─── Componente principal ─────────────────────────────────────────────────── */
 const Inventory = () => {
   const { token } = useAuth();
+  const { soloLectura } = usePlan();
   const [movements, setMovements] = useState([]);
   const [products,  setProducts]  = useState([]);
   const [suppliers, setSuppliers] = useState([]);
