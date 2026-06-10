@@ -1,0 +1,29 @@
+# ── Dockerfile.ia — Microservicio IA SmartMerca ──────────────────────
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Dependencias del sistema para OpenCV
+RUN apt-get update && apt-get install -y \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar dependencias Python
+RUN pip install --no-cache-dir \
+    flask \
+    flask-cors \
+    ultralytics \
+    opencv-python-headless \
+    numpy
+
+# Copiar el servicio y los modelos
+COPY ia_service.py .
+COPY ia_models/ ./ia_models/
+
+EXPOSE 5001
+
+CMD ["python", "ia_service.py"]

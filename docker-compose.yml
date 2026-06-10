@@ -1,0 +1,79 @@
+# ── docker-compose.yml — SmartMerca ─────────────────────────────────
+version: '3.8'
+
+services:
+
+  # ── Base de datos MySQL ──────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: smartmerca_db_${CLIENTE_NOMBRE}
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - smartmerca_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend Flask ────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.backend
+    container_name: smartmerca_backend_${CLIENTE_NOMBRE}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql+pymysql://${DB_USER}:${DB_PASSWORD}@db:3306/${DB_NAME}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      FLASK_ENV: production
+      CLIENTE_NOMBRE: ${CLIENTE_NOMBRE}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - smartmerca_net
+    volumes:
+      - backend_uploads:/app/uploads
+
+  # ── Microservicio IA (YOLOv8 frutas y verduras) ──────────────────
+  ia:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.ia
+    container_name: smartmerca_ia_${CLIENTE_NOMBRE}
+    restart: unless-stopped
+    networks:
+      - smartmerca_net
+
+  # ── Frontend React + Nginx ───────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend-react
+      dockerfile: Dockerfile.frontend
+      args:
+        REACT_APP_API_URL: /api
+    container_name: smartmerca_frontend_${CLIENTE_NOMBRE}
+    restart: unless-stopped
+    ports:
+      - "${PUERTO_EXTERNO}:80"
+    depends_on:
+      - backend
+      - ia
+    networks:
+      - smartmerca_net
+
+volumes:
+  mysql_data:
+  backend_uploads:
+
+networks:
+  smartmerca_net:
+    driver: bridge
