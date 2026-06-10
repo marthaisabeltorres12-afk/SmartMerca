@@ -126,6 +126,11 @@ const ManageUsers = () => {
   };
 
   const handleDelete = async (id) => {
+    if (id === me.id) {
+      showAlert('danger', 'No puedes eliminar tu propio usuario');
+      setConfirmDelete(null);
+      return;
+    }
     try {
       const res = await userService.delete(id, token);
       setConfirmDelete(null);
@@ -311,7 +316,7 @@ const ManageUsers = () => {
 <button className="btn btn-warning btn-sm" onClick={() => openEdit(u)} title="Editar">
   <i className="bi bi-pencil"></i>
 </button>
-<button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(u)} title="Eliminar">
+<button className="btn btn-danger btn-sm" onClick={() => { if (u.id === me.id) { showAlert('danger', 'No puedes eliminar tu propio usuario'); return; } setConfirmDelete(u); }} title="Eliminar">
   <i className="bi bi-trash"></i>
 </button>
                       </div>
@@ -343,7 +348,7 @@ const ManageUsers = () => {
                     <input type="password" name="fake_pass" style={{display:'none'}} readOnly />
                     <input className="form-control mb-2" placeholder="Nombre *"
                       value={form.name}
-                      onChange={e=>setForm({...form,name:e.target.value})}
+                      onChange={e=>setForm({...form,name:e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g,"")})}
                       required
                     />
 

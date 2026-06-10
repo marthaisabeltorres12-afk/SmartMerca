@@ -197,7 +197,7 @@ const Navbar = () => {
     reader.onload = async (ev) => {
       const base64 = ev.target.result;
       try {
-        await fetch('http://localhost:5000/api/users/me/avatar', {
+        await fetch('/api/users/me/avatar', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ avatar: base64 })
@@ -212,7 +212,7 @@ const Navbar = () => {
   useEffect(() => {
     if (!token || !['admin','admin_tecnico','supervisor','cajero'].includes(user?.role)) return;
     const cargar = () => {
-      fetch('http://localhost:5000/api/domicilios/stats', {
+      fetch('/api/domicilios/stats', {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       }).then(r => r.json()).then(d => setPedidosPendientes(d.pendientes || 0)).catch(() => {});
     };
@@ -511,7 +511,7 @@ const Navbar = () => {
       )}
 
       {/* Banner solo lectura — fijo en la parte inferior */}
-      {soloLectura && (
+      {soloLectura && user?.role !== 'admin_tecnico' && (
         <div style={{
           position:'fixed', bottom:0, left:0, right:0, zIndex:99998,
           background:'#991b1b', color:'#fff', padding:'8px 20px',
@@ -526,7 +526,7 @@ const Navbar = () => {
           </a>
         </div>
       )}
-      {planVencido && !soloLectura && (
+      {planVencido && !soloLectura && user?.role !== 'admin_tecnico' && (
         <div style={{
           position:'fixed', bottom:0, left:0, right:0, zIndex:99998,
           background:'#b45309', color:'#fff', padding:'6px 20px',

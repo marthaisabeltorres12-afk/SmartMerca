@@ -49,8 +49,8 @@ const SalesAnalysis = () => {
   useEffect(() => {
     const h = { Authorization: `Bearer ${token}` };
     Promise.all([
-      fetch('http://localhost:5000/api/sales/',    { headers: h }).then(r => r.json()),
-      fetch('http://localhost:5000/api/products/', { headers: h }).then(r => r.json()),
+      fetch('/api/sales/',    { headers: h }).then(r => r.json()),
+      fetch('/api/products/', { headers: h }).then(r => r.json()),
     ]).then(([s, p]) => { setSales(s); setProducts(p); setLoading(false); })
       .catch(() => setLoading(false));
   }, [token]);

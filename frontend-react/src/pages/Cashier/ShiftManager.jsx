@@ -7,7 +7,7 @@ import { cashCloseService } from '../../services/cashCloseService';
 import { exportCierresPDF, exportCierresExcel } from '../../services/exportService';
 
 const fmt   = n => Number(n||0).toLocaleString('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
-const fmtDt = s => s ? new Date(s).toLocaleString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+const fmtDt = s => s ? new Date(s).toLocaleString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', timeZone:'America/Bogota' }) : '—';
 
 // ══════════════════════════════════════════════
 // VISTA CAJERO — solo ve estado de turno y cuenta efectivo al cerrar
@@ -32,7 +32,12 @@ const CashierView = ({ token, user }) => {
 
   useEffect(() => { load(); }, [load]);
 
-  const round50 = n => Math.round(Number(n||0) / 50) * 50;
+  const round50 = n => {
+    const v = Number(n||0);
+    const centena = Math.floor(v / 100) * 100;
+    const t = v - centena;
+    return t <= 24 ? centena : t <= 74 ? centena + 50 : centena + 100;
+  };
   const fmt = n => '$' + round50(n).toLocaleString('es-CO');
 
   const efectivoEsperado = shift
@@ -107,7 +112,7 @@ const CashierView = ({ token, user }) => {
                 <div className="text-end">
                   <div className="text-muted small">Inicio del turno</div>
                   <div className="fw-semibold small">
-                    {new Date(shift.opened_at).toLocaleString('es-CO', {
+                    {new Date(shift.opened_at).toLocaleString('es-CO', { timeZone:'America/Bogota',
                       day:'2-digit', month:'2-digit', year:'numeric',
                       hour:'2-digit', minute:'2-digit'
                     })}
@@ -295,7 +300,7 @@ const AdminView = ({ token }) => {
     if (!pinValue.trim()) { setPinError('Ingresa el PIN'); return; }
     setPinLoading(true); setPinError('');
     try {
-      const res = await fetch('http://localhost:5000/api/pin/verify', {
+      const res = await fetch('/api/pin/verify', {
         method:'POST',
         headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
         body: JSON.stringify({ pin:pinValue, action:'retiro_efectivo', detail:`Retiro $${wdAmount} — ${wdReason}` }),

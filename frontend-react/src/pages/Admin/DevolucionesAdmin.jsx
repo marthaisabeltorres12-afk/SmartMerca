@@ -18,7 +18,7 @@ const DevolucionesAdmin = () => {
   const [dateTo,      setDateTo]      = useState('');
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/returns/', {
+    fetch('/api/returns/', {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(r => r.json())

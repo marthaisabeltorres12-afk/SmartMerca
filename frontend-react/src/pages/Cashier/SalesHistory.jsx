@@ -252,7 +252,7 @@ const InvoiceModal = ({ sale, cashierName, onClose }) => {
                 )}
                 {isDian && (
                   <div style={{ fontSize:9 }}>
-                    Generado el {new Date().toLocaleDateString('es-CO')}<br/>
+                    Generado el {new Date().toLocaleDateString('es-CO', { timeZone:'America/Bogota' })}<br/>
                     Vendedor autorizado por resolución DIAN
                   </div>
                 )}

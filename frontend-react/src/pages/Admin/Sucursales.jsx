@@ -329,7 +329,7 @@ const Sucursales = () => {
                   <div className="modal-footer">
                     <button type="button" className="btn btn-secondary" onClick={()=>setShowModal(false)}>Cancelar</button>
                     <button type="submit" className="btn btn-primary fw-bold" disabled={loading}>
-                      {loading?'Guardando...':'<i className="bi bi-save me-2"></i> Guardar'}
+                      {loading?'Guardando...':' Guardar'}
                     </button>
                   </div>
                 </form>

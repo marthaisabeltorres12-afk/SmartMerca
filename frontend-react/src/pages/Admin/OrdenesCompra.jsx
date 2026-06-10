@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import PlanGuard from '../../components/PlanGuard';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
 import { apiFetch } from '../../services/api';
@@ -30,6 +31,7 @@ const OrdenesCompra = () => {
   const [filterStatus, setFilterStatus] = useState('');
   const [expanded,   setExpanded]   = useState(null);
   const [alert,      setAlert]      = useState(null);
+  const [businessName, setBusinessName] = useState('SmartMerca');
   const [loading,    setLoading]    = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [editedQty,   setEditedQty]   = useState({});
@@ -60,7 +62,7 @@ const OrdenesCompra = () => {
         apiFetch('/replenishment/suggestions', {}, token).catch(()=>[]),
       ]);
       setOrders(Array.isArray(ords) ? ords : []);
-      setSuppliers(Array.isArray(sups) ? sups : []);
+      setSuppliers(Array.isArray(sups) ? sups.filter(s => s.is_active !== false) : []);
       setProducts(Array.isArray(prods) ? prods.filter(p=>p.is_active) : []);
       setSuggested(Array.isArray(sugg) ? sugg : []);
       const sugsArr = Array.isArray(autoSugg) ? autoSugg : [];
@@ -71,11 +73,19 @@ const OrdenesCompra = () => {
     } catch(e) { showAlert('danger', e.message); }
   }, [token]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    fetch('/api/policy/', {headers:{'Authorization':'Bearer '+token}})
+      .then(r => r.ok ? r.json() : {})
+      .then(pol => { if (pol?.business_name) setBusinessName(pol.business_name); })
+      .catch(() => {});
+  }, [load, token]);
 
   const handleCreateOrder = async (e) => {
     e.preventDefault();
     if (!orderItems.length) { showAlert('danger','Agrega al menos un producto'); return; }
+    const itemInvalido = orderItems.find(i => !i.cantidad_solicitada || Number(i.cantidad_solicitada) < 1);
+    if (itemInvalido) { showAlert('danger', `La cantidad de "${itemInvalido.product_name}" debe ser mayor a 0`); return; }
     setLoading(true);
     try {
       await apiFetch('/purchase-orders/', { method:'POST', body: JSON.stringify({
@@ -174,7 +184,20 @@ const OrdenesCompra = () => {
           </button>
         </div>
 
-        {alert && <div className={`alert alert-${alert.type} py-2`}>{alert.msg}</div>}
+        {alert && (
+          <div style={{
+            position:'fixed', top:20, left:'50%', transform:'translateX(-50%)',
+            zIndex:99999, minWidth:350, maxWidth:520, textAlign:'center',
+            borderRadius:12, padding:'14px 20px', fontWeight:600, fontSize:15,
+            background: alert.type==='success'?'#f0fdf4':alert.type==='warning'?'#fffbeb':'#fef2f2',
+            color: alert.type==='success'?'#166534':alert.type==='warning'?'#92400e':'#991b1b',
+            border: `1.5px solid ${alert.type==='success'?'#86efac':alert.type==='warning'?'#fde68a':'#fca5a5'}`,
+            boxShadow:'0 8px 25px rgba(0,0,0,0.15)',
+          }}>
+            <i className={`bi me-2 ${alert.type==='success'?'bi-check-circle-fill':alert.type==='danger'?'bi-x-circle-fill':'bi-exclamation-triangle-fill'}`}></i>
+            {alert.msg}
+          </div>
+        )}
 
         {/* KPIs */}
         <div className="row g-3 mb-4">
@@ -278,7 +301,7 @@ const OrdenesCompra = () => {
                               <button
   className="btn btn-sm btn-outline-danger py-0 px-2"
   title="Descargar PDF para enviar al proveedor"
-  onClick={() => exportOrdenCompraPDF(o)}
+  onClick={() => exportOrdenCompraPDF(o, businessName)}
 >
   <i className="bi bi-file-earmark-pdf me-1"></i>
   PDF
@@ -538,8 +561,8 @@ const OrdenesCompra = () => {
                                     <td className="fw-semibold align-middle">{item.product_name}</td>
                                     <td className="text-center align-middle">
                                       <input type="number" className="form-control form-control-sm text-center"
-                                        min="0.001" step="1" value={item.cantidad_solicitada}
-                                        onChange={e=>setOrderItems(prev=>prev.map((x,j)=>j===i?{...x,cantidad_solicitada:e.target.value}:x))} />
+                                        min="1" step="1" style={{width:80}} value={item.cantidad_solicitada}
+                                        onChange={e=>setOrderItems(prev=>prev.map((x,j)=>j===i?{...x,cantidad_solicitada:parseInt(e.target.value)||1}:x))} />
                                     </td>
                                     <td className="text-center align-middle">
                                       <div className="input-group input-group-sm">

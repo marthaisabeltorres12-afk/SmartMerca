@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import * as XLSX from 'xlsx';
 
-const API = 'http://localhost:5000/api';
+const API = '/api';
 
 const fmt = n => n != null ? Number(n).toLocaleString('es-CO', { style:'currency', currency:'COP', maximumFractionDigits:0 }) : '—';
 

@@ -40,23 +40,23 @@ const Etiquetas = () => {
       .catch(() => setLoading(false));
   }, [token]);
 
- useEffect(() => {
-  if (seleccionados.length === 0) return;
-  loadJsBarcode().then(() => {
-    todasEtiquetas.forEach((producto, idx) => {
-      const code = producto.barcode || String(producto.id).padStart(8, '0');
-      const el   = document.getElementById(`bc-${producto.id}-${idx}`);
-      if (el && window.JsBarcode) {
-        try {
-          window.JsBarcode(el, code, {
-            format: 'CODE128', width: 1.2, height: 28,
-            displayValue: true, fontSize: 9, margin: 2,
-          });
-        } catch {}
-      }
+  useEffect(() => {
+    if (seleccionados.length === 0) return;
+    loadJsBarcode().then(() => {
+      seleccionados.forEach(({ producto }) => {
+        const code = producto.barcode || String(producto.id).padStart(8, '0');
+        const el   = document.getElementById(`bc-${producto.id}`);
+        if (el && window.JsBarcode) {
+          try {
+            window.JsBarcode(el, code, {
+              format: 'CODE128', width: 1.2, height: 28,
+              displayValue: true, fontSize: 9, margin: 2,
+            });
+          } catch {}
+        }
+      });
     });
-  });
-}, [seleccionados, tamaño, mostrarPrecio, mostrarNombre, mostrarGramaje]);
+  }, [seleccionados, tamaño, mostrarPrecio, mostrarNombre, mostrarGramaje]);
 
   const prodFiltrados = productos.filter(p =>
     p.is_active && (
@@ -190,9 +190,30 @@ const Etiquetas = () => {
                       return (
                         <tr key={p.id} style={{cursor:'pointer'}}
                           onClick={() => agregarProducto(p)}>
-                          <td className="fw-semibold">{p.name}{p.gramaje_cantidad && (` (${p.gramaje_cantidad} ${p.gramaje_unidad})`)}</td>
+                          <td className="fw-semibold">
+                            {p.name}
+                            {p.gramaje_cantidad && (
+                              <span className="text-muted ms-1" style={{fontSize:11}}>
+                                {p.gramaje_cantidad}{p.gramaje_unidad}
+                              </span>
+                            )}
+                          </td>
                           <td className="text-muted">{p.barcode||'Sin código'}</td>
-                          <td className="text-success fw-bold">{fmt(p.price)}</td>
+                          <td className="text-success fw-bold">
+                            {p.promo_info?.type === 'lleva_gratis' ? (
+                              <>
+                                <span>{fmt(p.price)}</span>
+                                <span className="badge bg-success ms-1" style={{fontSize:9}}>
+                                  {p.promo_info.buy_quantity}x{(p.promo_info.buy_quantity||0)+(p.promo_info.free_quantity||0)}
+                                </span>
+                              </>
+                            ) : p.final_price && p.final_price < p.price ? (
+                              <>
+                                <span style={{textDecoration:'line-through', color:'#999', fontSize:12, marginRight:4}}>{fmt(p.price)}</span>
+                                <span className="text-danger fw-bold">{fmt(p.final_price)}</span>
+                              </>
+                            ) : fmt(p.price)}
+                          </td>
                           <td>
                             {ya
                               ? <span className="badge bg-success"><i className="bi bi-check"></i></span>
@@ -289,12 +310,35 @@ const Etiquetas = () => {
                               {prod.gramaje_cantidad}{prod.gramaje_unidad}
                             </div>
                           )}
-                         <svg id={`bc-${prod.id}-${idx}`} style={{maxWidth:'95%'}}></svg>
+                          <svg id={`bc-${prod.id}`} style={{maxWidth:'95%'}}></svg>
                           {mostrarPrecio && (
-                            <div style={{ fontSize: tam.h > 25 ? 11 : 9, fontWeight: 900,
-                              color: '#000', marginTop: 1 }}>
-                              {fmt(prod.price)}
-                              {prod.gramaje_unidad === 'kg' || prod.gramaje_unidad === 'lb' ? '/kg' : ''}
+                            <div style={{ marginTop: 1 }}>
+                              {prod.promo_info?.type === 'lleva_gratis' ? (
+                                <div style={{ fontSize: tam.h > 25 ? 9 : 7, fontWeight: 900, color: '#16a34a', textAlign:'center' }}>
+                                  {fmt(prod.price)}
+                                  <div style={{ fontSize: tam.h > 25 ? 8 : 6, background:'#16a34a', color:'#fff', borderRadius:3, padding:'0 3px', marginTop:1 }}>
+                                    LLEVA {(prod.promo_info.buy_quantity||0)+(prod.promo_info.free_quantity||0)} PAGA {prod.promo_info.buy_quantity}
+                                  </div>
+                                </div>
+                              ) : prod.final_price && prod.final_price < prod.price ? (
+                                <>
+                                  <div style={{ fontSize: tam.h > 25 ? 9 : 7, color: '#999', textDecoration: 'line-through', fontWeight: 600 }}>
+                                    {fmt(prod.price)}
+                                  </div>
+                                  <div style={{ fontSize: tam.h > 25 ? 12 : 10, fontWeight: 900, color: '#dc2626' }}>
+                                    {fmt(prod.final_price)}
+                                    {prod.gramaje_unidad === 'kg' || prod.gramaje_unidad === 'lb' ? '/kg' : ''}
+                                    <span style={{ fontSize: tam.h > 25 ? 8 : 7, marginLeft: 2, background:'#dc2626', color:'#fff', borderRadius:3, padding:'0 3px' }}>
+                                      -{Math.round((1 - prod.final_price/prod.price)*100)}%
+                                    </span>
+                                  </div>
+                                </>
+                              ) : (
+                                <div style={{ fontSize: tam.h > 25 ? 11 : 9, fontWeight: 900, color: '#000' }}>
+                                  {fmt(prod.price)}
+                                  {prod.gramaje_unidad === 'kg' || prod.gramaje_unidad === 'lb' ? '/kg' : ''}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>

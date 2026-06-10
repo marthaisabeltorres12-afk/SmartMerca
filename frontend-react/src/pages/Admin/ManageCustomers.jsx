@@ -287,7 +287,8 @@ const ManageCustomers = () => {
                         <label className="form-label fw-semibold">Número documento *</label>
                         <input className="form-control" placeholder="Ej: 1012345678"
                           value={form.doc_number}
-                          onChange={e=>setForm({...form,doc_number:e.target.value})} required />
+                          onKeyPress={(e) => { if (!/[0-9+\s\-]/.test(e.key)) e.preventDefault(); }}
+onChange={e=>setForm({...form,phone:e.target.value.replace(/[^0-9+\s\-]/g,'')})}   required />
                       </div>
                       <div className="col-md-4">
                         <label className="form-label fw-semibold">Nombre completo *</label>

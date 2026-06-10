@@ -119,7 +119,7 @@ function App() {
             <Route path="/admin/alertas"           element={<PrivateRoute roles={['admin','admin_tecnico']}><Alerts /></PrivateRoute>} />
             <Route path="/admin/reportes"          element={<PrivateRoute roles={['admin','admin_tecnico']}><Reports /></PrivateRoute>} />
             <Route path="/admin/auditoria"         element={<PrivateRoute roles={['admin','admin_tecnico']}><AuditLogs /></PrivateRoute>} />
-            <Route path="/admin/pin"               element={<PrivateRoute roles={['admin','admin_tecnico']}><PlanGuard feature="pin_autorizacion"><AdminPinSetup /></PlanGuard></PrivateRoute>} />
+            <Route path="/admin/pin"               element={<PrivateRoute roles={['admin','admin_tecnico']}><AdminPinSetup /></PrivateRoute>} />
             <Route path="/admin/cartera"           element={<PrivateRoute roles={['admin','admin_tecnico','contador']}><Cartera /></PrivateRoute>} />
             <Route path="/admin/presentaciones"    element={<PrivateRoute roles={['admin','admin_tecnico']}><ManagePresentations /></PrivateRoute>} />
             <Route path="/admin/lineas"            element={<PrivateRoute roles={['admin','admin_tecnico']}><LinesOverview /></PrivateRoute>} />

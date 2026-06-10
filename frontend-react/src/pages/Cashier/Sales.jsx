@@ -21,7 +21,7 @@ const todayStr = () => new Date().toISOString().slice(0, 10); // eslint-disable-
 const fmtDate = (iso) => {
   if (!iso) return '';
   const d = new Date(iso);
-  return d.toLocaleString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  return d.toLocaleString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', timeZone:'America/Bogota' });
 };
 
 const fmtMoney = (n) => {
@@ -32,7 +32,7 @@ const fmtMoney = (n) => {
 // eslint-disable-next-line no-unused-vars
 const logAudit = async (token, accion, descripcion) => {
   try {
-    await fetch('http://localhost:5000/api/audit/log', {
+    await fetch('/api/audit/log', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ accion, descripcion }),
@@ -288,7 +288,7 @@ const Invoice = ({ sale, cashierName, onClose, mode = 'sin_dian' }) => {
                   <div>Puntos ganados: +{Math.floor(total/1000)}</div>
                   <div>Puntos totales: {(sale.customer.points||0)+Math.floor(total/1000)}</div>
                 </>}
-                {isDian && <div style={{ fontSize:9 }}>Generado el {new Date().toLocaleDateString('es-CO')}<br/>Vendedor autorizado por resolución DIAN</div>}
+                {isDian && <div style={{ fontSize:9 }}>Generado el {new Date().toLocaleDateString('es-CO', { timeZone:'America/Bogota' })}<br/>Vendedor autorizado por resolución DIAN</div>}
                 <div style={{ fontWeight:'bold', fontSize:12, marginTop:2 }}>¡GRACIAS POR SU COMPRA!</div>
                 <div>Vuelva pronto</div>
                 <div style={{ fontSize:9, marginTop:2 }}>Este ticket es su comprobante</div>
@@ -444,7 +444,7 @@ const SalePanel = ({
     if (!tab.cuponCode) return;
     onUpdate(tab.id, d => ({ ...d, cuponLoading: true }));
     try {
-      const res = await fetch('http://localhost:5000/api/coupons/validate', {
+      const res = await fetch('/api/coupons/validate', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -538,7 +538,10 @@ const SalePanel = ({
     if (warn?.level === 'danger') { showAlert('danger', warn.msg); return; }
     if (product.stock === 0) { showAlert('danger', displayName(product) + ' sin stock'); return; }
 
-    if (esPorPeso(product.category)) {
+    const UNIDADES_PESO = ['kg', 'g', 'lb', 'oz'];
+    const esPeso = esPorPeso(product.category) && UNIDADES_PESO.includes(product.gramaje_unidad);
+
+    if (esPeso) {
       setWeightInput('');
       setWeightModal(product);
       clearQuery();
@@ -564,7 +567,23 @@ const SalePanel = ({
       }
       if (warn?.level === 'warning') showAlert('warning', warn.msg);
       const newCart = exists
-        ? draft.cart.map(c => (c.product_id === product.id && !c.is_presentation) ? { ...c, quantity: c.quantity + 1 } : c)
+        ? (() => {
+            const updated = draft.cart.map(c => (c.product_id === product.id && !c.is_presentation && !c.is_promo_free) ? { ...c, quantity: c.quantity + 1 } : c);
+            const mainItem = updated.find(c => c.product_id === product.id && !c.is_presentation && !c.is_promo_free);
+            const promo = promosActivas.find(pr => pr.product_id === product.id && pr.type === 'lleva_gratis' && pr.is_valid_today);
+            if (promo && mainItem) {
+              const buyQty = promo.buy_quantity || 1;
+              const freeQty = promo.free_quantity || 1;
+              const freeKey = 'promo_gratis_' + product.id;
+              const gratuitos = Math.floor(mainItem.quantity / buyQty) * freeQty;
+              const sinGratis = updated.filter(c => c.cart_key !== freeKey);
+              if (gratuitos > 0) {
+                sinGratis.push({ cart_key: freeKey, product_id: product.id, name: displayName(product), price: 0, original_price: parseFloat(product.price), discount_pct: 100, promo_label: '🎁 GRATIS', quantity: gratuitos, stock: product.stock, porPeso: false, editingPrice: false, is_promo_free: true });
+              }
+              return sinGratis;
+            }
+            return updated;
+          })()
         : [...draft.cart, (() => {
             const precioBase = parseFloat(product.price);  // precio SIN descuento
             // Buscar promo activa para este producto
@@ -670,6 +689,45 @@ const SalePanel = ({
           return draft;
         }
       }
+      // ── Lógica lleva_gratis ─────────────────────────────────────
+      const updatedItem2 = draft.cart.find(c => c.cart_key === cartKey);
+      if (updatedItem2 && !updatedItem2.is_presentation && !updatedItem2.porPeso) {
+        const promo = promosActivas.find(pr =>
+          pr.product_id === updatedItem2.product_id &&
+          pr.type === 'lleva_gratis' &&
+          pr.is_valid_today
+        );
+        if (promo) {
+          const buyQty  = promo.buy_quantity  || 2;
+          const freeQty = promo.free_quantity || 1;
+          const freeKey = 'promo_gratis_' + updatedItem2.product_id;
+          const gruposCompletos = Math.floor(q / (buyQty + freeQty));
+          const gratuitos = gruposCompletos * freeQty;
+          const cobrados = q - gratuitos;
+          // Actualizar item principal con cantidad cobrada real
+          const sinGratis = draft.cart
+            .map(c => c.cart_key === cartKey ? { ...c, quantity: q, _cobrados: cobrados } : c)
+            .filter(c => c.cart_key !== freeKey);
+          if (gratuitos > 0) {
+            sinGratis.push({
+              cart_key: freeKey,
+              product_id: updatedItem2.product_id,
+              name: updatedItem2.name,
+              price: 0,
+              original_price: parseFloat(updatedItem2.original_price || updatedItem2.price),
+              discount_pct: 100,
+              promo_label: '🎁 GRATIS',
+              quantity: gratuitos,
+              stock: updatedItem2.stock,
+              porPeso: false,
+              editingPrice: false,
+              is_promo_free: true,
+            });
+          }
+          return { ...draft, cart: sinGratis };
+        }
+      }
+      // ────────────────────────────────────────────────────────────
       return { ...draft, cart: draft.cart.map(c => c.cart_key === cartKey ? { ...c, quantity: q } : c) };
     });
   };
@@ -795,7 +853,7 @@ let sale;
 if (!isOnline) {
   // Sin internet — guardar localmente
   const ventaData = {
-    items:          tab.cart.map(c => ({ product_id: c.product_id, presentation_id: c.presentation_id || null, quantity: c.quantity, price: c.price })),
+    items:          tab.cart.filter(c => !c.is_promo_free).map(c => ({ product_id: c.product_id, presentation_id: c.presentation_id || null, quantity: c.quantity, price: c.price })),
     customer_id:    tab.selectedCustomer?.id || null,
     payment_method: pm,
     payments,
@@ -812,7 +870,7 @@ if (!isOnline) {
   };
 } else {
   sale = await saleService.create({
-    items:          tab.cart.map(c => ({ product_id: c.product_id, presentation_id: c.presentation_id || null, quantity: c.quantity, price: c.price })),
+    items:          tab.cart.filter(c => !c.is_promo_free).map(c => ({ product_id: c.product_id, presentation_id: c.presentation_id || null, quantity: c.quantity, price: c.price })),
     customer_id:    tab.selectedCustomer?.id || null,
     payment_method: pm,
     payments,
@@ -1677,7 +1735,7 @@ setDianModal(true);
                   const warn    = productWarning(p);
                   const inCart  = tab.cart.find(c => c.product_id === p.id);
                   const blocked = warn?.level === 'danger' || p.stock === 0;
-                  const porPeso = esPorPeso(p.category);
+                  const porPeso = esPorPeso(p.category) && ['kg','g','lb','oz'].includes(p.gramaje_unidad);
                   return (
                     <div key={p.id} className="px-3 py-2 border-bottom"
                       style={{ background: blocked ? '#fff5f5' : inCart ? '#f0fff4' : 'white' }}>
@@ -2151,14 +2209,17 @@ const Sales = () => {
   const [pedidosCatalogo, setPedidosCatalogo] = useState([]);
   const [showPedidos,       setShowPedidos]       = useState(false);
   const [modalDomiciliario, setModalDomiciliario] = useState(null);
-  const [formDom,           setFormDom]           = useState({nombre:'',celular:'',marca_moto:'',placa:''});
+  const [formDom,           setFormDom]           = useState({nombre:'',celular:'',cedula:'',marca_moto:'',placa:''});
 
   // Consultar pedidos del catálogo asignados a este cajero cada 30s
   useEffect(() => {
     if (!token || !user?.id) return;
     const cargar = () => {
-      apiFetch(`/domicilios?cajero_id=${user.id}&estado=asignado`, {}, token)
-        .then(data => setPedidosCatalogo(Array.isArray(data) ? data.filter(d => d.numero_pedido?.startsWith('CAT-')) : []))
+      apiFetch(`/domicilios/`, {}, token)
+        .then(data => setPedidosCatalogo(Array.isArray(data) ? data.filter(d =>
+          (d.numero_pedido?.startsWith('CAT-')) &&
+          !['entregado','cancelado'].includes(d.estado)
+        ) : []))
         .catch(() => {});
     };
     cargar();
@@ -2171,12 +2232,12 @@ const Sales = () => {
     productService.getAll(token).then(setProducts).catch(console.error);
     presentationService.getAll(token).then(setPresentations).catch(console.error);
     // Cargar promociones activas del día
-    fetch('http://localhost:5000/api/promotions/?activas=true', {
+    fetch('/api/promotions/?activas=true', {
       headers: { 'Authorization': 'Bearer ' + token }
     }).then(r => r.ok ? r.json() : [])
       .then(data => setPromosActivas(Array.isArray(data) ? data.filter(p => p.is_valid_today) : []))
       .catch(() => {});
-    fetch('http://localhost:5000/api/shifts/active', {
+    fetch('/api/shifts/active', {
       headers: { 'Authorization': 'Bearer ' + token }
     })
       .then(r => r.json())
@@ -2186,7 +2247,7 @@ const Sales = () => {
           setShiftData(data);
         } else {
           setShiftOk(false);
-          fetch('http://localhost:5000/api/cajas/mis-cajas', {
+          fetch('/api/cajas/mis-cajas', {
             headers: { 'Authorization': 'Bearer ' + token }
           }).then(r => r.ok ? r.json() : [])
             .then(cajas => {
@@ -2213,6 +2274,7 @@ const Sales = () => {
           estado:               'en_camino',
           domiciliario_nombre:  formDom.nombre,
           domiciliario_celular: formDom.celular,
+          domiciliario_cedula:  formDom.cedula,
           domiciliario_moto:    formDom.marca_moto,
           domiciliario_placa:   formDom.placa,
         })
@@ -2221,7 +2283,7 @@ const Sales = () => {
       imprimirComprobanteEnvio(modalDomiciliario, formDom);
       showAlert('success', `Enviado · Código de entrega: ${codigo}`);
       setModalDomiciliario(null);
-      setFormDom({nombre:'',celular:'',marca_moto:'',placa:''});
+      setFormDom({nombre:'',celular:'',cedula:'',marca_moto:'',placa:''});
       apiFetch(`/domicilios?cajero_id=${user.id}&estado=en_camino`, {}, token)
         .then(data => setPedidosCatalogo(Array.isArray(data) ? data.filter(d =>
           d.numero_pedido?.startsWith('CAT-') || d.numero_pedido?.startsWith('DOM-')) : []));
@@ -2270,7 +2332,7 @@ const Sales = () => {
       <div class="c" style="font-size:14px;font-weight:900">WhatsApp: 3203308547</div>
       <div class="c" style="font-size:9px">(Foto del comprobante firmado por el cliente)</div>
       <div class="sep"></div>
-      <div class="c" style="font-size:9px">Fecha: ${new Date().toLocaleString('es-CO')}</div>
+      <div class="c" style="font-size:9px">Fecha: ${new Date().toLocaleString('es-CO', { timeZone:'America/Bogota' })}</div>
     `;
     const w = window.open('','_blank','width=400,height=600');
     w.document.write(`<html><head><style>${css}</style></head><body>${html}<script>window.onload=function(){window.print();window.close();}<\/script></body></html>`);
@@ -2291,7 +2353,7 @@ const Sales = () => {
     }
     const monto = parseFloat(efectivoInicial) || 0;
     try {
-      const res = await fetch('http://localhost:5000/api/shifts/open', {
+      const res = await fetch('/api/shifts/open', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
         body: JSON.stringify({ initial_cash: monto, cash_register_id: cajaSeleccionada ? parseInt(cajaSeleccionada) : null })
@@ -2318,7 +2380,7 @@ const Sales = () => {
     try {
       const contado = parseFloat(efectivoContado) || 0;
       if (shiftData?.id) {
-        await fetch('http://localhost:5000/api/shifts/close', {
+        await fetch('/api/shifts/close', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
           body: JSON.stringify({ shift_id: shiftData.id, cash_counted: contado })
@@ -2437,7 +2499,7 @@ const Sales = () => {
               <div style={{ fontSize:9, color:'#38bdf8', letterSpacing:2, textTransform:'uppercase', fontWeight:600 }}>by Creatsoft</div>
             </div>
           <div style={{ fontSize:12, color:'#64748b' }}>
-            Cajero: <strong>{user?.name}</strong> — {new Date().toLocaleDateString('es-CO', { weekday:'long', day:'numeric', month:'long' })}
+            Cajero: <strong>{user?.name}</strong> — {new Date().toLocaleDateString('es-CO', { weekday:'long', day:'numeric', month:'long', timeZone:'America/Bogota' })}
           </div>
           </div>
         </div>
@@ -2668,7 +2730,7 @@ const Sales = () => {
       )}
 
       {/* ── Botón pedidos catálogo — solo Plan Estándar+ ── */}
-      {pedidosCatalogo.length > 0 && hasFeature('catalogo_qr') && (
+      {hasFeature('catalogo_qr') && (
         <div style={{position:'fixed',bottom:24,right:24,zIndex:8888}}>
           <button className="btn btn-warning fw-bold shadow-lg"
             style={{borderRadius:50,padding:'12px 20px',fontSize:15,position:'relative'}}
@@ -2705,7 +2767,7 @@ const Sales = () => {
                       style={{background:`var(--bs-${estadoColor}-bg-subtle,#fff)`}}>
                       <div>
                         <span className="fw-bold">{p.numero_pedido}</span>
-                        <span className="text-muted small ms-2">{new Date(p.created_at).toLocaleString('es-CO')}</span>
+                        <span className="text-muted small ms-2">{new Date(p.created_at).toLocaleString('es-CO', { timeZone:'America/Bogota' })}</span>
                       </div>
                       <span className={`badge bg-${estadoColor} text-${estadoColor==='warning'?'dark':'white'}`}>
                         {estadoLabel}
@@ -2759,7 +2821,7 @@ const Sales = () => {
                         {/* Asignar domiciliario — solo si no tiene */}
                         {p.estado !== 'entregado' && p.estado !== 'cancelado' && !p.domiciliario_nombre && (
                           <button className="btn btn-warning btn-sm fw-semibold"
-                            onClick={() => { setModalDomiciliario(p); setFormDom({nombre:'',celular:'',marca_moto:'',placa:''}); }}>
+                            onClick={() => { setModalDomiciliario(p); setFormDom({nombre:'',celular:'',cedula:'',marca_moto:'',placa:''}); }}>
                             Asignar domiciliario
                           </button>
                         )}
@@ -2966,6 +3028,11 @@ const Sales = () => {
                   <input className="form-control" placeholder="Ej: 3001234567" type="tel"
                     value={formDom.celular} onChange={e=>setFormDom(f=>({...f,celular:e.target.value}))}/>
                 </div>
+                <div className="col-12">
+                  <label className="form-label fw-semibold small mb-1">Cédula</label>
+                  <input className="form-control" placeholder="Ej: 1234567890"
+                    value={formDom.cedula} onChange={e=>setFormDom(f=>({...f,cedula:e.target.value}))}/>
+                </div>
                 <div className="col-7">
                   <label className="form-label fw-semibold small mb-1">Marca de la moto</label>
                   <input className="form-control" placeholder="Ej: Honda, Yamaha..."
@@ -2984,7 +3051,7 @@ const Sales = () => {
             </div>
             <div style={{padding:'0 20px 20px',display:'flex',gap:10}}>
               <button className="btn btn-outline-secondary flex-fill"
-                onClick={()=>{ setModalDomiciliario(null); setFormDom({nombre:'',celular:'',marca_moto:'',placa:''}); }}>
+                onClick={()=>{ setModalDomiciliario(null); setFormDom({nombre:'',celular:'',cedula:'',marca_moto:'',placa:''}); }}>
                 Cancelar
               </button>
               <button className="btn btn-warning fw-bold flex-fill" onClick={asignarDomiciliarioS}>

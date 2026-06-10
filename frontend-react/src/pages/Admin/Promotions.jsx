@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import PlanGuard from '../../components/PlanGuard';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -6,8 +7,8 @@ import { apiFetch } from '../../services/api';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
-const API  = 'http://localhost:5000/api/promotions/';
-const PAPI = 'http://localhost:5000/api/products/';
+const API  = '/api/promotions/';
+const PAPI = '/api/products/';
 
 const EMPTY = {
   name: '', type: 'descuento_pct', is_active: true,
@@ -175,6 +176,13 @@ const Promotions = () => {
         showMsg('danger', 'La fecha de inicio no puede ser posterior a la fecha de fin'); return;
       }
     }
+    // Validar campos del cupón
+    if (!cuponForm.codigo?.trim()) { showMsg('danger', 'El código del cupón es requerido'); return; }
+    const valCupon = parseFloat(cuponForm.valor);
+    if (!valCupon || valCupon <= 0) { showMsg('danger', 'El descuento debe ser mayor a 0'); return; }
+    if (cuponForm.tipo === 'descuento_pct' && valCupon > 100) { showMsg('danger', 'El descuento no puede ser mayor al 100%'); return; }
+    const duplicado = cupones.find(cp => cp.codigo?.toLowerCase() === cuponForm.codigo.trim().toLowerCase());
+    if (duplicado) { showMsg('danger', `El código "${cuponForm.codigo}" ya está registrado`); return; }
     try {
       await apiFetch('/coupons/', { method:'POST', body: JSON.stringify(cuponForm) }, token);
       showMsg('success', 'Cupón creado');
@@ -241,6 +249,16 @@ const Promotions = () => {
         showMsg('danger', 'La fecha de fin debe ser posterior a la fecha de inicio');
         return;
       }
+    }
+    // Validar descuento máximo 100%
+    if (form.type === 'descuento_pct') {
+      const val = parseFloat(form.discount_value);
+      if (!val || val <= 0) { showMsg('danger', 'El descuento debe ser mayor a 0%'); return; }
+      if (val > 100) { showMsg('danger', 'El descuento no puede ser mayor al 100%'); return; }
+    }
+    if (form.type === 'descuento_fijo') {
+      const val = parseFloat(form.discount_value);
+      if (!val || val <= 0) { showMsg('danger', 'El descuento debe ser mayor a $0'); return; }
     }
     setSaving(true);
     const body = {
@@ -313,7 +331,21 @@ const Promotions = () => {
           {mainTab === 'cupones' && <button className="btn btn-primary" onClick={()=>setShowCuponModal(true)}>+ Nuevo cupón</button>}
         </div>
 
-        {alert && <div className={`alert alert-${alert.type} py-2 mb-3`}>{alert.msg}</div>}
+        {alert && (
+          <div style={{
+            position:'fixed', top:20, left:'50%', transform:'translateX(-50%)',
+            zIndex:99999, minWidth:350, maxWidth:520, textAlign:'center',
+            borderRadius:12, padding:'14px 20px',
+            background: alert.type==='success'?'#f0fdf4':alert.type==='warning'?'#fffbeb':'#fef2f2',
+            color: alert.type==='success'?'#166534':alert.type==='warning'?'#92400e':'#991b1b',
+            border: `1.5px solid ${alert.type==='success'?'#86efac':alert.type==='warning'?'#fde68a':'#fca5a5'}`,
+            boxShadow:'0 8px 25px rgba(0,0,0,0.15)',
+            fontWeight:600, fontSize:15,
+          }}>
+            <i className={`bi me-2 ${alert.type==='success'?'bi-check-circle-fill':'bi-exclamation-circle-fill'}`}></i>
+            {alert.msg}
+          </div>
+        )}
 
         {/* Tabs principales */}
         <ul className="nav nav-tabs mb-4">
@@ -483,15 +515,28 @@ const Promotions = () => {
                   <label className="form-label fw-semibold">
                     Producto al que aplica <span className="text-danger">*</span>
                   </label>
-                  <select className="form-select" value={form.product_id}
-                    onChange={e=>set('product_id', e.target.value)} required>
-                    <option value="">— Seleccionar producto —</option>
-                    {products.map(p => (
-                      <option key={p.id} value={p.id}>
-                        {productLabel(p)}
-                      </option>
-                    ))}
-                  </select>
+                  <input className="form-control mb-1" placeholder="Buscar por nombre o código de barras..."
+                    value={form._prodSearch||''}
+                    onChange={e=>{
+                      set('_prodSearch', e.target.value);
+                      if(!e.target.value) set('product_id','');
+                    }}
+                  />
+                  {form._prodSearch && (
+                    <div className="border rounded shadow-sm" style={{maxHeight:200,overflowY:'auto',position:'relative',zIndex:20}}>
+                      {products.filter(p=>
+                        p.name.toLowerCase().includes((form._prodSearch||'').toLowerCase()) ||
+                        (p.barcode && p.barcode.includes(form._prodSearch))
+                      ).slice(0,10).map(p=>(
+                        <div key={p.id} className="px-3 py-2 border-bottom"
+                          style={{cursor:'pointer',background: parseInt(form.product_id)===p.id?'#f0fdf4':'white'}}
+                          onClick={()=>{ set('product_id', String(p.id)); set('_prodSearch', p.name); }}>
+                          <div className="fw-semibold small">{p.name}</div>
+                          <div className="text-muted" style={{fontSize:11}}>{p.category} · ${Number(p.price).toLocaleString('es-CO')} · Stock: {p.stock} {p.barcode && `· ${p.barcode}`}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   {selectedProduct && (
                     <div className="mt-2 px-3 py-2 rounded d-flex align-items-center gap-2"
                       style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', fontSize:13 }}>
@@ -512,7 +557,7 @@ const Promotions = () => {
                       {form.type==='descuento_pct' ? 'Descuento (%)' : 'Descuento ($ COP)'}
                     </label>
                     <input type="number" className="form-control" min={0}
-                      value={form.discount_value} onChange={e=>set('discount_value', e.target.value)}
+                      value={form.discount_value} onChange={e=>set('discount_value', e.target.value)} max={form.type==='descuento_pct'?100:undefined} min={0.01}
                       placeholder={form.type==='descuento_pct' ? '15' : '5000'} />
                     {selectedProduct && form.discount_value > 0 && (
                       <div className="mt-2 px-3 py-2 rounded" style={{ background:'#fef9c3', fontSize:12 }}>
@@ -558,15 +603,28 @@ const Promotions = () => {
                       <label className="form-label fw-semibold">
                         Producto gratis <span className="text-muted fw-normal">(opcional, si es diferente)</span>
                       </label>
-                      <select className="form-select" value={form.free_product_id}
-                        onChange={e=>set('free_product_id', e.target.value)}>
-                        <option value="">— Mismo producto —</option>
-                        {products.map(p => (
-                          <option key={p.id} value={p.id}>
-                            {productLabel(p)}
-                          </option>
-                        ))}
-                      </select>
+                      <input className="form-control mb-1" placeholder="Buscar producto gratis (dejar vacío = mismo producto)..."
+                        value={form._freeSearch||''}
+                        onChange={e=>{
+                          set('_freeSearch', e.target.value);
+                          if(!e.target.value) set('free_product_id','');
+                        }}
+                      />
+                      {form._freeSearch && (
+                        <div className="border rounded shadow-sm" style={{maxHeight:180,overflowY:'auto',zIndex:20,position:'relative'}}>
+                          {products.filter(p=>
+                            p.name.toLowerCase().includes((form._freeSearch||'').toLowerCase()) ||
+                            (p.barcode && p.barcode.includes(form._freeSearch))
+                          ).slice(0,8).map(p=>(
+                            <div key={p.id} className="px-3 py-2 border-bottom"
+                              style={{cursor:'pointer',background: parseInt(form.free_product_id)===p.id?'#fdf4ff':'white'}}
+                              onClick={()=>{ set('free_product_id', String(p.id)); set('_freeSearch', p.name); }}>
+                              <div className="fw-semibold small">{p.name}</div>
+                              <div className="text-muted" style={{fontSize:11}}>{p.category} · Stock: {p.stock}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       {selectedFreeProduct && (
                         <div className="mt-2 px-3 py-2 rounded d-flex align-items-center gap-2"
                           style={{ background:'#fdf4ff', border:'1px solid #e9d5ff', fontSize:13 }}>

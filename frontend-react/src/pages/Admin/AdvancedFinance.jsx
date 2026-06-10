@@ -48,7 +48,7 @@ const AdvancedFinance = () => {
   const [tab,      setTab]        = useState('tabla');
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/finance/', {
+    fetch('/api/finance/', {
       headers: { Authorization: `Bearer ${token}` }
     }).then(r => r.json())
       .then(d => { setData(d); setLoading(false); })

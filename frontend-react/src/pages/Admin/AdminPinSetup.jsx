@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
+import { usePlan } from '../../context/PlanContext';
 import { apiFetch } from '../../services/api';
 
 // Cargar JsBarcode dinámicamente
@@ -14,6 +15,7 @@ const loadJsBarcode = () => new Promise((res) => {
 
 const AdminPinSetup = () => {
   const { token, user } = useAuth();
+  const { hasFeature } = usePlan();
   const barcodeRef = useRef();
 
   // PIN
@@ -174,6 +176,12 @@ const AdminPinSetup = () => {
                       </button>
                     </div>
                     <div className="form-text">Solo números · 4 a 6 dígitos</div>
+                    {pin.length > 0 && pin.length < 4 && (
+                      <div className="alert alert-warning py-1 px-2 mt-1 small">
+                        <i className="bi bi-exclamation-triangle-fill me-1"></i>
+                        El PIN debe tener mínimo 4 dígitos ({pin.length}/4)
+                      </div>
+                    )}
                   </div>
                   <div className="mb-4">
                     <label className="form-label fw-semibold small">Confirmar PIN</label>
@@ -194,6 +202,20 @@ const AdminPinSetup = () => {
             </div>
 
             {/* ── Tarjeta de código de barras ── */}
+            {!hasFeature('tarjeta_autorizacion') ? (
+              <div className="card border-0 shadow-sm">
+                <div className="card-header fw-semibold py-3"
+                  style={{ background:'#1e3a5f', color:'#fff', borderRadius:'8px 8px 0 0' }}>
+                  <i className="bi bi-credit-card me-2"></i> Tarjeta de autorización
+                </div>
+                <div className="card-body text-center py-4">
+                  <div style={{ fontSize:48, marginBottom:12 }}>🔒</div>
+                  <div className="fw-bold mb-1">Función no disponible</div>
+                  <div className="text-muted small mb-3">La tarjeta de autorización requiere <strong>Plan Estándar</strong></div>
+                  <a href="/admin/mi-plan" className="btn btn-primary btn-sm">Ver planes</a>
+                </div>
+              </div>
+            ) : (
             <div className="card border-0 shadow-sm">
               <div className="card-header fw-semibold py-3"
                 style={{ background:'#1e3a5f', color:'#fff', borderRadius:'8px 8px 0 0' }}>
@@ -259,6 +281,7 @@ const AdminPinSetup = () => {
                 )}
               </div>
             </div>
+            )}
           </div>
 
           {/* ── Instrucciones ── */}

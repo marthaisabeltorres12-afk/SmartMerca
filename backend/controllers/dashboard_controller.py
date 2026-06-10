@@ -131,35 +131,7 @@ def get_dashboard_today():
                 ventas = int(q.count or 0)
                 total_suc = float(q.total or 0)
 
-            if ventas == 0:
-                # Método 2: turnos con branch_id hoy
-                turnos = Shift.query.filter(
-                    Shift.branch_id == suc.id,
-                    func.date(Shift.opened_at) == today
-                ).all()
-                cajero_ids = list({t.cashier_id for t in turnos if t.cashier_id})
-
-                if not cajero_ids:
-                    # Método 3: cajas asignadas a esta sucursal
-                    cajas = CashRegister.query.filter_by(branch_id=suc.id, is_active=True).all()
-                    caja_ids = [c.id for c in cajas]
-                    if caja_ids:
-                        turnos2 = Shift.query.filter(
-                            Shift.cash_register_id.in_(caja_ids),
-                            func.date(Shift.opened_at) == today
-                        ).all()
-                        cajero_ids = list({t.cashier_id for t in turnos2 if t.cashier_id})
-
-                if cajero_ids:
-                    q2 = db.session.query(
-                        func.count(Sale.id).label('count'),
-                        func.sum(Sale.total).label('total')
-                    ).filter(
-                        func.date(Sale.created_at) == today,
-                        Sale.cashier_id.in_(cajero_ids)
-                    ).first()
-                    ventas = int(q2.count or 0)
-                    total_suc = float(q2.total or 0)
+            # Solo usar branch_id directo para evitar duplicados
 
             por_sucursal.append({
                 'nombre': suc.nombre,
@@ -182,7 +154,10 @@ def get_dashboard_today():
         SaleItem.product_name,
         func.sum(SaleItem.quantity).label('qty'),
         func.sum(SaleItem.quantity * SaleItem.price).label('valor')
-    ).join(Sale).filter(func.date(Sale.created_at) == today)
+    ).join(Sale).filter(
+        func.date(Sale.created_at) == today,
+        ~Sale.id.in_(ids_devueltos) if ids_devueltos else True
+    )
     top_productos = q_top.group_by(SaleItem.product_name)\
         .order_by(func.sum(SaleItem.quantity * SaleItem.price).desc()).limit(5).all()
 

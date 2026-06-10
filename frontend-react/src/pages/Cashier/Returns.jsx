@@ -7,7 +7,7 @@ import AuthModal from '../../components/AuthModal';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const fmtMoney = (n) => Number(n).toLocaleString('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
-const fmtDate  = (s) => s ? new Date(s).toLocaleString('es-CO', { dateStyle:'short', timeStyle:'short' }) : '—';
+const fmtDate  = (s) => s ? new Date(s).toLocaleString('es-CO', { dateStyle:'short', timeStyle:'short', timeZone:'America/Bogota' }) : '—';
 
 const Returns = () => {
   const { token }  = useAuth();
@@ -48,7 +48,7 @@ const Returns = () => {
       .then(data => setProducts(Array.isArray(data) ? data.filter(p => p.is_active !== false) : []))
       .catch(() => {});
     // Cargar política
-    fetch('http://localhost:5000/api/policy/', { headers: { Authorization: `Bearer ${token}` } })
+    fetch('/api/policy/', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
       .then(p => {
         if (p) {

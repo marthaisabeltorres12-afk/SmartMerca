@@ -41,7 +41,7 @@ export const NotificationProvider = ({ children }) => {
   const doFetch = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await fetch('http://localhost:5000/api/products/', {
+      const res = await fetch('/api/products/', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) return;

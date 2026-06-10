@@ -50,6 +50,10 @@ const ManageSuppliers = () => {
     // Validar campos obligatorios
     if (!form.company_name?.trim()) { showAlertMsg('danger', 'El nombre de la empresa es obligatorio'); return; }
     if (!form.name?.trim())         { showAlertMsg('danger', 'El nombre del proveedor es obligatorio'); return; }
+    if (!editing && form.nit?.trim()) {
+      const existe = suppliers.find(s => s.nit?.trim() === form.nit.trim());
+      if (existe) { showAlertMsg('danger', 'NIT ya registrado en: ' + (existe.company_name || existe.name)); return; }
+    }
     setLoading(true);
     try {
       if (editing) { await supplierService.update(editing.id, form, token); showAlertMsg('success','Proveedor actualizado'); }
@@ -238,7 +242,8 @@ const ManageSuppliers = () => {
                         <label className="form-label">Teléfono</label>
                         <input className="form-control" placeholder="Ej: 3001234567"
                           value={form.phone}
-                          onChange={e => setForm({...form, phone: e.target.value})} />
+                          onKeyPress={(e) => { if (!/[0-9+\s\-]/.test(e.key)) e.preventDefault(); }}
+                          onChange={e => setForm({...form, phone: e.target.value.replace(/[^0-9+\s\-]/g,'')})} />
                       </div>
                       <div className="col-12">
                         <label className="form-label">Dirección</label>

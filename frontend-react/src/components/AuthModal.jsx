@@ -219,7 +219,7 @@ const label = LABELS[tipo] || {
         <form onSubmit={handleSubmit}>
 
           {/* ── TARJETA — solo Plan Estándar+ ── */}
-          {hasFeature('pin_autorizacion') && <div style={{ marginBottom:16 }}>
+          {hasFeature('tarjeta_autorizacion') && <div style={{ marginBottom:16 }}>
             <label
   style={{
     color: '#94a3b8',
@@ -289,7 +289,7 @@ const label = LABELS[tipo] || {
 </div>
           </div>}
 
-          {hasFeature('pin_autorizacion') && (
+          {hasFeature('tarjeta_autorizacion') && (
           <div style={{ display:'flex', alignItems:'center', gap:10, margin:'12px 0', color:'#475569', fontSize:12 }}>
             <div style={{ flex:1, height:1, background:'#334155' }} />
             {esDobleFacto ? 'Y TAMBIÉN' : 'O'}
@@ -340,7 +340,7 @@ const label = LABELS[tipo] || {
           </div>
 
           {/* Hint modo simple */}
-          {!esDobleFacto && hasFeature('pin_autorizacion') && (
+          {!esDobleFacto && hasFeature('tarjeta_autorizacion') && (
             <div style={{ textAlign:'center', color:'#475569', fontSize:11, marginTop:12 }}>
               Con tarjeta se autoriza automáticamente al escanear
             </div>

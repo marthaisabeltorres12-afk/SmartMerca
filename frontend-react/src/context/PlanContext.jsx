@@ -26,13 +26,13 @@ const BASICO = [
   'ventas', 'codigo_barras', 'efectivo_nequi_transferencia',
   'pago_mixto', 'presentaciones', 'control_stock',
   'alertas_stock', 'cartera', 'turnos', 'auditoria',
-  'backup', 'importar_excel', 'offline',
+  'backup', 'importar_excel', 'offline', 'pin_autorizacion', 'credito_avanzado',
   'descuentos_temporales', 'clientes_basico',
 ];
 
 const ESTANDAR = [
   ...BASICO,
-  'pin_autorizacion', 'etiquetas', 'devoluciones', 'domicilios',
+  'pin_autorizacion', 'tarjeta_autorizacion', 'etiquetas', 'devoluciones', 'domicilios',
   'promociones', 'cupones', 'ordenes_compra',
   'reportes_excel', 'reportes_pdf', 'dian', 'multicaja',
   'analisis_ventas', 'credito_avanzado', 'listas_precios',

@@ -1,0 +1,18 @@
+# requirements_docker.txt — dependencias limpias para Docker
+# (sin las de IA/ML que hacen la imagen muy pesada)
+
+Flask==3.0.3
+Flask-Cors==4.0.1
+Flask-JWT-Extended==4.6.0
+Flask-Mail==0.10.0
+Flask-SQLAlchemy==3.1.1
+gunicorn==22.0.0
+PyMySQL==1.1.1
+SQLAlchemy==2.0.50
+python-dotenv==1.0.1
+python-dateutil==2.9.0.post0
+openpyxl==3.1.5
+Werkzeug==3.0.3
+cryptography==42.0.8
+requests==2.31.0
+boto3==1.43.22

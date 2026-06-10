@@ -401,7 +401,7 @@
 
 <script>
 const CUPOS_USADOS=7,CUPOS_TOTALES=15;
-const BACKEND=window.location.hostname==='localhost'?'http://localhost:5000/api':'https://TU-BACKEND.railway.app/api';
+const BACKEND=window.location.hostname==='localhost'?'/api':'https://TU-BACKEND.railway.app/api';
 const CUPOS_REST=CUPOS_TOTALES-CUPOS_USADOS;
 document.getElementById('cupos-rest').textContent=CUPOS_REST+' cupos';
 const fmt=n=>'$'+Number(n||0).toLocaleString('es-CO');

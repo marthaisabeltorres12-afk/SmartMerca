@@ -147,9 +147,14 @@ def create_app():
             from models.shift        import Shift, ShiftWithdrawal
         except ImportError:
             pass
-        db.create_all()
+        db.metadata.create_all(bind=db.engine, checkfirst=True)
 
         # Migración: plan_vence y plan_cliente en system_config
+        try:
+            db.session.execute(db.text("ALTER TABLE system_config ADD COLUMN plan_actual VARCHAR(50) DEFAULT 'basico'"))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
         try:
             db.session.execute(db.text("ALTER TABLE system_config ADD COLUMN plan_vence DATE NULL"))
             db.session.commit()
@@ -192,6 +197,33 @@ def create_app():
                 "ALTER TABLE cash_registers ADD COLUMN branch_id INT NULL REFERENCES branches(id)"
             ))
             db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        # ── Sucursal inicial automática ──────────────────────────────
+        # Si no existe ninguna sucursal, crear una con el nombre del negocio
+        try:
+            from models.branch import Branch
+            from models.business_policy import BusinessPolicy
+            if Branch.query.count() == 0:
+                policy = BusinessPolicy.query.first()
+                nombre_negocio = policy.business_name if policy and policy.business_name else 'Sucursal Principal'
+                sucursal = Branch(
+                    nombre=nombre_negocio,
+                    direccion=policy.address if policy else '',
+                    telefono=policy.phone if policy else '',
+                    is_active=True,
+                )
+                db.session.add(sucursal)
+                db.session.commit()
+                # Asignar todas las ventas sin sucursal a esta sucursal
+                db.session.execute(db.text(
+                    f"UPDATE sales SET branch_id = {sucursal.id} WHERE branch_id IS NULL"
+                ))
+                db.session.execute(db.text(
+                    f"UPDATE cash_registers SET branch_id = {sucursal.id} WHERE branch_id IS NULL"
+                ))
+                db.session.commit()
         except Exception:
             db.session.rollback()
 

@@ -17,7 +17,7 @@ const round50 = n => {
   return t <= 24 ? centena : t <= 74 ? centena + 50 : centena + 100;
 };
 const fmt   = n => round50(n).toLocaleString('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
-const fmtDt = s => s ? new Date(s).toLocaleString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+const fmtDt = s => s ? new Date(s).toLocaleString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', timeZone:'America/Bogota' }) : '—';
 
 // ══════════════════════════════════════════════
 // VISTA CAJERO
@@ -1155,7 +1155,7 @@ const AdminView = ({ token }) => {
                     <tbody>
                       {adjList.map(a => (
                         <tr key={a.id}>
-                          <td className="text-muted">{new Date(a.created_at).toLocaleString('es-CO',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
+                          <td className="text-muted">{new Date(a.created_at).toLocaleString('es-CO',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',timeZone:'America/Bogota'})}</td>
                           <td><span className={`badge ${a.tipo==='ingreso'?'bg-success':'bg-danger'}`}><i className={`bi ${a.tipo==='ingreso'?'bi-box-arrow-in-down':'bi-box-arrow-up'} me-1`}></i>{a.tipo}</span></td>
                           <td className={`text-end fw-bold ${a.tipo==='ingreso'?'text-success':'text-danger'}`}>{a.tipo==='ingreso'?'+':'-'}{fmt(a.monto)}</td>
                           <td>{a.motivo}</td>

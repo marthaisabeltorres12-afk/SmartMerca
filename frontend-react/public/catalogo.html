@@ -87,6 +87,12 @@
   </div>
 </div>
 
+<div style="display:flex;align-items:center;gap:8px;margin:4px 8px">
+  <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;color:#dc2626;font-weight:700;background:#fee2e2;padding:4px 14px;border-radius:20px;border:1.5px solid #fca5a5">
+    <input type="checkbox" id="filter-promos" onchange="renderGrid()" style="width:15px;height:15px;accent-color:#dc2626">
+    🏷️ Solo ofertas
+  </label>
+</div>
 <div class="cats" id="cats"></div>
 <div class="grid" id="grid"></div>
 
@@ -166,6 +172,25 @@
     <h3 style="font-weight:800;font-size:18px;margin-bottom:6px">📦 Finalizar pedido</h3>
     <p style="font-size:13px;color:#64748b;margin-bottom:16px">El pago se coordina contra entrega o Nequi directo con el negocio</p>
 
+    <!-- Selector de sucursal -->
+    <div style="margin-bottom:10px" id="sucursal-selector">
+      <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px">🏪 ¿A cuál sede deseas pedir? *</label>
+      <select id="cli-sucursal"
+        style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box;background:#fff">
+        <option value="">— Selecciona una sede —</option>
+      </select>
+    </div>
+    <!-- Filtro solo promociones (fuera del modal, en la barra de búsqueda) -->
+    <!-- Método de pago -->
+    <div style="margin-bottom:10px">
+      <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px">💳 Método de pago *</label>
+      <select id="cli-metodo-pago"
+        style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box;background:#fff">
+        <option value="efectivo">💵 Efectivo contra entrega</option>
+        <option value="nequi">📱 Nequi</option>
+        <option value="transferencia">🏦 Transferencia bancaria</option>
+      </select>
+    </div>
     <!-- Datos del cliente -->
     <div style="margin-bottom:10px">
       <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px">👤 Tu nombre *</label>
@@ -219,14 +244,20 @@
 // URL BACKEND — CAMBIAR cuando esté en Railway
 // ══════════════════════════════════════════════════════════════════
 const BACKEND = window.location.hostname === 'localhost'
-  ? 'http://localhost:5000/api'
-  : 'http://' + window.location.hostname + ':5000/api';
+  ? 'http://localhost:3001/api'
+  : 'http://' + window.location.hostname + ':3001/api';
 // ══════════════════════════════════════════════════════════════════
 
 const API = BACKEND + '/catalogo/productos';
 
 async function pagarConWompi() {
   if (!cart.length) { alert('Agrega productos primero'); return; }
+  const sucursalEl = document.getElementById('cli-sucursal');
+  const sucursalId = sucursalEl ? sucursalEl.value : '';
+  const sucursalNombre = sucursalEl ? sucursalEl.options[sucursalEl.selectedIndex]?.text : '';
+  const metodoPagoEl = document.getElementById('cli-metodo-pago');
+  const metodoPago = metodoPagoEl ? metodoPagoEl.value : 'efectivo';
+  if (sucursalEl && sucursalEl.options.length > 1 && !sucursalId) { alert('Selecciona una sede'); return; }
   if (!envioType)   { alert('Selecciona cómo recibes el pedido'); return; }
   if (envioType === 'domicilio') {
     const addr = document.getElementById('addr-input').value.trim();
@@ -250,6 +281,9 @@ async function pagarConWompi() {
         items:      cart.map(i => ({ nombre: i.name, cantidad: i.qty || i.kg || i.peso, precio: i.total / (i.qty || i.kg || 1), subtotal: i.total })),
         total, nombre, email, telefono,
         direccion, tipo_envio: envioType,
+        branch_id: sucursalId || null,
+        sucursal_nombre: sucursalNombre || null,
+        metodo_pago: metodoPago,
       }),
     });
     const data = await res.json();
@@ -346,8 +380,26 @@ async function init(){
     const d=await res.json();
     allProds=d.products||[];
     bizPhone=(d.business_phone||'').replace(/\D/g,'');
+    // promo_info ya viene incluido en cada producto desde /catalogo/productos
     document.getElementById('biz-name').textContent='🛒 '+(d.business_name||'Catálogo');
     document.getElementById('biz-addr').textContent=d.business_address||'';
+    // Cargar sucursales
+    try {
+      const resSuc = await fetch(BACKEND+'/catalogo/sucursales');
+      const sucData = await resSuc.json();
+      const sucursales = Array.isArray(sucData) ? sucData : [];
+      const sel = document.getElementById('cli-sucursal');
+      if (sucursales.length <= 1) {
+        document.getElementById('sucursal-selector').style.display='none';
+        if (sucursales.length===1) sel.innerHTML=`<option value="${sucursales[0].id}">${sucursales[0].nombre}</option>`;
+      } else {
+        sucursales.forEach(s=>{
+          const opt=document.createElement('option');
+          opt.value=s.id; opt.textContent=s.nombre;
+          sel.appendChild(opt);
+        });
+      }
+    } catch(e){}
     renderCats(); renderGrid();
   }catch{
     document.getElementById('grid').innerHTML='<div class="empty"><div>⚠️</div><p>No se pudo conectar.<br>Verifica que estés en la red WiFi del negocio.</p></div>';
@@ -365,9 +417,13 @@ function selectCat(c){activeCat=c;renderCats();renderGrid();}
 
 function renderGrid(){
   const q=document.getElementById('search').value.toLowerCase();
+  const soloPromos=document.getElementById('filter-promos')?.checked||false;
+  const normalizar=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const tienePromo=p=>p.promo_info&&p.promo_info.type;
   const prods=allProds.filter(p=>
-    (activeCat==='Todos'||p.category===activeCat)&&
-    (!q||p.name.toLowerCase().includes(q))&&p.stock>0
+    (activeCat==='Todos'||normalizar(p.category)===normalizar(activeCat))&&
+    (!q||normalizar(p.name).includes(normalizar(q)))&&p.stock>0&&
+    (!soloPromos||tienePromo(p))
   );
   if(!prods.length){
     document.getElementById('grid').innerHTML='<div class="empty"><div>🔍</div><p>Sin resultados</p></div>';
@@ -380,7 +436,13 @@ function renderGrid(){
       <div class="card-body">
         <div class="card-name">${p.name}</div>
         <div class="card-cat">${p.category||'General'}</div>
-        <div class="card-price">${fmt(p.price)}${peso?' / kg':''}</div>
+        ${p.promo_info&&p.promo_info.type==='lleva_gratis'?
+          `<div class="card-price" style="color:#16a34a">${fmt(p.price)}</div>
+           <div class="card-tag" style="background:#dcfce7;color:#16a34a;font-weight:700">🎁 LLEVA ${(p.promo_info.buy_quantity||0)+(p.promo_info.free_quantity||0)} PAGA ${p.promo_info.buy_quantity}</div>`
+        :p.promo_info&&p.final_price&&p.final_price<p.price?
+          `<div class="card-price"><span style="text-decoration:line-through;color:#999;font-size:12px">${fmt(p.price)}</span> <span style="color:#dc2626;font-weight:700">${fmt(p.final_price)}</span></div>
+           <div class="card-tag" style="background:#fee2e2;color:#dc2626;font-weight:700">🏷️ ${p.promo_info.type==='descuento_pct'?`-${p.promo_info.discount_value}%`:`-$${fmt(p.promo_info.discount_value)}`}</div>`
+        :`<div class="card-price">${fmt(p.price)}${peso?' / kg':''}</div>`}
         ${p.gramaje?`<div class="card-tag">📦 ${p.gramaje}</div>`:''}
         ${peso?'<div class="card-tag">⚖️ Por peso</div>':''}
         <button class="card-btn" onclick="event.stopPropagation();openModal(${p.id})">${peso?'⚖️ Elegir peso':'+ Agregar'}</button>
@@ -511,6 +573,9 @@ function selEnvio(tipo){
 }
 
 async function sendWhatsApp(){
+  const sucursalEl2 = document.getElementById('cli-sucursal');
+  const sucursalNombreWA = sucursalEl2 ? sucursalEl2.options[sucursalEl2.selectedIndex]?.text : '';
+  if (sucursalEl2 && sucursalEl2.options.length > 1 && !sucursalEl2.value) { alert('Selecciona una sede'); return; }
   // Validar campos
   const nombre = (document.getElementById('cli-nombre')?.value||'').trim();
   const tel    = (document.getElementById('cli-tel')?.value||'').trim();
@@ -534,7 +599,7 @@ async function sendWhatsApp(){
     notaLine + '\n' +
     'Productos:\n' + lines.join('\n') + '\n\n' +
     'Total: ' + fmt(total) + '\n\n' +
-    'Pago: efectivo contra entrega o Nequi';
+    `Pago: ${document.getElementById('cli-metodo-pago')?.options[document.getElementById('cli-metodo-pago')?.selectedIndex]?.text || 'Efectivo'}`;
 
   // Crear pedido en la BD automáticamente
   try {

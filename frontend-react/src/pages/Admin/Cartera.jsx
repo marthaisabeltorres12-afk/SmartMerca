@@ -187,6 +187,7 @@ const Cartera = () => {
       setFacturas(Array.isArray(data) ? data : []);
     } catch(e) { setFacturas([]); }
     finally { setLoadingFact(false); }
+    
   };
 
   // ── Tope ─────────────────────────────────────────────────────────────
@@ -218,7 +219,21 @@ const Cartera = () => {
 
         <p className="text-muted mb-4">Gestión de créditos, deudas y abonos</p>
 
-        {alert && <div className={`alert alert-${alert.type} alert-dismissible`}>{alert.msg}</div>}
+        <div style={{
+            position:'fixed', top:20, left:'50%', transform:'translateX(-50%)',
+            zIndex:99999, minWidth:380, maxWidth:520, textAlign:'center',
+            borderRadius:12, padding:'14px 20px', fontWeight:600, fontSize:15,
+            background: alert?.type==='success'?'#f0fdf4':'#fef2f2',
+            color: alert?.type==='success'?'#166534':'#991b1b',
+            border: `1.5px solid ${alert?.type==='success'?'#86efac':'#fca5a5'}`,
+            boxShadow:'0 8px 25px rgba(0,0,0,0.15)',
+            display: alert ? 'block' : 'none',
+            pointerEvents: alert ? 'auto' : 'none',
+          }}>
+            <i className={`bi me-2 ${alert?.type==='success'?'bi-check-circle-fill':'bi-exclamation-circle-fill'}`}></i>
+            {alert?.msg}
+        </div>
+
 
         {/* KPIs */}
         <div className="row g-3 mb-4">
@@ -312,9 +327,9 @@ const Cartera = () => {
                           </td>
                           <td>
                             <div className="d-flex gap-1 flex-wrap">
-                             <button className="btn btn-success btn-sm"><i className="bi bi-cash me-1"></i>Abono</button>
-<button className="btn btn-warning btn-sm text-dark"><i className="bi bi-receipt me-1"></i>Facturas</button>
-<button className="btn btn-outline-primary btn-sm"><i className="bi bi-clock-history me-1"></i>Historial</button>
+                             <button className="btn btn-success btn-sm" onClick={() => { setAbonoModal(c); setAbonoFactura(null); setAbonoMonto(''); setAbonoNota(''); }}><i className="bi bi-cash me-1"></i>Abono</button>
+<button className="btn btn-warning btn-sm text-dark" onClick={() => openFacturas(c)}><i className="bi bi-receipt me-1"></i>Facturas</button>
+<button className="btn btn-outline-primary btn-sm" onClick={() => openHist(c)}><i className="bi bi-clock-history me-1"></i>Historial</button>
                             </div>
                           </td>
                         </tr>

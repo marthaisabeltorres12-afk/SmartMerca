@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
-const API = 'http://localhost:5000/api/policy/';
+const API = '/api/policy/';
 
 const BusinessPolicy = () => {
   const { token } = useAuth();

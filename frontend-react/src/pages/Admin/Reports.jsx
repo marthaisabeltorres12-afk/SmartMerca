@@ -70,7 +70,7 @@ const Reports = () => {
       setSales(s); setProducts(p); setByCashier(bc); setMovements(mv);
     }).catch(console.error);
     // Cargar nombre del negocio independientemente
-    fetch('http://localhost:5000/api/policy/', {headers:{'Authorization':'Bearer '+token}})
+    fetch('/api/policy/', {headers:{'Authorization':'Bearer '+token}})
       .then(r => r.ok ? r.json() : {})
       .then(pol => { if (pol?.business_name) setBusinessName(pol.business_name); })
       .catch(() => {});
